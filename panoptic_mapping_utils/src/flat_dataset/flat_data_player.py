@@ -3,6 +3,7 @@
 import os
 import json
 import csv
+from drift_generator import DriftGenerator
 
 import rospy
 from sensor_msgs.msg import Image
@@ -22,7 +23,7 @@ class FlatDataPlayer(object):
         """  Initialize ros node and read params """
         # params
         self.data_path = rospy.get_param(
-            '~data_path', '/home/lukas/Documents/Datasets/flat_dataset/run1')
+            '~data_path', '/home/ioannis/datasets/flat_dataset/run1')
         self.global_frame_name = rospy.get_param('~global_frame_name', 'world')
         self.sensor_frame_name = rospy.get_param('~sensor_frame_name',
                                                  "depth_cam")
@@ -64,6 +65,15 @@ class FlatDataPlayer(object):
         self.times = [(x - self.times[0]) / self.play_rate for x in self.times]
         self.start_time = None
 
+        # drift generator
+        self.drift_generator = DriftGenerator(
+                        load_from_file=True,
+                        load_file_path="/home/ioannis/datasets/noise/noise_p0.5.json", 
+                        save_to_file=False,
+                        use_as_generator=False,
+                        save_history=True,
+                        history_file_path="/home/ioannis/datasets/noise/history_p0.5.json")
+
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
         else:
@@ -83,6 +93,7 @@ class FlatDataPlayer(object):
         # Check we're not done.
         if self.current_index >= len(self.times):
             rospy.loginfo("Finished playing the dataset.")
+            self.drift_generator.save_history_to_file()
             rospy.signal_shutdown("Finished playing the dataset.")
             return
 
@@ -163,15 +174,17 @@ class FlatDataPlayer(object):
                 for col in range(4):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
+            position, rotation = self.drift_generator.add_drift_to_position(now, transform[:,3], rotation)
+            
             self.tf_broadcaster.sendTransform(
-                (transform[0, 3], transform[1, 3], transform[2, 3]), rotation,
+                position, rotation,
                 now, self.sensor_frame_name, self.global_frame_name)
         pose_msg = PoseStamped()
         pose_msg.header.stamp = now
         pose_msg.header.frame_id = self.global_frame_name
-        pose_msg.pose.position.x = pose_data[3]
-        pose_msg.pose.position.y = pose_data[7]
-        pose_msg.pose.position.z = pose_data[11]
+        pose_msg.pose.position.x = position[0]
+        pose_msg.pose.position.y = position[1]
+        pose_msg.pose.position.z = position[2]
         pose_msg.pose.orientation.x = rotation[0]
         pose_msg.pose.orientation.y = rotation[1]
         pose_msg.pose.orientation.z = rotation[2]
