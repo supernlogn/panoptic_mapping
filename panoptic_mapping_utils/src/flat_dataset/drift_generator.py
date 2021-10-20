@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import json
 from pathlib import Path
-
+from typing import List
 from numpy.lib.npyio import load
 
 import rospy
@@ -20,12 +20,29 @@ class DriftGenerator(object):
     _y_index = 1
     _z_index = 2
 
+    def get_param_names() -> List[str]:
+        """
+        Returns:
+            List[str]: All param names available by the DriftGenerator class
+        """
+        return ["max_noise_length",
+                "pose_noise_sigma",
+                "velocity_noise_sampling_frequency_hz",
+                "use_as_generator",
+                "save_to_file",
+                "load_from_file",
+                "save_history",
+                "load_file_path",
+                "save_file_path",
+                "history_file_path"]
+    
     def __init__(self, **driftParams:dict):
-        """ """
+        """
+        """
         self.max_noise_length = driftParams.get("max_noise_length", 10000)
         self.pose_noise_sigma = driftParams.get("pose_noise_sigma", 0.5)
-        self.velocity_noise_frequency_hz = driftParams.get("velocity_noise_frequency_hz", 1)
-        self.velocity_noise_sampling_period = driftParams.get("velocity_noise_sampling_period", 1/self.velocity_noise_frequency_hz)
+        self.velocity_noise_sampling_frequency_hz = driftParams.get("velocity_noise_sampling_frequency_hz", 1)
+        self.velocity_noise_sampling_period =  1/self.velocity_noise_sampling_frequency_hz
         self.use_as_generator = driftParams.get("use_as_generator", True)
         self.save_to_file = driftParams.get("save_to_file", True)
         self.load_from_file = driftParams.get("load_from_file",False)
@@ -126,14 +143,14 @@ class DriftGenerator(object):
         """ Save the samples of the original signal and the noisy signal
         to a file specified in the DriftGenerator parameters.
         """
-        assert(not(self.history_file_path.isdir())), "f{history_file_path} needs to be a file"
+        assert(not(self.history_file_path.is_dir())), "f{history_file_path} needs to be a file"
         with open(str(self.history_file_path), "w") as fw:
             json.dump({
-                "timestamps": self.time_history,
-                "pose_noise_sigma": self.pose_noise_sigma,
+                "timestamps": list(self.time_history),
+                "pose_noise_sigma": float(self.pose_noise_sigma),
                 "orig_history": list(self.orig_history),
                 "noise_history": list(self.noise_history)
-            },fw)
+            }, fw)
         rospy.loginfo(f"path history of noisy signal and original signal has been saved to {self.history_file_path}")
 
     def save_noise_to_file(self):
@@ -143,9 +160,10 @@ class DriftGenerator(object):
             json.dump({
                 "max_noise_length": self.max_noise_length,
                 "pose_noise_sigma": self.pose_noise_sigma,
-                "pose_noise": list(np.reshape(self.pose_noise, [-1])),
+                "pose_noise": np.reshape(self.pose_noise, [-1]).tolist(),
                 "velocity_noise": []
-            },fw)
+            }, fw)
+        rospy.loginfo(f"noise signal is saved to {self.save_file_path}")
 
     def load_noise_from_file(self):
         """ load noisy data from a file """

@@ -6,6 +6,7 @@ import csv
 from drift_generator import DriftGenerator
 
 import rospy
+from rospy.client import get_param
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped
 from cv_bridge import CvBridge
@@ -66,13 +67,9 @@ class FlatDataPlayer(object):
         self.start_time = None
 
         # drift generator
-        self.drift_generator = DriftGenerator(
-                        load_from_file=True,
-                        load_file_path="/home/ioannis/datasets/noise/noise_p0.5.json", 
-                        save_to_file=False,
-                        use_as_generator=False,
-                        save_history=True,
-                        history_file_path="/home/ioannis/datasets/noise/history_p0.5.json")
+        self.drift_generator = DriftGenerator(**{
+                                    param_name:rospy.get_param("~"+param_name) for param_name in 
+                                    DriftGenerator.get_param_names()})
 
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
@@ -174,7 +171,7 @@ class FlatDataPlayer(object):
                 for col in range(4):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
-            position, rotation = self.drift_generator.add_drift_to_position(now, transform[:,3], rotation)
+            position, rotation = self.drift_generator.add_drift_to_position(now.to_sec(), transform[:,3], rotation)
             
             self.tf_broadcaster.sendTransform(
                 position, rotation,
