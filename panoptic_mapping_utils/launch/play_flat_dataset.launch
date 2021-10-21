@@ -25,6 +25,7 @@
     <remap from="~id_image" to="$(arg namespace)/segmentation_image" />
     <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
     <remap from="~pose" to="$(arg namespace)/pose" />
+    <param name="use_noise" value="$(arg use_noise)" />
     <rosparam command="load" file="/home/ioannis/datasets/noise/noise_config.yml"/>
   </node>
 

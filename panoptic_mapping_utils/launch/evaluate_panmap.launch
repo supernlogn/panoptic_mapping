@@ -1,10 +1,10 @@
 <launch>
 <!-- ============ Arguments ============ -->
   <!-- Groundtruth -->
-  <arg name="ground_truth_pointcloud_file" default="/home/lukas/Documents/Datasets/3RScan/scene2.ply"/>
+  <arg name="ground_truth_pointcloud_file" default="/home/ioannis/datasets/flat_dataset/flat_1_gt_10000.ply"/>
   
   <!-- Source map -->
-<arg name="map_file" default="/home/lukas/Documents/PanopticMapping/run1.panmap"/>
+<arg name="map_file" default="/home/ioannis/datasets/map_files/run_0.panmap"/>
   
   <!-- Params -->
   <arg name="maximum_distance" default="0.05"/>

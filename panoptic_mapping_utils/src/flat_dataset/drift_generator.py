@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+#
+# Example usage for generating a noisy signal
+#  python drift_generator.py 0.01
+#
+# This will generate a noise signal of length (10000) with gaussian distribution N(0, 0.01).
+# 
+# 
 from genericpath import isdir
 import os
 import sys
@@ -11,7 +18,7 @@ from numpy.lib.npyio import load
 
 import rospy
 from geometry_msgs.msg import PoseStamped
-# from sensor_msgs.msg import
+
 
 
 
@@ -40,7 +47,7 @@ class DriftGenerator(object):
         """
         """
         self.max_noise_length = driftParams.get("max_noise_length", 10000)
-        self.pose_noise_sigma = driftParams.get("pose_noise_sigma", 0.5)
+        self.pose_noise_sigma = float(driftParams.get("pose_noise_sigma", 0.5))
         self.velocity_noise_sampling_frequency_hz = driftParams.get("velocity_noise_sampling_frequency_hz", 1)
         self.velocity_noise_sampling_period =  1/self.velocity_noise_sampling_frequency_hz
         self.use_as_generator = driftParams.get("use_as_generator", True)
@@ -75,6 +82,7 @@ class DriftGenerator(object):
             newPosition[self._x_index] += self.total_noise[self.noiseIndex][0]
             newPosition[self._y_index] += self.total_noise[self.noiseIndex][1]
             newPosition[self._z_index] += self.total_noise[self.noiseIndex][2]
+            # we don't edit w_index
             # pose_stamped.pose.orientation.x += self.total_noise[self.noiseIndex][3] * 1000
             # pose_stamped.pose.orientation.y += self.total_noise[self.noiseIndex][4] * 1000
             # pose_stamped.pose.orientation.z += self.total_noise[self.noiseIndex][5] * 1000
@@ -108,6 +116,7 @@ class DriftGenerator(object):
             pose_stamped.pose.orientation.z += self.total_noise[self.noiseIndex][5]
             self.noiseIndex = (self.noiseIndex + 1) % self.total_noise.shape[0]
         else:
+            # adds noise in real time
             now = pose_stamped.header.stamp
             pose_msg = PoseStamped()
             pose_msg.header.stamp = now
@@ -143,13 +152,13 @@ class DriftGenerator(object):
         """ Save the samples of the original signal and the noisy signal
         to a file specified in the DriftGenerator parameters.
         """
-        assert(not(self.history_file_path.is_dir())), "f{history_file_path} needs to be a file"
+        assert(not(self.history_file_path.is_dir())), f"{self.history_file_path} needs to be a file"
         with open(str(self.history_file_path), "w") as fw:
             json.dump({
                 "timestamps": list(self.time_history),
                 "pose_noise_sigma": float(self.pose_noise_sigma),
-                "orig_history": list(self.orig_history),
-                "noise_history": list(self.noise_history)
+                "orig_history": np.reshape(self.orig_history, [-1]).tolist(),
+                "noise_history": np.reshape(self.noise_history, [-1]).tolist()
             }, fw)
         rospy.loginfo(f"path history of noisy signal and original signal has been saved to {self.history_file_path}")
 
@@ -178,34 +187,10 @@ class DriftGenerator(object):
         self.total_noise = self.pose_noise
         rospy.loginfo(f"Noise loaded from file {self.load_file_path}")
 
+
 def mainGenerator(args):
     dG = DriftGenerator(save_file_path="temp.json", pose_noise_sigma=0.1)
 
-def plotPathAndNoise(load_history_path:Path):
-    """ creates a plot ot the original history signal
-        and the noise history signal from a previous experiment execution.
-        It needs the json file where the signals where saved.
-    """
-    assert(load_history_path.exists()), f"{load_history_path} does not exist"
-    sig_data = {}
-    with open(str(load_history_path), "r") as fr:
-        sig_data = json.load(fr)
-
-    sig_noise = np.array(sig_data.get("noise_history",[]))
-    sig_orig = np.array(sig_data.get("orig_history",[]))
-    
-    fig = plt.figure(figsize=(12,9))
-    ax = fig.add_subplot(projection='3d')
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-
-    ax.scatter(sig_noise[:,0],sig_noise[:,1],sig_noise[:,2])
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    plt.show()
-    plt.savefig("/home/ioannis/datasets/noise/lastFig.pdf")
 
 def mainRos(_):
     rospy.init_node('drift_generator')
@@ -223,7 +208,8 @@ def main(args):
                     load_from_file=False, 
                     save_to_file=True, 
                     use_as_generator=True,
-                    pose_noise_sigma=pose_noise_sigma
-                    )
+                    pose_noise_sigma=pose_noise_sigma)
+
+
 if __name__ == "__main__":
     main(sys.argv)

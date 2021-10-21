@@ -1,13 +1,13 @@
 <launch>
 <!-- ============ Arguments ============ -->
   <!-- Groundtruth -->
-  <arg name="ground_truth_pointcloud_file" default="/home/lukas/Documents/Datasets/flat_dataset/ground_truth/run2/flat_2_gt_10000.ply"/>  <!-- Used if not using rio. -->
+  <arg name="ground_truth_pointcloud_file" default="/home/ioannis/datasets/flat_dataset/flat_1_gt_10000.ply"/>  <!-- Used if not using rio. -->
   <arg name="use_rio" default="false"/>   <!-- Otherwise look up scene hash. -->
   <arg name="scene_id" default="0"/>
   <arg name="scan_id" default="0"/>
   
   <!-- Source directory -->
-  <arg name="map_file" default="/home/lukas/Documents/PanopticMapping"/>
+  <arg name="map_file" default="/home/ioannis/datasets/map_files/"/>
   <arg name="output_suffix" default=""/>
   
   <!-- Evaluation Params -->

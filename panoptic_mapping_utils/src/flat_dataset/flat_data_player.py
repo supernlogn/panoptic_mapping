@@ -67,9 +67,11 @@ class FlatDataPlayer(object):
         self.start_time = None
 
         # drift generator
-        self.drift_generator = DriftGenerator(**{
-                                    param_name:rospy.get_param("~"+param_name) for param_name in 
-                                    DriftGenerator.get_param_names()})
+        self.use_noise = rospy.get_param("~use_noise")
+        if self.use_noise:
+            self.drift_generator = DriftGenerator(**{
+                                param_name:rospy.get_param("~"+param_name) for param_name in 
+                                DriftGenerator.get_param_names()})
 
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
@@ -90,7 +92,8 @@ class FlatDataPlayer(object):
         # Check we're not done.
         if self.current_index >= len(self.times):
             rospy.loginfo("Finished playing the dataset.")
-            self.drift_generator.save_history_to_file()
+            if self.use_noise:
+                self.drift_generator.save_history_to_file()
             rospy.signal_shutdown("Finished playing the dataset.")
             return
 
@@ -171,7 +174,9 @@ class FlatDataPlayer(object):
                 for col in range(4):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
-            position, rotation = self.drift_generator.add_drift_to_position(now.to_sec(), transform[:,3], rotation)
+            position = transform[:,3]
+            if self.use_noise:
+                position, rotation = self.drift_generator.add_drift_to_position(now.to_sec(), transform[:,3], rotation)
             
             self.tf_broadcaster.sendTransform(
                 position, rotation,
