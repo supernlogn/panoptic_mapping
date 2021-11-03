@@ -103,7 +103,9 @@ bool GroundTruthIDTracker::parseInputInstance(int instance,
     new_submap->setInstanceID(instance);
     instance_to_id_[instance] = new_submap->getID();
     // if it is a background submap, send it to voxgraph
-
+    if(new_submap->getLabel() == PanopticLabel::kBackground) {
+      publishSubmapToVoxGraph(*new_submap);
+    }
 
     return true;
   } else {
