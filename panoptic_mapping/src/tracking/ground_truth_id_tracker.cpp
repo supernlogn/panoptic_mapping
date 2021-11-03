@@ -104,7 +104,7 @@ bool GroundTruthIDTracker::parseInputInstance(int instance,
     instance_to_id_[instance] = new_submap->getID();
     // if it is a background submap, send it to voxgraph
     if(new_submap->getLabel() == PanopticLabel::kBackground) {
-      publishSubmapToVoxGraph(*new_submap);
+      publishSubmapToVoxGraph(*new_submap, input->timestamp());
     }
 
     return true;
@@ -129,16 +129,22 @@ void GroundTruthIDTracker::printAndResetWarnings() {
 }
 
 
-void GroundTruthIDTracker::publishSubmapToVoxGraph(Submap & submapToPublish) {
+void GroundTruthIDTracker::publishSubmapToVoxGraph(const Submap & submapToPublish, const double timestamp) {
   // This code is from Voxblox::TsdfServer::publishSubmap
   // assume that submapToPublish is not null
   voxblox_msgs::Submap submap_msg;
   submap_msg.robot_name = "robot";
-  
   voxblox::serializeLayerAsMsg<TsdfVoxel>(submapToPublish.getTsdfLayer(),
-                                   /* only_updated */ false, &submap_msg.layer);  
+                                   /* only_updated */ false, &submap_msg.layer);
+  geometry_msgs::PoseStamped pose_msg;
+  pose_msg.header.stamp = ros::Time(timestamp);
+  pose_msg.header.frame_id = "world";
+  tf::poseKindrToMsg(submapToPublish.getT_S_M().cast<double>(),
+                         &pose_msg.pose);
+  submap_msg.trajectory.poses.emplace_back(pose_msg);
+
   // submap_msg.trajectory
-  background_submap_publisher.publish(submap_msg);
+  background_submap_publisher.publish(submap_msg);  
 }
 
 

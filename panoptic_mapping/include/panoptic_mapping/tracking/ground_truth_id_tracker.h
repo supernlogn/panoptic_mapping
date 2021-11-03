@@ -57,7 +57,7 @@ class GroundTruthIDTracker : public IDTrackerBase {
   /**
    * @brief Publishes a given submap to voxgraph's submap topic.
    */
-  void publishSubmapToVoxGraph(Submap & submapToPublish);
+  void publishSubmapToVoxGraph(const Submap & submapToPublish, const double timestamp);
 
   static config_utilities::Factory::RegistrationRos<
       IDTrackerBase, GroundTruthIDTracker, std::shared_ptr<Globals>>
@@ -66,6 +66,7 @@ class GroundTruthIDTracker : public IDTrackerBase {
   std::unordered_map<int, int> instance_to_id_;  // Track active maps.
   std::unordered_map<int, int> unknown_ids;      // For error handling.
   ros::NodeHandle nh_;
+  
   ros::Publisher background_submap_publisher;    // For publishing background to voxgraph
 
   const std::string background_submap_topic_name_ = "background_submap_out";
