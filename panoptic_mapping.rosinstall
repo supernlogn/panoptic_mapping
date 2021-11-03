@@ -27,14 +27,17 @@
     local-name: opencv3_catkin
     uri: git@github.com:ethz-asl/opencv3_catkin.git
 
-# Package Dependencies. Notice that voxblox requires a special branch.
+# Package Dependencies. Notice that all require a special branch, to send
+# a submap message
 - git:
     local-name: voxblox
-    uri: git@github.com:ethz-asl/voxblox.git
-    version: 'devel/panoptic_mapping'
+    uri: git@github.com:ethz-asl/v  oxblox.git
+    version: 'feature/multi_robot'
 - git:
     local-name: cblox
     uri: git@github.com:ethz-asl/cblox.git
+    version: 'feature/submap_deep_copy_constructors'
 - git:
     local-name: voxgraph
     uri: git@github.com:ethz-asl/voxgraph.git
+    version: 'feature/configurable_robocentric_robot_frame'
