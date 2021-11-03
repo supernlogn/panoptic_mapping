@@ -5,6 +5,10 @@
 #include <utility>
 #include <vector>
 
+#include <minkindr_conversions/kindr_tf.h>
+#include <minkindr_conversions/kindr_msg.h>
+#include <voxblox_ros/conversions.h>
+
 namespace panoptic_mapping {
 
 config_utilities::Factory::RegistrationRos<IDTrackerBase, GroundTruthIDTracker,
@@ -23,6 +27,7 @@ GroundTruthIDTracker::GroundTruthIDTracker(const Config& config,
                                                        << config_.toString();
   addRequiredInputs({InputData::InputType::kSegmentationImage,
                      InputData::InputType::kValidityImage});
+  background_submap_publisher = nh_.advertise<voxblox_msgs::Submap>(background_submap_topic_name_, 100);
 }
 
 void GroundTruthIDTracker::processInput(SubmapCollection* submaps,
@@ -90,12 +95,16 @@ bool GroundTruthIDTracker::parseInputInstance(int instance,
   }
 
   // Allocate new submap.
+  const panoptic_mapping::LabelEntry & submapLabel = globals_->labelHandler()->getLabelEntry(instance);
   Submap* new_submap = submap_allocator_->allocateSubmap(
       submaps, input, instance,
-      globals_->labelHandler()->getLabelEntry(instance));
+      submapLabel);
   if (new_submap) {
     new_submap->setInstanceID(instance);
     instance_to_id_[instance] = new_submap->getID();
+    // if it is a background submap, send it to voxgraph
+
+
     return true;
   } else {
     LOG_IF(WARNING, config_.verbosity >= 2)
@@ -116,5 +125,19 @@ void GroundTruthIDTracker::printAndResetWarnings() {
   }
   unknown_ids.clear();
 }
+
+
+void GroundTruthIDTracker::publishSubmapToVoxGraph(Submap & submapToPublish) {
+  // This code is from Voxblox::TsdfServer::publishSubmap
+  // assume that submapToPublish is not null
+  voxblox_msgs::Submap submap_msg;
+  submap_msg.robot_name = "robot";
+  
+  voxblox::serializeLayerAsMsg<TsdfVoxel>(submapToPublish.getTsdfLayer(),
+                                   /* only_updated */ false, &submap_msg.layer);  
+  // submap_msg.trajectory
+  background_submap_publisher.publish(submap_msg);
+}
+
 
 }  // namespace panoptic_mapping
