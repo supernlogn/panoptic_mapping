@@ -54,23 +54,28 @@
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
     <remap from="segmentation_image_in" to="$(arg namespace)/segmentation_image"/>
     <remap from="labels_in" to="$(arg namespace)/segmentation_labels"/>
-  </node>  
+  </node>
   
   <!-- Map loader -->
   <node name="map_loader" pkg="panoptic_mapping_utils" type="map_loader.py" if="$(arg load_map)" output="screen">
      <param name="path" value="$(arg load_file)" /> 
      <param name="srv_name" value="/panoptic_mapper/load_map" /> 
      <param name="delay" value="0.1" /> 
-  </node>  
+  </node>
   
 
   <!-- Voxgraph -->
   <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" 
     launch-prefix="$(arg launch_prefix)">
     <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml"/>
-    <param name="pointcloud_topic" value="$(arg pointcloud_topic)" />
+    <param name="submap_topic" value="/panoptic_mapping/background_submap_out" />
   </node>
+
   <!-- RVIZ Visualization-->
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find panoptic_mapping_ros)/config/rviz/devel.rviz" output="screen" if="$(arg visualize)"/>
+  <group if="$(arg visualize)">
+    <node type="rviz" name="rVizVoxgraph" pkg="rviz" output="screen" args="-d $(find voxgraph)/config/voxgraph_mapper.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find panoptic_mapping_ros)/config/rviz/devel.rviz" output="screen"/>
+  </group>
+
 
 </launch>
