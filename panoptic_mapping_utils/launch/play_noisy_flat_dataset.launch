@@ -1,0 +1,39 @@
+<launch>
+<!-- ============ Arguments ============ -->
+  <arg name="base_path" default="/home/ioannis/datasets/flat_dataset/run1"/>
+  <arg name="play_rate" default="1"/>
+  <arg name="wait" default="false"/>
+  <arg name="namespace" default="data"/>
+  <arg name="use_detectron" default="false"/>
+  <arg name="max_frames" default="1e9"/>
+  <arg name="global_frame_name" default="world"/>
+  <arg name="sensor_frame_name" default="depth_camera"/>
+  <arg name="use_noise" default="false"/>
+   
+<!-- ============ Play Data ============ -->
+  <node pkg="panoptic_mapping_utils" type="flat_data_player.py" name="flat_data_player" output="screen">
+    <param name="data_path" value="$(arg base_path)" />
+    <param name="play_rate" value="$(arg play_rate)" />
+    <param name="use_detectron" value="$(arg use_detectron)" />
+    <param name="global_frame_name" value="$(arg global_frame_name)" />
+    <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
+    <param name="wait" value="$(arg wait)" />
+    <param name="max_frames" value="$(arg max_frames)" />
+            
+    <remap from="~color_image" to="$(arg namespace)/color_image" />
+    <remap from="~depth_image" to="$(arg namespace)/depth_image" />
+    <remap from="~id_image" to="$(arg namespace)/segmentation_image" />
+    <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
+    <remap from="~pose" to="$(arg namespace)/pose_ground_truth" />
+    <param name="use_noise" value="$(arg use_noise)" />
+    <rosparam command="load" file="/home/ioannis/datasets/noise/noise_config.yml"/>
+  </node>
+<!-- add noise to the data -->
+  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen">
+    <param name="noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/src/drift_generator/noise.txt" />
+    <param name="save_file_path" value="" />
+    <param name="save_to_file" value="" />
+    <param name="noisy_pose_topic" value="$(arg namespace)/pose" />
+    <param name="ground_truth_Pose_topic" value="$(arg namespace)/pose_ground_truth" />
+  </node>
+</launch>

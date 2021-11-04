@@ -3,7 +3,7 @@
 import os
 import json
 import csv
-from drift_generator import DriftGenerator
+from drift_generator_old import DriftGenerator
 
 import rospy
 from rospy.client import get_param
