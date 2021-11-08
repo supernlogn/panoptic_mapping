@@ -28,7 +28,7 @@ class DriftGenerator {
     ~DriftGenerator() = default;
 
   // ROS callbacks
-  void generateNewPoseCallback(const geometry_msgs::TransformStamped& msg);
+  void generate_noisy_pose_callback(const geometry_msgs::TransformStamped& msg);
   void startupCallback(const ros::TimerEvent&);
   void onShutdown();  // called by the sigint handler
 

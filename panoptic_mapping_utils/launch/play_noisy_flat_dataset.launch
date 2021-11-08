@@ -8,7 +8,7 @@
   <arg name="max_frames" default="1e9"/>
   <arg name="global_frame_name" default="world"/>
   <arg name="sensor_frame_name" default="depth_camera"/>
-  <arg name="use_noise" default="false"/>
+  <arg name="use_noise" default="true"/>
    
 <!-- ============ Play Data ============ -->
   <node pkg="panoptic_mapping_utils" type="flat_data_player.py" name="flat_data_player" output="screen">
@@ -29,7 +29,7 @@
     <rosparam command="load" file="/home/ioannis/datasets/noise/noise_config.yml"/>
   </node>
 <!-- add noise to the data -->
-  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen">
+  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen" launch-prefix="gdb -ex run --args">
     <param name="noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/src/drift_generator/noise.txt" />
     <param name="save_file_path" value="" />
     <param name="save_to_file" value="" />

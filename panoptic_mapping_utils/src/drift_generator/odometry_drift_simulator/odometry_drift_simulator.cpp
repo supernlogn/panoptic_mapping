@@ -197,14 +197,14 @@ OdometryDriftSimulator::Config OdometryDriftSimulator::Config::fromRosParams(
   nh.param("velocity_noise_frequency_hz", config.velocity_noise_frequency_hz,
            config.velocity_noise_frequency_hz);
 
-  for (auto& kv : config.velocity_noise) {
-    kv.second = NormalDistribution::Config::fromRosParams(
-        ros::NodeHandle(nh, "velocity_noise/" + kv.first));
-  }
-  for (auto& kv : config.pose_noise) {
-    kv.second = NormalDistribution::Config::fromRosParams(
-        ros::NodeHandle(nh, "position_noise/" + kv.first));
-  }
+  // for (auto& kv : config.velocity_noise) {
+  //   kv.second = NormalDistribution::Config::fromRosParams(
+  //       ros::NodeHandle(nh, "velocity_noise/" + kv.first));
+  // }
+  // for (auto& kv : config.pose_noise) {
+  //   kv.second = NormalDistribution::Config::fromRosParams(
+  //       ros::NodeHandle(nh, "position_noise/" + kv.first));
+  // }
 
   return config;
 }
@@ -224,16 +224,16 @@ bool OdometryDriftSimulator::Config::isValid() const {
     is_valid = false;
   }
 
-  for (auto& kv : velocity_noise) {
-    if (!kv.second.isValid("velocity_noise/" + kv.first + "/")) {
-      is_valid = false;
-    }
-  }
-  for (auto& kv : pose_noise) {
-    if (!kv.second.isValid("position_noise/" + kv.first + "/")) {
-      is_valid = false;
-    }
-  }
+  // for (auto& kv : velocity_noise) {
+  //   if (!kv.second.isValid("velocity_noise/" + kv.first + "/")) {
+  //     is_valid = false;
+  //   }
+  // }
+  // for (auto& kv : pose_noise) {
+  //   if (!kv.second.isValid("position_noise/" + kv.first + "/")) {
+  //     is_valid = false;
+  //   }
+  // }
 
   return is_valid;
 }
@@ -247,14 +247,14 @@ std::ostream& operator<<(std::ostream& os,
      << "-- velocity_noise_frequency_hz: " << config.velocity_noise_frequency_hz
      << "\n";
 
-  os << "-- velocity_noise/\n";
-  for (auto& kv : config.velocity_noise) {
-    os << "---- " << kv.first << ": {" << kv.second << "}\n";
-  }
-  os << "-- position_noise/\n";
-  for (auto& kv : config.pose_noise) {
-    os << "---- " << kv.first << ": {" << kv.second << "}\n";
-  }
+  // os << "-- velocity_noise/\n";
+  // for (auto& kv : config.velocity_noise) {
+  //   os << "---- " << kv.first << ": {" << kv.second << "}\n";
+  // }
+  // os << "-- position_noise/\n";
+  // for (auto& kv : config.pose_noise) {
+  //   os << "---- " << kv.first << ": {" << kv.second << "}\n";
+  // }
 
   return os;
 }

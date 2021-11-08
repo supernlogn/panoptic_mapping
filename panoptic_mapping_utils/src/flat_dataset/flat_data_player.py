@@ -3,12 +3,11 @@
 import os
 import json
 import csv
-from drift_generator_old import DriftGenerator
 
 import rospy
 from rospy.client import get_param
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from cv_bridge import CvBridge
 import cv2
 from PIL import Image as PilImage
@@ -33,7 +32,8 @@ class FlatDataPlayer(object):
         self.wait = rospy.get_param('~wait', False)
         self.max_frames = rospy.get_param('~max_frames', 1e9)
         self.refresh_rate = 100  # Hz
-
+        # drift generator
+        self.use_noise = rospy.get_param("~use_noise")
         # ROS
         self.color_pub = rospy.Publisher("~color_image", Image, queue_size=100)
         self.depth_pub = rospy.Publisher("~depth_image", Image, queue_size=100)
@@ -42,7 +42,11 @@ class FlatDataPlayer(object):
             self.label_pub = rospy.Publisher("~labels",
                                              DetectronLabels,
                                              queue_size=100)
-        self.pose_pub = rospy.Publisher("~pose", PoseStamped, queue_size=100)
+        if self.use_noise:
+            self.pose_pub = rospy.Publisher("~pose", TransformStamped, queue_size=100)
+        else:
+            self.pose_pub = rospy.Publisher("~pose", PoseStamped, queue_size=100)
+
         self.tf_broadcaster = tf.TransformBroadcaster()
 
         # setup
@@ -66,12 +70,7 @@ class FlatDataPlayer(object):
         self.times = [(x - self.times[0]) / self.play_rate for x in self.times]
         self.start_time = None
 
-        # drift generator
-        self.use_noise = rospy.get_param("~use_noise")
-        if self.use_noise:
-            self.drift_generator = DriftGenerator(**{
-                                param_name:rospy.get_param("~"+param_name) for param_name in 
-                                DriftGenerator.get_param_names()})
+        
 
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
@@ -175,23 +174,38 @@ class FlatDataPlayer(object):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
             position = transform[:,3]
-            if self.use_noise:
-                position, rotation = self.drift_generator.add_drift_to_position(now.to_sec(), transform[:,3], rotation)
-            
+
             self.tf_broadcaster.sendTransform(
                 position, rotation,
                 now, self.sensor_frame_name, self.global_frame_name)
-        pose_msg = PoseStamped()
-        pose_msg.header.stamp = now
-        pose_msg.header.frame_id = self.global_frame_name
-        pose_msg.pose.position.x = position[0]
-        pose_msg.pose.position.y = position[1]
-        pose_msg.pose.position.z = position[2]
-        pose_msg.pose.orientation.x = rotation[0]
-        pose_msg.pose.orientation.y = rotation[1]
-        pose_msg.pose.orientation.z = rotation[2]
-        pose_msg.pose.orientation.w = rotation[3]
-        self.pose_pub.publish(pose_msg)
+        if self.use_noise:
+            pose_msg = TransformStamped()
+            pose_msg.header.stamp = now
+            pose_msg.header.frame_id = self.global_frame_name
+            pose_msg.transform.translation.x = position[0]
+            pose_msg.transform.translation.y = position[1]
+            pose_msg.transform.translation.z = position[2]
+
+            pose_msg.transform.rotation.x = rotation[0]
+            pose_msg.transform.rotation.y = rotation[1]
+            pose_msg.transform.rotation.z = rotation[2]
+            pose_msg.transform.rotation.w = rotation[3]
+            pose_msg.child_frame_id = ""
+            self.pose_pub.publish(pose_msg) # TODO: change this to publish
+        else:
+            pose_msg = PoseStamped()
+            pose_msg.header.stamp = now
+            pose_msg.header.frame_id = self.global_frame_name
+            pose_msg.pose.x = position[0]
+            pose_msg.pose.y = position[1]
+            pose_msg.pose.z = position[2]
+
+            pose_msg.pose.orientation.x = rotation[0]
+            pose_msg.pose.orientation.y = rotation[1]
+            pose_msg.pose.orientation.z = rotation[2]
+            pose_msg.pose.orientation.w = rotation[3]
+            pose_msg.child_frame_id = ""
+            self.pose_pub.publish(pose_msg)
 
         self.current_index += 1
         if self.current_index > self.max_frames:

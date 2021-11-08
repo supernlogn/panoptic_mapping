@@ -3,6 +3,9 @@
 #include <string>
 
 namespace unreal_airsim {
+
+std::shared_ptr<NormalDistribution> NormalDistribution::normalDistribution = nullptr;
+
 NormalDistribution::Config NormalDistribution::Config::fromRosParams(
     const ros::NodeHandle& nh) {
   Config config;
@@ -12,7 +15,7 @@ NormalDistribution::Config NormalDistribution::Config::fromRosParams(
 
 bool NormalDistribution::Config::isValid(
     const std::string& error_msg_prefix) const {
-    bool ok = std::ifstream(noise_file_path).good();
+  bool ok = std::ifstream(noise_file_path).good();
   if (!ok) {
     LOG_IF(WARNING, !error_msg_prefix.empty())
         << "The " << error_msg_prefix
