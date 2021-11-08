@@ -6,7 +6,7 @@
 
 #include "panoptic_mapping_utils/drift_generator/drift_generator.h"
 // Lets the simulator shutdown in a controlled fashion
-std::unique_ptr<DriftGenerator> the_generator;
+std::unique_ptr<DriftGenerator> the_generator = nullptr;
 void sigintHandler(int sig) {
   if (the_generator) {
     the_generator->onShutdown();
