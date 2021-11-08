@@ -19,21 +19,35 @@
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
     <param name="wait" value="$(arg wait)" />
     <param name="max_frames" value="$(arg max_frames)" />
-            
+
     <remap from="~color_image" to="$(arg namespace)/color_image" />
     <remap from="~depth_image" to="$(arg namespace)/depth_image" />
     <remap from="~id_image" to="$(arg namespace)/segmentation_image" />
     <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
     <remap from="~pose" to="$(arg namespace)/pose_ground_truth" />
     <param name="use_noise" value="$(arg use_noise)" />
-    <rosparam command="load" file="/home/ioannis/datasets/noise/noise_config.yml"/>
   </node>
 <!-- add noise to the data -->
-  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen" launch-prefix="gdb -ex run --args">
-    <param name="noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/src/drift_generator/noise.txt" />
-    <param name="save_file_path" value="" />
-    <param name="save_to_file" value="" />
+  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen">
     <param name="noisy_pose_topic" value="$(arg namespace)/pose" />
     <param name="ground_truth_Pose_topic" value="$(arg namespace)/pose_ground_truth" />
+    <param name="save_noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt" />
+    <param name="save_noise_to_file" value="true" />
+    <rosparam command="load" file="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/launch/noise_config.yml" />
+  </node>
+  <!-- Path visualization -->
+  <node pkg="panoptic_mapping_utils" type="path_visualizer.py" name="path_visualizer_noisy" output="screen" if="$(arg use_noise)">
+    <remap from="~pose_in" to="$(arg namespace)/pose" />
+    <param name="use_arrow" value="false" />
+    <param name="length" value="0.5" />
+    <param name="use_noise" value="true" />
+  </node>
+  <node pkg="panoptic_mapping_utils" type="path_visualizer.py" name="path_visualizer_gt" output="screen">
+    <remap from="~pose_in" to="$(arg namespace)/pose_ground_truth" />
+    <param name="use_arrow" value="false" />
+    <param name="length" value="0.01" />
+    <param name="use_noise" value="false" />
+    <param name="r" value="0"/>
+    <param name="g" value="1"/>
   </node>
 </launch>
