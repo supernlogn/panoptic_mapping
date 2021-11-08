@@ -91,8 +91,6 @@ class FlatDataPlayer(object):
         # Check we're not done.
         if self.current_index >= len(self.times):
             rospy.loginfo("Finished playing the dataset.")
-            if self.use_noise:
-                self.drift_generator.save_history_to_file()
             rospy.signal_shutdown("Finished playing the dataset.")
             return
 
@@ -196,15 +194,14 @@ class FlatDataPlayer(object):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = now
             pose_msg.header.frame_id = self.global_frame_name
-            pose_msg.pose.x = position[0]
-            pose_msg.pose.y = position[1]
-            pose_msg.pose.z = position[2]
+            pose_msg.pose.position.x = position[0]
+            pose_msg.pose.position.y = position[1]
+            pose_msg.pose.position.z = position[2]
 
             pose_msg.pose.orientation.x = rotation[0]
             pose_msg.pose.orientation.y = rotation[1]
             pose_msg.pose.orientation.z = rotation[2]
             pose_msg.pose.orientation.w = rotation[3]
-            pose_msg.child_frame_id = ""
             self.pose_pub.publish(pose_msg)
 
         self.current_index += 1
