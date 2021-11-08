@@ -4,22 +4,22 @@
 
 namespace unreal_airsim {
 
-std::shared_ptr<NormalDistribution> NormalDistribution::normalDistribution = nullptr;
+int NormalDistribution::seed_num = 2;
 
 NormalDistribution::Config NormalDistribution::Config::fromRosParams(
     const ros::NodeHandle& nh) {
   Config config;
-  nh.param<std::string>("noise_file_path", config.noise_file_path);
+  nh.param<double>("mean", config.mean, config.mean);
+  nh.param<double>("stddev", config.stddev, config.stddev);
   return config;
 }
 
 bool NormalDistribution::Config::isValid(
     const std::string& error_msg_prefix) const {
-  bool ok = std::ifstream(noise_file_path).good();
-  if (!ok) {
+  if (stddev < 0.0) {
     LOG_IF(WARNING, !error_msg_prefix.empty())
         << "The " << error_msg_prefix
-        << "/file_path:" << noise_file_path << " does not exist";
+        << "/stddev should be a non-negative float";
     return false;
   }
   return true;
@@ -27,6 +27,6 @@ bool NormalDistribution::Config::isValid(
 
 std::ostream& operator<<(std::ostream& os,
                          const NormalDistribution::Config& config) {
-  return os << "noise_file_path: " << config.noise_file_path;
+  return os << "mean: " << config.mean << ", stddev: " << config.stddev;
 }
 }  // namespace unreal_airsim
