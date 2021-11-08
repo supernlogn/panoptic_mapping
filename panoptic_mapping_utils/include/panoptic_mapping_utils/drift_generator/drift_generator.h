@@ -1,7 +1,7 @@
 #include "odometry_drift_simulator/odometry_drift_simulator.h"
 #include <memory>
 #include <string>
-
+#include <fstream>
 
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
@@ -15,7 +15,6 @@ class DriftGenerator {
     struct Config {
         // Initialize from ROS params
         static Config fromRosParams(const ros::NodeHandle& nh);
-        std::string noise_file_path;
         std::string save_file_path;
         bool save_to_file;
         std::string noisy_pose_topic;
@@ -31,13 +30,20 @@ class DriftGenerator {
   void generate_noisy_pose_callback(const geometry_msgs::TransformStamped& msg);
   void startupCallback(const ros::TimerEvent&);
   void onShutdown();  // called by the sigint handler
-
+  static std::ofstream  initializeStreamFromRosParams(Config cfg) {
+    if(cfg.save_to_file) {
+      std::ofstream outstream(cfg.save_file_path.c_str(), std::ofstream::out);
+      return outstream;
+    }
+    return std::ofstream("no_text.txt", std::ofstream::app);
+  }
  private:
    // ROS
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher noisy_pose_pub_;
   ros::Subscriber pose_sub_;
+  std::ofstream noise_file_output_;
   bool setupROS();
   bool readParamsFromRos();
   // simulator

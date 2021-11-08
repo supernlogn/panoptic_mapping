@@ -29,6 +29,7 @@ class OdometryDriftSimulator {
 
     // Params of the distributions used to generate the pose drift and noise
     float velocity_noise_frequency_hz = 1;
+    int noise_config_seed = 2;
     using NoiseConfigMap = std::map<std::string, NoiseDistribution::Config>;
     NoiseConfigMap velocity_noise = {
         {"x", {}}, {"y", {}}, {"z", {}}, {"yaw", {}}};

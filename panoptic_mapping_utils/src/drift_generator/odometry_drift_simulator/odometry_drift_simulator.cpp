@@ -11,6 +11,8 @@ OdometryDriftSimulator::OdometryDriftSimulator(Config config)
       velocity_noise_(config.velocity_noise),
       pose_noise_(config.pose_noise) {
   reset();
+  // initialize the random generator's seed
+  NormalDistribution::seed_num = config.noise_config_seed;
   VLOG(1) << "Initialized drifting odometry simulator, with config:\n"
           << config_;
 }
@@ -197,14 +199,17 @@ OdometryDriftSimulator::Config OdometryDriftSimulator::Config::fromRosParams(
   nh.param("velocity_noise_frequency_hz", config.velocity_noise_frequency_hz,
            config.velocity_noise_frequency_hz);
 
-  // for (auto& kv : config.velocity_noise) {
-  //   kv.second = NormalDistribution::Config::fromRosParams(
-  //       ros::NodeHandle(nh, "velocity_noise/" + kv.first));
-  // }
-  // for (auto& kv : config.pose_noise) {
-  //   kv.second = NormalDistribution::Config::fromRosParams(
-  //       ros::NodeHandle(nh, "position_noise/" + kv.first));
-  // }
+  nh.param("noise_seed", config.noise_config_seed,
+           config.noise_config_seed);
+
+  for (auto& kv : config.velocity_noise) {
+    kv.second = NormalDistribution::Config::fromRosParams(
+        ros::NodeHandle(nh, "velocity_noise/" + kv.first));
+  }
+  for (auto& kv : config.pose_noise) {
+    kv.second = NormalDistribution::Config::fromRosParams(
+        ros::NodeHandle(nh, "position_noise/" + kv.first));
+  }
 
   return config;
 }
