@@ -24,10 +24,10 @@
   
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
-  <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
+  <arg name="load_file" default = "/home/ioannis/datasets/map_files/run1.panmap"/>
 
   <!-- noise args -->
-  <arg name="use_noise" value="false"/>
+  <arg name="use_noise" value="true"/>
 
 <!-- ============ Run ============ -->
   <!-- Play data -->
@@ -36,7 +36,7 @@
   <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" />  
   
   <!-- Mapper -->
-  <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" ><!--required="true"-->
+  <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" >
     <!-- Config -->
     <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
      
@@ -52,7 +52,7 @@
      <param name="path" value="$(arg load_file)" /> 
      <param name="srv_name" value="/panoptic_mapper/load_map" /> 
      <param name="delay" value="0.1" /> 
-  </node>  
+  </node>
   
   <!-- RVIZ Visualization-->
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find panoptic_mapping_ros)/config/rviz/devel.rviz" output="screen" if="$(arg visualize)"/>
