@@ -62,6 +62,7 @@ void Submap::initialize() {
   // Initialize with identity transformation.
   T_M_S_.setIdentity();
   T_M_S_inv_.setIdentity();
+  T_O_S_initial_ = T_M_S_;
 
   // Setup layers.
   tsdf_layer_ =
@@ -240,6 +241,11 @@ std::unique_ptr<Submap> Submap::loadFromStream(
   submap->setFrameName(submap_proto.frame_name());
 
   return submap;
+}
+
+
+void Submap::addPose(const Transformation & T_M_C, const double timestamp) {
+  pose_history_.emplace(ros::Time(timestamp), T_M_C);
 }
 
 void Submap::finishActivePeriod() {

@@ -4,10 +4,12 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <ros/ros.h>
 #include <voxblox/core/layer.h>
 #include <voxblox/mesh/mesh_layer.h>
 
@@ -25,6 +27,7 @@ class LayerManipulator;
 
 class Submap {
  public:
+  typedef std::map<ros::Time, Transformation> PoseHistoryMap;
   // Config.
   struct Config : public config_utilities::Config<Config> {
     float voxel_size = 0.1;           // m
@@ -94,6 +97,7 @@ class Submap {
   void setIsActive(bool is_active) { is_active_ = is_active; }
   void setWasTracked(bool was_tracked) { was_tracked_ = was_tracked; }
 
+  void addPose(const Transformation & T_M_C, const double timestamp);
   // Processing.
   /**
    * @brief Set the submap status to inactive and update its status accordingly.
@@ -162,6 +166,8 @@ class Submap {
   std::unique_ptr<Submap> clone(SubmapIDManager* submap_id_manager,
                                 InstanceIDManager* instance_id_manager) const;
 
+  const PoseHistoryMap& getPoseHistory() const { return pose_history_; }
+  
  private:
   friend class SubmapCollection;
   const Config config_;
@@ -236,6 +242,10 @@ class Submap {
 
   // Processing.
   std::unique_ptr<MeshIntegrator> mesh_integrator_;
+
+  // History of how the robot moved through the submap
+  PoseHistoryMap pose_history_;
+  Transformation T_O_S_initial_;
 };
 
 }  // namespace panoptic_mapping
