@@ -1,6 +1,6 @@
 <launch>
 <!-- ============ Arguments ============ -->
-  <arg name="base_path" default="/home/ioannis/datasets/flat_dataset/run1"/>
+  <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/>
   <arg name="play_rate" default="1"/>
   <arg name="wait" default="false"/>
   <arg name="namespace" default="data"/>

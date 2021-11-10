@@ -1,6 +1,5 @@
 <launch>
 <!-- ============ Arguments ============ -->
-  <arg name="base_path" default="/home/ioannis/datasets/flat_dataset/run1"/>
   <arg name="play_rate" default="1"/>
   <arg name="wait" default="false"/>
   <arg name="namespace" default="data"/>
@@ -9,7 +8,7 @@
   <arg name="global_frame_name" default="world"/>
   <arg name="sensor_frame_name" default="depth_camera"/>
   <arg name="use_noise" default="true"/>
-   
+  <arg name="drift_type" default="severe"/>
 <!-- ============ Play Data ============ -->
   <node pkg="panoptic_mapping_utils" type="flat_data_player.py" name="flat_data_player" output="screen">
     <param name="data_path" value="$(arg base_path)" />
@@ -33,7 +32,9 @@
     <param name="ground_truth_Pose_topic" value="$(arg namespace)/pose_ground_truth" />
     <param name="save_noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt" />
     <param name="save_noise_to_file" value="true" />
-    <rosparam command="load" file="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/launch/noise_config.yml" />
+    <param name="global_frame_name" value="$(arg global_frame_name)" />
+    <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
+    <rosparam command="load" file="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/drift_$(arg drift_type).yaml" />
   </node>
   <!-- Path visualization -->
   <node pkg="panoptic_mapping_utils" type="path_visualizer.py" name="path_visualizer_noisy" output="screen" if="$(arg use_noise)">

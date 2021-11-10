@@ -173,9 +173,6 @@ class FlatDataPlayer(object):
             rotation = tf.transformations.quaternion_from_matrix(transform)
             position = transform[:,3]
 
-            self.tf_broadcaster.sendTransform(
-                position, rotation,
-                now, self.sensor_frame_name, self.global_frame_name)
         if self.use_noise:
             pose_msg = TransformStamped()
             pose_msg.header.stamp = now
@@ -191,6 +188,9 @@ class FlatDataPlayer(object):
             pose_msg.child_frame_id = ""
             self.pose_pub.publish(pose_msg) # TODO: change this to publish
         else:
+            self.tf_broadcaster.sendTransform(
+                position, rotation,
+                now, self.sensor_frame_name, self.global_frame_name)
             pose_msg = PoseStamped()
             pose_msg.header.stamp = now
             pose_msg.header.frame_id = self.global_frame_name

@@ -9,7 +9,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 
-
 class DriftGenerator {
  public:
     struct Config {
@@ -19,6 +18,8 @@ class DriftGenerator {
         bool save_to_file;
         std::string noisy_pose_topic;
         std::string ground_truth_Pose_topic;
+        std::string sensor_frame_name="depth_cam";
+        std::string global_frame_name="world";
         // Write config values to stream, e.g. for logging
         // friend std::ostream& operator<<(std::ostream& os, const Config& config);
     };
@@ -44,6 +45,7 @@ class DriftGenerator {
   ros::Publisher noisy_pose_pub_;
   ros::Subscriber pose_sub_;
   std::ofstream noise_file_output_;
+  tf2_ros::TransformBroadcaster noisy_transform_broadcaster_;
   bool setupROS();
   bool readParamsFromRos();
   // simulator
