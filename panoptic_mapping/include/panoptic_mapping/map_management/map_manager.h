@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include <voxblox_msgs/Submap.h>
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/map/submap.h"
@@ -29,7 +30,9 @@ class MapManager : public MapManagerBase {
     int prune_active_blocks_frequency = 0;
     int change_detection_frequency = 0;
     int activity_management_frequency = 0;
-
+    // If true background submaps will be published (and sent) to a voxgraph
+    // node, when they get deactivated
+    bool send_deactivated_submaps_to_voxgraph = false;
     // If true, submaps that are deactivated are checked for alignment with
     // inactive maps and merged together if a match is found.
     bool merge_deactivated_submaps_if_possible = false;
@@ -69,7 +72,10 @@ class MapManager : public MapManagerBase {
 
  protected:
   std::string pruneBlocks(Submap* submap) const;
-
+  /**
+   * @brief Publishes a given submap to voxgraph's submap topic.
+   */
+  void publishSubmapToVoxGraph(const Submap & submapToPublish);
  private:
   static config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
       registration_;
@@ -79,6 +85,11 @@ class MapManager : public MapManagerBase {
   std::shared_ptr<ActivityManager> activity_manager_;
   std::shared_ptr<TsdfRegistrator> tsdf_registrator_;
   std::shared_ptr<LayerManipulator> layer_manipulator_;
+
+  // For publishing background to voxgraph
+  ros::NodeHandle nh_;
+  ros::Publisher background_submap_publisher;    
+  const std::string background_submap_topic_name_ = "background_submap_out";
 
   // Action tick counters.
   class Ticker {

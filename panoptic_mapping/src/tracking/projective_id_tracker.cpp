@@ -155,6 +155,12 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     }
     alloc_timer.Pause();
 
+    // Add current pose to all tracked submaps
+    for(auto it=submaps->begin(); it != submaps->end(); it++) {
+      if(it->isActive()) {
+        it->addPose(input->T_M_C(), input->timestamp());
+      }
+    }
     // Logging.
     if (config_.verbosity >= 3) {
       if (matched) {

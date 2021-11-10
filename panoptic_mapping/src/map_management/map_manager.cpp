@@ -7,6 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include <voxblox_ros/conversions.h>
+#include <minkindr_conversions/kindr_tf.h>
+#include <minkindr_conversions/kindr_msg.h>
+
 namespace panoptic_mapping {
 
 config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
@@ -27,6 +31,8 @@ void MapManager::Config::setupParamsAndPrinting() {
              &merge_deactivated_submaps_if_possible);
   setupParam("apply_class_layer_when_deactivating_submaps",
              &apply_class_layer_when_deactivating_submaps);
+  setupParam("send_deactivated_submaps_to_voxgraph",
+             &send_deactivated_submaps_to_voxgraph);
   setupParam("activity_manager_config", &activity_manager_config,
              "activity_manager");
   setupParam("tsdf_registrator_config", &tsdf_registrator_config,
@@ -35,7 +41,7 @@ void MapManager::Config::setupParamsAndPrinting() {
              "layer_manipulator");
 }
 
-MapManager::MapManager(const Config& config) : config_(config.checkValid()) {
+MapManager::MapManager(const Config& config) : config_(config.checkValid()), nh_("~") {
   LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
 
   // Setup members.
@@ -61,6 +67,9 @@ MapManager::MapManager(const Config& config) : config_(config.checkValid()) {
     tickers_.emplace_back(
         config_.change_detection_frequency,
         [this](SubmapCollection* submaps) { performChangeDetection(submaps); });
+  }
+  if(config.send_deactivated_submaps_to_voxgraph) {
+    background_submap_publisher = nh_.advertise<voxblox_msgs::Submap>(background_submap_topic_name_, 100);
   }
 }
 
@@ -121,7 +130,9 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
 
   // Process de-activated submaps if requested.
   if (config_.merge_deactivated_submaps_if_possible ||
-      config_.apply_class_layer_when_deactivating_submaps) {
+      config_.apply_class_layer_when_deactivating_submaps ||
+      config_.send_deactivated_submaps_to_voxgraph) {
+    // get all deactivated submaps
     std::unordered_set<int> deactivated_submaps;
     for (Submap& submap : *submaps) {
       if (!submap.isActive() &&
@@ -137,7 +148,15 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
         submap->applyClassLayer(*layer_manipulator_);
       }
     }
-
+    // send deactivated background submaps to voxgraph
+    if(config_.send_deactivated_submaps_to_voxgraph) {
+      for (int id : deactivated_submaps) {
+       Submap* submap = submaps->getSubmapPtr(id);
+       if(submap->getLabel() == PanopticLabel::kBackground) {
+         publishSubmapToVoxGraph(*submap);
+       }    
+      }
+    }
     // Try to merge the submaps.
     if (config_.merge_deactivated_submaps_if_possible) {
       for (int id : deactivated_submaps) {
@@ -330,5 +349,32 @@ void MapManager::Ticker::tick(SubmapCollection* submaps) {
     current_tick_ = 0;
   }
 }
+
+void MapManager::publishSubmapToVoxGraph(const Submap & submapToPublish) {
+  // This code is from Voxblox::TsdfServer::publishSubmap
+  // assume that submapToPublish is not null
+  voxblox_msgs::Submap submap_msg;
+  submap_msg.robot_name = "robot";
+  voxblox::serializeLayerAsMsg<TsdfVoxel>(submapToPublish.getTsdfLayer(),
+                                   /* only_updated */ false, &submap_msg.layer);
+  
+  for(auto time_pose_pair: submapToPublish.getPoseHistory()) {
+    geometry_msgs::PoseStamped pose_msg;
+    pose_msg.header.stamp = ros::Time(time_pose_pair.first);
+    pose_msg.header.frame_id = "world";
+    
+    tf::poseKindrToMsg(time_pose_pair.second.cast<double>(),
+                          &pose_msg.pose);
+    submap_msg.trajectory.poses.emplace_back(pose_msg);
+  }
+  ROS_INFO("Publishing submap to Voxgraph with %d poses", 
+           submapToPublish.getPoseHistory().size());
+
+  // submap_msg.trajectory
+  background_submap_publisher.publish(submap_msg);
+  
+}
+
+
 
 }  // namespace panoptic_mapping
