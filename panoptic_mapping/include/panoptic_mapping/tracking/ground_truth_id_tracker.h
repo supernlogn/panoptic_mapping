@@ -4,7 +4,6 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <voxblox_msgs/Submap.h>
 
 #include "ros/ros.h"
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
@@ -54,10 +53,6 @@ class GroundTruthIDTracker : public IDTrackerBase {
   void printAndResetWarnings();
 
  private:
-  /**
-   * @brief Publishes a given submap to voxgraph's submap topic.
-   */
-  void publishSubmapToVoxGraph(const Submap & submapToPublish, const double timestamp);
 
   static config_utilities::Factory::RegistrationRos<
       IDTrackerBase, GroundTruthIDTracker, std::shared_ptr<Globals>>
@@ -65,11 +60,7 @@ class GroundTruthIDTracker : public IDTrackerBase {
   const Config config_;
   std::unordered_map<int, int> instance_to_id_;  // Track active maps.
   std::unordered_map<int, int> unknown_ids;      // For error handling.
-  ros::NodeHandle nh_;
-  
-  ros::Publisher background_submap_publisher;    // For publishing background to voxgraph
 
-  const std::string background_submap_topic_name_ = "background_submap_out";
 };
 
 
