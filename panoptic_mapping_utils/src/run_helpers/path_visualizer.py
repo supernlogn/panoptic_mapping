@@ -20,11 +20,13 @@ class PathVisualizer(object):
         self.use_arrow = rospy.get_param('~use_arrow', True)  # m
         self.use_noise = rospy.get_param('~use_noise', False)
         # ROS
-        if(self.use_noise):
-            self.sub = rospy.Subscriber("~pose_in", TransformStamped, self.transform_cb)
+        if (self.use_noise):
+            self.sub = rospy.Subscriber("~pose_in", TransformStamped,
+                                        self.transform_cb)
         else:
-            self.sub = rospy.Subscriber("~pose_in", PoseStamped, self.pose_cb)
-        
+            self.sub = rospy.Subscriber("~pose_in", TransformStamped,
+                                        self.pose_cb)
+
         if self.use_noise:
             self.pub = rospy.Publisher("~path_noisy", Marker, queue_size=10)
         else:
@@ -77,12 +79,14 @@ class PathVisualizer(object):
     def transform_cb(self, transform_stamped: TransformStamped):
         # Init
         if self.previous_pose is None:
-            self.previous_pose = PathVisualizer.transformToPose(transform_stamped.transform)
+            self.previous_pose = PathVisualizer.transformToPose(
+                transform_stamped.transform)
             return
 
         # Only plot every 'distance' meters
 
-        pose:Pose = PathVisualizer.transformToPose(transform_stamped.transform)
+        pose: Pose = PathVisualizer.transformToPose(
+            transform_stamped.transform)
         dist = np.linalg.norm(
             np.array([
                 self.previous_pose.position.x, self.previous_pose.position.y,
@@ -90,7 +94,8 @@ class PathVisualizer(object):
             ]) - np.array([pose.position.x, pose.position.y, pose.position.z]))
         if dist < self.distance:
             return
-        self.previous_pose = PathVisualizer.transformToPose(transform_stamped.transform)
+        self.previous_pose = PathVisualizer.transformToPose(
+            transform_stamped.transform)
 
         # Plot
         msg = Marker()
@@ -116,8 +121,8 @@ class PathVisualizer(object):
         msg.id = self.counter
         self.counter = self.counter + 1
         self.pub.publish(msg)
-    
-    def transformToPose(transform:Transform)->Pose:
+
+    def transformToPose(transform: Transform) -> Pose:
         p = Pose()
         p.position.x = transform.translation.x
         p.position.y = transform.translation.y
@@ -126,7 +131,8 @@ class PathVisualizer(object):
         p.orientation.y = transform.rotation.y
         p.orientation.z = transform.rotation.z
         p.orientation.w = transform.rotation.w
-        return p    
+        return p
+
 
 if __name__ == '__main__':
     rospy.init_node('path_visualizer', anonymous=True)
