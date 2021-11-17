@@ -5,10 +5,11 @@
   <arg name="use_rio" default="false"/>
   <arg name="use_detectron" default="false"/>
   <arg name="visualize" default="true"/> 
-  
+  <arg name="use_sim_time" default="false"/>
+  <param name="use_sim_time" value="$(arg use_sim_time)" />
   <!-- Flat Dataset args -->
   <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/> 
-  <arg name="play_rate" default="5"/>  <!-- Realtime factor -->
+  <arg name="play_rate" default="1"/>  <!-- Realtime factor -->
   <arg name="wait_time" default="0"/>  <!-- s -->
   <arg name="max_frames" default="1000"/> <!-- 90 -->
   
@@ -27,7 +28,7 @@
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
 
   <!-- noise args -->
-  <arg name="use_noise" value="true"/>
+  <arg name="use_noise" default="true"/>
 
   <!-- Voxgraph supplied arguments -->
   <arg name="pointcloud_topic" value="pointcloud" doc="ROS topic for pointcloud input"/>
