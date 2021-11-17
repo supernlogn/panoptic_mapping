@@ -26,7 +26,6 @@ class SimTimePublisher:
                                          queue_size=2 * len(self.times))
         self.sim_clock = Clock()
         self.index = 0
-        self.start(None)
 
     def setup_times(self):
         self.times = []
@@ -55,7 +54,10 @@ class SimTimePublisher:
             else:
                 time.sleep(1 / self.refresh_rate)  # sleep in wall time
 
-
-if __name__ == '__main__':
+def main():
     rospy.init_node('sim_time_publisher', anonymous=True)
     sim_time_publisher = SimTimePublisher()
+    sim_time_publisher.start(None)
+
+if __name__ == '__main__':
+    main()
