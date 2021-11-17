@@ -31,7 +31,7 @@ class FlatDataPlayer(object):
         self.play_rate = rospy.get_param('~play_rate', 1.0)
         self.wait = rospy.get_param('~wait', False)
         self.max_frames = rospy.get_param('~max_frames', 1e9)
-        self.refresh_rate = 100  # Hz
+        self.refresh_rate = rospy.get_param('~refresh_rate', 1)  # Hz
         # drift generator
         self.use_noise = rospy.get_param("~use_noise")
         # ROS
@@ -43,9 +43,13 @@ class FlatDataPlayer(object):
                                              DetectronLabels,
                                              queue_size=100)
         if self.use_noise:
-            self.pose_pub = rospy.Publisher("~pose", TransformStamped, queue_size=100)
+            self.pose_pub = rospy.Publisher("~pose",
+                                            TransformStamped,
+                                            queue_size=100)
         else:
-            self.pose_pub = rospy.Publisher("~pose", PoseStamped, queue_size=100)
+            self.pose_pub = rospy.Publisher("~pose",
+                                            PoseStamped,
+                                            queue_size=100)
 
         self.tf_broadcaster = tf.TransformBroadcaster()
 
@@ -69,8 +73,6 @@ class FlatDataPlayer(object):
         self.times = sorted(self.times)
         self.times = [(x - self.times[0]) / self.play_rate for x in self.times]
         self.start_time = None
-
-        
 
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
@@ -100,7 +102,8 @@ class FlatDataPlayer(object):
             self.start_time = now
         if self.times[self.current_index] > (now - self.start_time).to_sec():
             return
-
+        now = rospy.Time.from_sec(self.times[self.current_index])
+        # now = self.times[self.current_index]
         # Get all data and publish.
         file_id = os.path.join(self.data_path, self.ids[self.current_index])
 
@@ -171,7 +174,7 @@ class FlatDataPlayer(object):
                 for col in range(4):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
-            position = transform[:,3]
+            position = transform[:, 3]
 
         if self.use_noise:
             pose_msg = TransformStamped()
@@ -186,11 +189,11 @@ class FlatDataPlayer(object):
             pose_msg.transform.rotation.z = rotation[2]
             pose_msg.transform.rotation.w = rotation[3]
             pose_msg.child_frame_id = ""
-            self.pose_pub.publish(pose_msg) # TODO: change this to publish
+            self.pose_pub.publish(pose_msg)  # TODO: change this to publish
         else:
-            self.tf_broadcaster.sendTransform(
-                position, rotation,
-                now, self.sensor_frame_name, self.global_frame_name)
+            self.tf_broadcaster.sendTransform(position, rotation, now,
+                                              self.sensor_frame_name,
+                                              self.global_frame_name)
             pose_msg = PoseStamped()
             pose_msg.header.stamp = now
             pose_msg.header.frame_id = self.global_frame_name
