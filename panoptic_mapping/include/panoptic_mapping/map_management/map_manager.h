@@ -2,11 +2,11 @@
 #define PANOPTIC_MAPPING_MAP_MANAGEMENT_MAP_MANAGER_H_
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <voxblox_msgs/Submap.h>
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/map/submap.h"
@@ -15,6 +15,11 @@
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
+
+#include "cblox_msgs/MapHeader.h"
+#include "cblox_msgs/MapPoseUpdates.h"
+#include "tf/tf.h"
+#include "voxblox_msgs/Submap.h"
 
 namespace panoptic_mapping {
 
@@ -30,6 +35,7 @@ class MapManager : public MapManagerBase {
     int prune_active_blocks_frequency = 0;
     int change_detection_frequency = 0;
     int activity_management_frequency = 0;
+    int update_poses_with_voxgraph_frequency = 50;
     // If true background submaps will be published (and sent) to a voxgraph
     // node, when they get deactivated
     bool send_deactivated_submaps_to_voxgraph = false;
@@ -70,12 +76,17 @@ class MapManager : public MapManagerBase {
   bool mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
                              int* merged_id = nullptr);
 
+  void optimized_voxgraph_submaps_callback(
+      const cblox_msgs::MapPoseUpdates& msg);
+  void optimize_poses_from_voxgraph(SubmapCollection* submaps);
+
  protected:
   std::string pruneBlocks(Submap* submap) const;
   /**
    * @brief Publishes a given submap to voxgraph's submap topic.
    */
   void publishSubmapToVoxGraph(const Submap & submapToPublish);
+
  private:
   static config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
       registration_;
@@ -88,8 +99,17 @@ class MapManager : public MapManagerBase {
 
   // For publishing background to voxgraph
   ros::NodeHandle nh_;
-  ros::Publisher background_submap_publisher;    
-  const std::string background_submap_topic_name_ = "background_submap_out";
+  ros::Publisher background_submap_publisher_;
+  const std::string background_submap_topic_name_ =
+      "/panoptic_mapper/background_submap_out";
+  std::queue<int> published_ids_to_voxgraph_;
+  // For receiving optimized poses from voxgraph
+  ros::Subscriber optimized_background_poses_sub_;
+  const std::string optimized_background_poses_topic_name_ =
+      "/voxgraph_mapper/submap_poses";
+  tf::Pose voxgraph_correction_tf_;
+  bool correct_on_next_action_ = false;
+  ros::Time correct_times_[2];
 
   // Action tick counters.
   class Ticker {

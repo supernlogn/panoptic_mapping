@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include <voxblox_ros/conversions.h>
-#include <minkindr_conversions/kindr_tf.h>
-#include <minkindr_conversions/kindr_msg.h>
+#include "minkindr_conversions/kindr_msg.h"
+#include "minkindr_conversions/kindr_tf.h"
+#include "voxblox_ros/conversions.h"
 
 namespace panoptic_mapping {
 
@@ -41,7 +41,8 @@ void MapManager::Config::setupParamsAndPrinting() {
              "layer_manipulator");
 }
 
-MapManager::MapManager(const Config& config) : config_(config.checkValid()), nh_("~") {
+MapManager::MapManager(const Config& config)
+    : config_(config.checkValid()), nh_("") {
   LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
 
   // Setup members.
@@ -68,8 +69,16 @@ MapManager::MapManager(const Config& config) : config_(config.checkValid()), nh_
         config_.change_detection_frequency,
         [this](SubmapCollection* submaps) { performChangeDetection(submaps); });
   }
-  if(config.send_deactivated_submaps_to_voxgraph) {
-    background_submap_publisher = nh_.advertise<voxblox_msgs::Submap>(background_submap_topic_name_, 100);
+  if (config.send_deactivated_submaps_to_voxgraph) {
+    background_submap_publisher_ =
+        nh_.advertise<voxblox_msgs::Submap>(background_submap_topic_name_, 100);
+    optimized_background_poses_sub_ =
+        nh_.subscribe(optimized_background_poses_topic_name_, 10,
+                      &MapManager::optimized_voxgraph_submaps_callback, this);
+    tickers_.emplace_back(config_.update_poses_with_voxgraph_frequency,
+                          [this](SubmapCollection* submaps) {
+                            optimize_poses_from_voxgraph(submaps);
+                          });
   }
 }
 
@@ -149,12 +158,13 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
       }
     }
     // send deactivated background submaps to voxgraph
-    if(config_.send_deactivated_submaps_to_voxgraph) {
+    if (config_.send_deactivated_submaps_to_voxgraph) {
       for (int id : deactivated_submaps) {
        Submap* submap = submaps->getSubmapPtr(id);
-       if(submap->getLabel() == PanopticLabel::kBackground) {
+       if (submap->getLabel() == PanopticLabel::kBackground) {
+         published_ids_to_voxgraph_.push(id);
          publishSubmapToVoxGraph(*submap);
-       }    
+       }
       }
     }
     // Try to merge the submaps.
@@ -279,6 +289,37 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
   return false;
 }
 
+void MapManager::optimized_voxgraph_submaps_callback(
+    const cblox_msgs::MapPoseUpdates& msg) {
+  // Receives the optimized poses from voxgraph and
+  ROS_ERROR(
+      "MapManager::optimized_voxgraph_submaps_callback received %lf with %lu "
+      "map_headers",
+      msg.header.stamp.toSec(), msg.map_headers.size());
+
+  for (const auto tt : msg.map_headers) {
+    std::cout << "(" << tt.start_time << "," << tt.end_time << "): ";
+    std::cout << tt.pose_estimate.map_pose.orientation;
+  }
+  std::cout << std::endl;
+  // get the latest one always
+  const auto latest = msg.map_headers.back();
+  tf::Pose p;
+  tf::poseMsgToKindr(latest.pose_estimate.map_pose, &p);
+  correct_on_next_action_ = true;
+  correct_times_[0] = latest.start_time;
+  correct_times_[1] = latest.end_time;
+}
+
+void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
+  // updates all poses connected to the poses of voxgraph
+  if (correct_on_next_action_ && !published_ids_to_voxgraph_.empty()) {
+    int id_of_background = published_ids_to_voxgraph_.front();
+    published_ids_to_voxgraph_.pop();
+    submaps->getSubmap(id_of_background);
+  }
+}
+
 std::string MapManager::pruneBlocks(Submap* submap) const {
   auto t1 = std::chrono::high_resolution_clock::now();
   // Setup.
@@ -357,22 +398,21 @@ void MapManager::publishSubmapToVoxGraph(const Submap & submapToPublish) {
   submap_msg.robot_name = "robot";
   voxblox::serializeLayerAsMsg<TsdfVoxel>(submapToPublish.getTsdfLayer(),
                                    /* only_updated */ false, &submap_msg.layer);
-  
-  for(auto time_pose_pair: submapToPublish.getPoseHistory()) {
+
+  for (auto time_pose_pair : submapToPublish.getPoseHistory()) {
     geometry_msgs::PoseStamped pose_msg;
     pose_msg.header.stamp = ros::Time(time_pose_pair.first);
     pose_msg.header.frame_id = "world";
-    
+
     tf::poseKindrToMsg(time_pose_pair.second.cast<double>(),
                           &pose_msg.pose);
     submap_msg.trajectory.poses.emplace_back(pose_msg);
   }
-  ROS_INFO("Publishing submap to Voxgraph with %d poses", 
+  ROS_INFO("Publishing submap to Voxgraph with %lu poses",
            submapToPublish.getPoseHistory().size());
 
   // submap_msg.trajectory
-  background_submap_publisher.publish(submap_msg);
-  
+  background_submap_publisher_.publish(submap_msg);
 }
 
 
