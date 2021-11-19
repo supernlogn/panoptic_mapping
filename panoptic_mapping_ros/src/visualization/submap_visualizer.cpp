@@ -1,13 +1,13 @@
 #include "panoptic_mapping_ros/visualization/submap_visualizer.h"
 
+#include <minkindr_conversions/kindr_msg.h>
+#include <ros/time.h>
+#include <voxblox_ros/ptcloud_vis.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <minkindr_conversions/kindr_msg.h>
-#include <ros/time.h>
-#include <voxblox_ros/ptcloud_vis.h>
 
 namespace panoptic_mapping {
 
@@ -155,7 +155,7 @@ std::vector<voxblox_msgs::MultiMesh> SubmapVisualizer::generateMeshMsgs(
     if (it->second.was_deleted) {
       voxblox_msgs::MultiMesh msg;
       msg.header.stamp = ros::Time::now();
-      msg.header.frame_id = global_frame_name_;
+      msg.header.frame_id = submaps->getSubmap(it->second.id).getFrameName();
       msg.name_space = it->second.name_space;
       result.emplace_back(msg);
       it = vis_infos_.erase(it);
