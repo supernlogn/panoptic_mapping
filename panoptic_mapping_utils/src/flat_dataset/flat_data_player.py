@@ -71,7 +71,7 @@ class FlatDataPlayer(object):
 
         self.ids = [x for _, x in sorted(zip(self.times, self.ids))]
         self.times = sorted(self.times)
-        self.times = [(x - self.times[0]) / self.play_rate for x in self.times]
+        self.times = [(x - self.times[0]) for x in self.times]
         self.start_time = None
 
         if self.wait:
@@ -100,7 +100,7 @@ class FlatDataPlayer(object):
         now = rospy.Time.now()
         if self.start_time is None:
             self.start_time = now
-        if self.times[self.current_index] > (now - self.start_time).to_sec():
+        if self.times[self.current_index] > self.play_rate * (now - self.start_time).to_sec():
             return
         now = rospy.Time.from_sec(self.times[self.current_index])
         # now = self.times[self.current_index]
