@@ -28,10 +28,12 @@ cs_add_library(${PROJECT_NAME}
         src/common/camera.cpp
         src/common/input_data_user.cpp
         src/map/submap.cpp
+        src/map/pseudo_submap.cpp
         src/map/submap_collection.cpp
         src/map/submap_id.cpp
         src/map/instance_id.cpp
         src/map/submap_bounding_volume.cpp
+        src/map/pseudo_submap_bounding_volume.cpp
         src/labels/label_handler_base.cpp
         src/labels/null_label_handler.cpp
         src/labels/csv_label_handler.cpp
@@ -49,6 +51,7 @@ cs_add_library(${PROJECT_NAME}
         src/integration/projection_interpolators.cpp
         src/integration/mesh_integrator.cpp
         src/map_management/map_manager.cpp
+        src/map/pose_manager.cpp
         src/map_management/null_map_manager.cpp
         src/map_management/activity_manager.cpp
         src/map_management/tsdf_registrator.cpp
