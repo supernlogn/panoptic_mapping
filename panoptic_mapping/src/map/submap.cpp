@@ -244,8 +244,8 @@ std::unique_ptr<Submap> Submap::loadFromStream(
 }
 
 
-void Submap::addPose(const Transformation & T_M_C, const double timestamp) {
-  pose_history_.emplace(ros::Time(timestamp), T_M_C);
+void Submap::addPoseID(const PoseManager::poseIdType pose_id) {
+  pose_id_history_.insert(pose_id);
 }
 
 void Submap::finishActivePeriod() {
