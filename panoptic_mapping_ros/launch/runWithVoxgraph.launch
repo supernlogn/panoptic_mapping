@@ -46,7 +46,8 @@
   <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" />
   
   <!-- Mapper -->
-  <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" ><!--required="true"-->
+  <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" 
+   launch-prefix="$(arg launch_prefix)"><!--required="true"-->
     <!-- Config -->
     <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
      
@@ -66,8 +67,7 @@
   
 
   <!-- Voxgraph -->
-  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" 
-    launch-prefix="$(arg launch_prefix)">
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
     <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml"/>
     <param name="submap_topic" value="/panoptic_mapper/background_submap_out" />
   </node>
