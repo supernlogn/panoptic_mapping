@@ -169,9 +169,11 @@ bool TsdfRegistrator::submapsConflict(const Submap& reference,
       } else {
         // Check for class belonging.
         if (other.hasClassLayer()) {
+          const panoptic_mapping::ClassLayer &cL = other.getClassLayer();
+          const ClassVoxel * cV = cL.getVoxelPtrByCoordinates(
+                      point.position);
           if (!classVoxelBelongsToSubmap(
-                  *other.getClassLayer().getVoxelPtrByCoordinates(
-                      point.position))) {
+                  *cV)) {
             distance = other.getConfig().truncation_distance;
           }
         }
