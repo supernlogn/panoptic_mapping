@@ -4,7 +4,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
-#include <map>
+#include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -18,6 +18,7 @@
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/integration/mesh_integrator.h"
 #include "panoptic_mapping/map/instance_id.h"
+#include "panoptic_mapping/map/pose_manager.h"
 #include "panoptic_mapping/map/submap_bounding_volume.h"
 #include "panoptic_mapping/map/submap_id.h"
 
@@ -27,7 +28,8 @@ class LayerManipulator;
 
 class Submap {
  public:
-  typedef std::map<ros::Time, Transformation> PoseHistoryMap;
+  // typedef std::map<ros::Time, Transformation> PoseHistoryMap;
+  typedef std::set<PoseManager::poseIdType> PoseIdHistory;
   // Config.
   struct Config : public config_utilities::Config<Config> {
     float voxel_size = 0.1;           // m
@@ -97,7 +99,7 @@ class Submap {
   void setIsActive(bool is_active) { is_active_ = is_active; }
   void setWasTracked(bool was_tracked) { was_tracked_ = was_tracked; }
 
-  void addPose(const Transformation & T_M_C, const double timestamp);
+  void addPoseID(const PoseManager::poseIdType pose_id);
   // Processing.
   /**
    * @brief Set the submap status to inactive and update its status accordingly.
@@ -166,7 +168,7 @@ class Submap {
   std::unique_ptr<Submap> clone(SubmapIDManager* submap_id_manager,
                                 InstanceIDManager* instance_id_manager) const;
 
-  const PoseHistoryMap& getPoseHistory() const { return pose_history_; }
+  const PoseIdHistory& getPoseHistory() const { return pose_id_history_; }
   
  private:
   friend class SubmapCollection;
@@ -244,7 +246,7 @@ class Submap {
   std::unique_ptr<MeshIntegrator> mesh_integrator_;
 
   // History of how the robot moved through the submap
-  PoseHistoryMap pose_history_;
+  PoseIdHistory pose_id_history_;
   Transformation T_O_S_initial_;
 };
 
