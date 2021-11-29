@@ -45,6 +45,7 @@ inline std::string panopticLabelToString(const PanopticLabel& label) {
     case PanopticLabel::kBackground:
       return "Background";
     case PanopticLabel::kFreeSpace:
+    default:
       return "FreeSpace";
   }
 }
