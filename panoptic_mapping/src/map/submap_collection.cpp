@@ -22,12 +22,15 @@ Submap* SubmapCollection::createSubmap(const Submap::Config& config) {
 }
 
 bool SubmapCollection::removeSubmap(int id) {
-  auto it = id_to_index_.find(id);
+  const auto it = id_to_index_.find(id);
   if (it == id_to_index_.end()) {
     // Submap does not exist.
     return false;
   }
+  // update the poseManager
   size_t previous_index = it->second;
+  const auto it_submap = submaps_.begin() + it->second;
+
   submaps_.erase(submaps_.begin() + it->second);
   id_to_index_.erase(it);
   // correct the index table
