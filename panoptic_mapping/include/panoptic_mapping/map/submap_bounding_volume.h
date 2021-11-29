@@ -6,6 +6,7 @@
 namespace panoptic_mapping {
 
 class Submap;
+class PseudoSubmapBoundingVolume;
 
 /**
  * This class interfaces conservative bounding volumes to hierarchically
@@ -14,7 +15,9 @@ class Submap;
  */
 class SubmapBoundingVolume {
  public:
+  friend class PseudoSubmapBoundingVolume;
   explicit SubmapBoundingVolume(const Submap& submap);
+
   ~SubmapBoundingVolume() = default;
 
   // Interaction.
@@ -24,11 +27,11 @@ class SubmapBoundingVolume {
   bool intersects(const SubmapBoundingVolume& other) const;
   bool isInsidePlane_S(const Point& normal_S) const;
   bool isInsidePlane_M(const Point& normal_M) const;
-
+  
   // Access.
   FloatingPoint getRadius() const { return radius_; }
   const Point& getCenter() const { return center_; }
-
+  
  private:
   const Submap* const submap_;
   Point center_;  // This is in submap frame.

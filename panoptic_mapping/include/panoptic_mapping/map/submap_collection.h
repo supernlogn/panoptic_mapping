@@ -10,6 +10,7 @@
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/map/submap.h"
+#include "panoptic_mapping/map/pose_manager.h"
 
 namespace panoptic_mapping {
 
@@ -67,6 +68,9 @@ class SubmapCollection {
    * SubmapID and InstanceID trackers.
    */
   void clear();
+  
+  // Modifying poses
+  // PoseManager::poseIdType createNewPose(const Transformation & pose, const ros::Time & poseTime);
 
   // Access.
   size_t size() const { return submaps_.size(); }
@@ -132,7 +136,6 @@ class SubmapCollection {
   // IDs are managed within a submap collection.
   SubmapIDManager submap_id_manager_;
   InstanceIDManager instance_id_manager_;
-
   // The map.
   std::vector<std::unique_ptr<Submap>> submaps_;
 

@@ -4,6 +4,7 @@
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/map/submap.h"
+#include "panoptic_mapping/map/pseudo_submap.h"
 #include "panoptic_mapping/map/submap_collection.h"
 
 namespace panoptic_mapping {
@@ -39,7 +40,8 @@ class LayerManipulator {
                                 float truncation_distance) const;
 
   void mergeSubmapAintoB(const Submap& A, Submap* B) const;
-
+  
+  void mergePseudoSubmapAintoB(const PseudoSubmap& A, PseudoSubmap* B) const;
   /**
    * @brief Convert a TSDF into an ESDF layer, propagating shortest distances
    * through the projective TSDF.
