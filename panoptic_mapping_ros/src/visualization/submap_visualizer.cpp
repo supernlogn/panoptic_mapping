@@ -155,7 +155,12 @@ std::vector<voxblox_msgs::MultiMesh> SubmapVisualizer::generateMeshMsgs(
     if (it->second.was_deleted) {
       voxblox_msgs::MultiMesh msg;
       msg.header.stamp = ros::Time::now();
-      msg.header.frame_id = submaps->getSubmap(it->second.id).getFrameName();
+
+      std::stringstream ss;
+      ss << "submap_" << static_cast<int>(it->second.id);
+      std::string submap_frame_name = ss.str();
+
+      msg.header.frame_id = submap_frame_name;
       msg.name_space = it->second.name_space;
       result.emplace_back(msg);
       it = vis_infos_.erase(it);
