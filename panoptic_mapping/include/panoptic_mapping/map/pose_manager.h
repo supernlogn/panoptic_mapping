@@ -28,14 +28,9 @@ class PoseManager {
       Transformation pose;
   } PoseInformation;
 
-  explicit PoseManager() {
-      // poses_info_ = std::map<poseIdType, PoseInformation>();
-      // submap_id_to_pose_id_ = std::map<submapIdType, std::set<poseIdType>>();
-      // std::cout << "Created PoseManager :" << poses_info_.size() << " " << submap_id_to_pose_id_.size() << " " << poses_.size() << std::endl;
-  };
-
+  PoseManager() = default;
   virtual ~PoseManager() = default;
-  
+
   // Access to the global id manager via singleton.
   static PoseManager* getGlobalInstance() {
     static PoseManager instance;
@@ -97,6 +92,7 @@ class PoseManager {
   **/
   Transformation getPoseCorrectionTF(const poseIdType pose_id, 
                                const Transformation & other_pose) const;
+
   /**
    * @brief return a way to turn the other_pose
    * to the pose at pose_id by multiplying the result 

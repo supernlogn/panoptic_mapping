@@ -169,7 +169,7 @@ class Submap {
                                 InstanceIDManager* instance_id_manager) const;
 
   const PoseIdHistory& getPoseHistory() const { return pose_id_history_; }
-  
+
  private:
   friend class SubmapCollection;
   const Config config_;

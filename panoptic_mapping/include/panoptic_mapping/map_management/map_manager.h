@@ -39,6 +39,7 @@ class MapManager : public MapManagerBase {
     int change_detection_frequency = 0;
     int activity_management_frequency = 0;
     int update_poses_with_voxgraph_frequency = 0;
+    int publish_poses_to_voxgraph_frequency = 0;
     // how many poses to put in one batch to be merged to one
     // and send them to voxgraph
     int num_submaps_to_merge_for_voxgraph = 1;
@@ -103,6 +104,15 @@ class MapManager : public MapManagerBase {
       const cblox_msgs::MapPoseUpdates& msg);
 
  protected:
+
+  /**
+   * @brief Publish the background submaps when new ones are deactivated. 
+   * It should run in each cycle to be as much updated as possible.
+   * 
+   * @param submaps 
+   */
+  void updatePublishedSubmaps(SubmapCollection* submaps);
+
   /**
    * @brief Publishes a given submap to voxgraph's submap topic.
    * @param submapToPublish the most recent deactivated background submap to be published to voxgraph
@@ -117,11 +127,10 @@ class MapManager : public MapManagerBase {
    * @param submapB This is a PseudoSubmap which will take place
    *                into merging but also the merging result will be stored here.
    */
-  // void mergePseudoSubmapAToPseudoSubmapB(PseudoSubmap & submapA, PseudoSubmap * submapB);
+  void mergePseudoSubmapAToPseudoSubmapB(PseudoSubmap & submapA, PseudoSubmap * submapB);
 
   std::string pruneBlocks(Submap* submap) const;
-  static std::queue<Submap::PoseIdHistory> pose_id_histories_published_;
-  
+  std::vector<PseudoSubmap> pseudo_submaps_sent_;
  private:
   static config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
       registration_;
@@ -134,11 +143,11 @@ class MapManager : public MapManagerBase {
   // For publishing background to voxgraph
   ros::NodeHandle nh_;
   ros::Publisher background_submap_publisher_;
-  static std::deque<int> published_submap_ids_to_voxgraph_;
+  std::vector<int> published_submap_ids_to_voxgraph_;
   // For receiving optimized poses from voxgraph
   ros::Subscriber optimized_background_poses_sub_;
-  std::vector<Submap::PoseIdHistory> poses_to_optimize_;
-  std::queue<Transformation> voxgraph_correction_tfs_;
+  std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
+  // For voxgraph_correction_tfs_ access synchronization
   static std::mutex callback_mutex_;
 
   // Action tick counters.
