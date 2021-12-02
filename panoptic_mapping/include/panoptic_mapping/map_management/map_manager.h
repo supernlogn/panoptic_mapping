@@ -58,7 +58,7 @@ class MapManager : public MapManagerBase {
     // the loss of classification information.
     bool apply_class_layer_when_deactivating_submaps = false;
     // publish to voxgraph topic names
-    std::string background_submap_topic_name = 
+    std::string background_submap_topic_name =
       "/panoptic_mapper/background_submap_out";
     std::string optimized_background_poses_topic_name =
       "/voxgraph_mapper/submap_poses";
@@ -104,7 +104,6 @@ class MapManager : public MapManagerBase {
       const cblox_msgs::MapPoseUpdates& msg);
 
  protected:
-
   /**
    * @brief Publish the background submaps when new ones are deactivated. 
    * It should run in each cycle to be as much updated as possible.
@@ -118,7 +117,8 @@ class MapManager : public MapManagerBase {
    * @param submapToPublish the most recent deactivated background submap to be published to voxgraph
    * The publishing is done in the topic defined by optimized_background_poses_topic_name in config.
    */
-  void publishSubmapToVoxGraph(SubmapCollection * submaps, Submap & submapToPublish);
+  void publishSubmapToVoxGraph(SubmapCollection * submaps,
+                               const Submap & submapToPublish);
   /**
    * @brief Merges a pseudo submap fo A into a pseudo submap B.
    * 
@@ -127,10 +127,12 @@ class MapManager : public MapManagerBase {
    * @param submapB This is a PseudoSubmap which will take place
    *                into merging but also the merging result will be stored here.
    */
-  void mergePseudoSubmapAToPseudoSubmapB(PseudoSubmap & submapA, PseudoSubmap * submapB);
+  void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap & submapA,
+                                  PseudoSubmap * submapB);
 
   std::string pruneBlocks(Submap* submap) const;
   std::vector<PseudoSubmap> pseudo_submaps_sent_;
+
  private:
   static config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
       registration_;
