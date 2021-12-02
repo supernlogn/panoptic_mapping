@@ -1,11 +1,12 @@
-#ifndef PANOPTIC_MAPPING_MAP_MANAGEMENT_POSE_MANAGER_H_
-#define PANOPTIC_MAPPING_MAP_MANAGEMENT_POSE_MANAGER_H_
+#ifndef PANOPTIC_MAPPING_MAP_POSE_MANAGER_H_
+#define PANOPTIC_MAPPING_MAP_POSE_MANAGER_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <set>
 #include <iostream>
 
@@ -22,7 +23,7 @@ class PoseManager {
   typedef int poseIdxType;
   typedef int submapIdType;
 
-  typedef struct { 
+  typedef struct {
       ros::Time time;
       poseIdxType pose_idx;
       Transformation pose;
@@ -37,7 +38,7 @@ class PoseManager {
     return &instance;
   }
   // copying information
-  void copy(PoseManager & other) const;
+  void copy(PoseManager * other) const;
   // updating information
   void correctPoseRangeTransformation(
                         const poseIdType start_pose_id,
@@ -81,7 +82,7 @@ class PoseManager {
    * each pose information
    * The poses that will be affected are those with id inside pose_ids 
    **/
-  void removeSubmapIdFromPose(const poseIdType pose_id, 
+  void removeSubmapIdFromPose(const poseIdType pose_id,
                               const submapIdType submap_id);
 
   // const accessors -- computing transformations
@@ -90,7 +91,7 @@ class PoseManager {
   * so that the below sentence holds true:
   * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
   **/
-  Transformation getPoseCorrectionTF(const poseIdType pose_id, 
+  Transformation getPoseCorrectionTF(const poseIdType pose_id,
                                const Transformation & other_pose) const;
 
   /**
@@ -99,7 +100,7 @@ class PoseManager {
    * so that the below sentence holds true:
    * getPoseCorrectionTF(pose_id, other_pose) * other_pose == pose@pose_id
    **/
-  Transformation getPoseCorrectionTFInv(const poseIdType pose_id, 
+  Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
                               const Transformation & other_pose) const;
 
   // const accessors -- fetching elements
@@ -124,6 +125,6 @@ class PoseManager {
   }
 };
 
-}; // panoptic_mapping
+};  // namespace panoptic_mapping
 
-#endif // PANOPTIC_MAPPING_MAP_MANAGEMENT_POSE_MANAGER_H_
+#endif  // PANOPTIC_MAPPING_MAP_POSE_MANAGER_H_

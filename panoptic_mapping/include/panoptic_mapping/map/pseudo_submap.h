@@ -1,22 +1,25 @@
 #ifndef PANOPTIC_MAPPING_MAP_PSEUDO_SUBMAP_H_
 #define PANOPTIC_MAPPING_MAP_PSEUDO_SUBMAP_H_
 
+#include <string>
+#include <memory>
+
 #include "panoptic_mapping/map/submap.h"
 
 namespace panoptic_mapping {
 
 class PseudoSubmap {
- // This class is like submap, but is not managed by any MapManagers
- // or instance managers. Its purpose is to keep and copy submap data
- // without triggering any managers.
+// This class is like submap, but is not managed by any MapManagers
+// or instance managers. Its purpose is to keep and copy submap data
+// without triggering any managers.
  public:
   // Construction.
-  PseudoSubmap() {};
-  PseudoSubmap(const Submap & submap);
+  PseudoSubmap() {}
+  explicit PseudoSubmap(const Submap & submap);
 
   virtual ~PseudoSubmap() = default;
   // copy constructor
-  void clone(PseudoSubmap & other) const;
+  void clone(PseudoSubmap * other) const;
   // Const accessors.
   int getClassID() const { return class_id_; }
   PanopticLabel getLabel() const { return label_; }
@@ -26,7 +29,8 @@ class PseudoSubmap {
   const Transformation& getT_M_S() const { return T_M_S_; }
   const Transformation& getT_S_M() const { return T_M_S_inv_; }
   ChangeState getChangeState() const { return change_state_; }
-
+  const Submap::PoseIdHistory& getPoseHistoryConst() const {
+                                      return pose_id_history_; }
   // Modifying accessors
   std::shared_ptr<TsdfLayer>& getTsdfLayerPtr() { return tsdf_layer_; }
   Submap::PoseIdHistory& getPoseHistory() { return pose_id_history_; }
@@ -54,6 +58,6 @@ class PseudoSubmap {
   float truncation_distance_;
 };
 
-}
+}  // namespace panoptic_mapping
 
-#endif
+#endif  // PANOPTIC_MAPPING_MAP_PSEUDO_SUBMAP_H_

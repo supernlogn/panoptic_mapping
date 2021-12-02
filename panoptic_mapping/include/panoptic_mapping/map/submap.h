@@ -1,6 +1,10 @@
 #ifndef PANOPTIC_MAPPING_MAP_SUBMAP_H_
 #define PANOPTIC_MAPPING_MAP_SUBMAP_H_
 
+#include <ros/ros.h>
+#include <voxblox/core/layer.h>
+#include <voxblox/mesh/mesh_layer.h>
+
 #include <fstream>
 #include <memory>
 #include <string>
@@ -9,9 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include <ros/ros.h>
-#include <voxblox/core/layer.h>
-#include <voxblox/mesh/mesh_layer.h>
+
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/Submap.pb.h"

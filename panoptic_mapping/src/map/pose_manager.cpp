@@ -4,13 +4,13 @@
 
 namespace panoptic_mapping {
 
-void PoseManager::copy(PoseManager & other) const {
+void PoseManager::copy(PoseManager * other) const {
   // a very time-expensive copy operation
   // because every copy is a deep-copy
-  other.poses_info_ = poses_info_;
-  other.submap_id_to_pose_id_ = submap_id_to_pose_id_;
-  other.pose_id_to_submap_id_ = pose_id_to_submap_id_;
-  other.next_pose_id_index_ = next_pose_id_index_;
+  other->poses_info_ = poses_info_;
+  other->submap_id_to_pose_id_ = submap_id_to_pose_id_;
+  other->pose_id_to_submap_id_ = pose_id_to_submap_id_;
+  other->next_pose_id_index_ = next_pose_id_index_;
 }
 
 void PoseManager::correctPoseRangeTransformation(
@@ -21,7 +21,7 @@ void PoseManager::correctPoseRangeTransformation(
         << "correcting " << (end_pose_id - start_pose_id + 1)
         << " transformations with " << T_corr
         << std::endl;
-  for(auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
+  for (auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation & pose_at_pose_idx = poses_info_[pose_idx].pose;
@@ -36,7 +36,7 @@ void PoseManager::correctPoseRangeTransformation(
         << "correcting " << pose_ids.size()
         << " transformations with " << T_corr
         << std::endl;
-  for(const auto pose_id: pose_ids) {
+  for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation & pose_at_pose_idx = poses_info_[pose_idx].pose;
@@ -51,7 +51,7 @@ void PoseManager::correctPoseRangeTransformation(
         << "correcting " << pose_ids.size()
         << " transformations with " << T_corr
         << std::endl;
-  for(const auto pose_id: pose_ids) {
+  for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation & pose_at_pose_idx = poses_info_[pose_idx].pose;
@@ -67,8 +67,7 @@ void PoseManager::updateSinglePoseTransformation(const poseIdType pose_id,
   if (it == poses_info_.end()) {
     // not found
     return;
-  }
-  else {
+  } else {
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     poses_info_[pose_idx].pose = new_pose;
   }
@@ -96,7 +95,7 @@ void PoseManager::addSubmapIdToPose(const poseIdType pose_id,
 void PoseManager::addSubmapIdToPoses(const poseIdType submap_id,
                           const std::set<poseIdType> & pose_ids) {
   assert(submap_id_to_pose_id_.find(submap_id) != submap_id_to_pose_id_.end());
-  for(const PoseManager::poseIdType p_id: pose_ids) {
+  for (const PoseManager::poseIdType p_id : pose_ids) {
     addSubmapIdToPose(p_id, submap_id);
   }
 }
@@ -111,7 +110,7 @@ void PoseManager::removeSubmapIdFromPose(const poseIdType pose_id,
 void PoseManager::removeSubmapIdFromPoses(
           const PoseManager::submapIdType submap_id,
           const std::set<poseIdType> & pose_ids) {
-  for(const auto p_id: pose_ids) {
+  for (const auto p_id : pose_ids) {
     removeSubmapIdFromPose(p_id, submap_id);
   }
 }
@@ -127,7 +126,7 @@ void PoseManager::clear() {
   submap_id_to_pose_id_.clear();
   pose_id_to_submap_id_.clear();
   poses_info_.clear();
-  next_pose_id_index_ = 0; // reset next pose id index
+  next_pose_id_index_ = 0;  // reset next pose id index
 }
 
 Transformation PoseManager::getPoseCorrectionTF(const poseIdType pose_id,
@@ -145,7 +144,7 @@ Transformation PoseManager::getPoseCorrectionTF(const poseIdType pose_id,
   return result;
 }
 
-Transformation PoseManager::getPoseCorrectionTFInv(const poseIdType pose_id, 
+Transformation PoseManager::getPoseCorrectionTFInv(const poseIdType pose_id,
                             const Transformation & T_voxgraph) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation & pose_at_pose_id = poses_info_.at(pose_id).pose;
@@ -162,14 +161,17 @@ PoseManager::PoseInformation PoseManager::getPoseInformation(
   return it->second;
 }
 
-Transformation PoseManager::getPoseTransformation(const poseIdType pose_id) const {
+Transformation PoseManager::getPoseTransformation(
+                              const poseIdType pose_id) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation & pose_transformation = poses_info_.at(pose_id).pose;
   return pose_transformation;
 }
 
-PoseManager::poseIdType PoseManager::getPoseIdAtTime(const ros::Time time) const {
-  // This parses the entire container with PoseInformation sequentially trying to find
+PoseManager::poseIdType PoseManager::getPoseIdAtTime(
+                              const ros::Time time) const {
+  // This parses the entire container with
+  // PoseInformation sequentially trying to find
   // the pose id at the given time.
   // If no PoseInformation exists for the specified time exists,
   // an INVALID_POSE_ID_NUM is returned
@@ -181,15 +183,16 @@ PoseManager::poseIdType PoseManager::getPoseIdAtTime(const ros::Time time) const
     }
   }
   assert(it_result != poses_info_.end());
-  if(it_result == poses_info_.end()) {
+  if (it_result == poses_info_.end()) {
     return INVALID_POSE_ID_NUM;
   }
   return it_result->first;
 }
 
-const PoseManager::PoseInformation * PoseManager::getPoseInformationAtTime(const ros::Time time) const {
-  // This parses the entire container with PoseInformation sequentially trying to find
-  // a pointer to the PoseInformation at the given time.
+const PoseManager::PoseInformation * PoseManager::getPoseInformationAtTime(
+                                const ros::Time time) const {
+  // This parses the entire container with PoseInformation sequentially trying
+  // to find a pointer to the PoseInformation at the given time.
   // If no PoseInformation for the specified time exists, a nullptr is returned
   auto it_result = poses_info_.end();
   for (auto it = poses_info_.begin(); it != poses_info_.end(); ++it) {
@@ -199,14 +202,15 @@ const PoseManager::PoseInformation * PoseManager::getPoseInformationAtTime(const
     }
   }
   assert(it_result != poses_info_.end());
-  if(it_result == poses_info_.end()) {
+  if (it_result == poses_info_.end()) {
     return nullptr;
   }
   const PoseManager::PoseInformation * result = &(it_result->second);
   return result;
 }
 
-Transformation PoseManager::getPoseTransformationAtTime(const ros::Time time) const {
+Transformation PoseManager::getPoseTransformationAtTime(
+                                const ros::Time time) const {
   const PoseManager::PoseInformation * p_info = getPoseInformationAtTime(time);
   return p_info->pose;
 }
@@ -215,8 +219,7 @@ bool PoseManager::hasPose(const poseIdType pose_id) const {
   auto it = poses_info_.find(pose_id);
   bool has_pose = (it != poses_info_.end());
   return has_pose;
-};
+}
 
 
-
-}; // panoptic_mapping
+};  // namespace panoptic_mapping
