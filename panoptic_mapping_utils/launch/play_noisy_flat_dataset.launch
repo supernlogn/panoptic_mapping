@@ -35,9 +35,9 @@
   </node>
 
 <!-- add noise to the data -->
-  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen">
+  <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen" if="$(arg use_noise)">
     <param name="noisy_pose_topic" value="$(arg namespace)/pose" />
-    <param name="ground_truth_Pose_topic" value="$(arg namespace)/pose_ground_truth" />
+    <param name="ground_truth_pose_topic" value="$(arg namespace)/pose_ground_truth" />
     <param name="save_noise_file_path" value="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt" />
     <param name="save_noise_to_file" value="true" />
     <param name="global_frame_name" value="$(arg global_frame_name)" />

@@ -89,14 +89,15 @@ map_management:
   activity_management_frequency: 1
   change_detection_frequency: 5
   update_poses_with_voxgraph_frequency: 3
+  publish_poses_to_voxgraph_frequency: 1
   
   # voxgraph publishing
-  num_submaps_to_merge_for_voxgraph: 1
+  num_submaps_to_merge_for_voxgraph: 3
   avoid_merging_deactivated_backhround_submaps: false
 
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
-  merge_deactivated_submaps_if_possible: true
+  merge_deactivated_submaps_if_possible: false
   apply_class_layer_when_deactivating_submaps: false
   
   activity_manager:
@@ -117,11 +118,11 @@ map_management:
       verbosity: 3
       use_instance_classification: *use_instance_classification
   
-visualization:  
+visualization:
   submaps:
     type: submaps  # submaps, single_tsdf
     verbosity: 1
-    color_mode: color # submaps, instances, color, normals, classes, change, classification
+    color_mode: classes # submaps, instances, color, normals, classes, change, classification
     visualization_mode: active  # all, active, active_only, inactive, persistent
     submap_color_discretization: 20
     visualize_mesh: true
