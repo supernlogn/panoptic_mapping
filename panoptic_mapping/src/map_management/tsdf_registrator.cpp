@@ -1,14 +1,14 @@
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
 
+#include <voxblox/integrator/merge_integration.h>
+#include <voxblox/mesh/mesh_integrator.h>
+
 #include <algorithm>
 #include <future>
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <voxblox/integrator/merge_integration.h>
-#include <voxblox/mesh/mesh_integrator.h>
 
 #include "panoptic_mapping/common/index_getter.h"
 #include "panoptic_mapping/map/submap.h"
@@ -172,7 +172,11 @@ bool TsdfRegistrator::submapsConflict(const Submap& reference,
           const panoptic_mapping::ClassLayer &cL = other.getClassLayer();
           const ClassVoxel * cV = cL.getVoxelPtrByCoordinates(
                       point.position);
-          if (!classVoxelBelongsToSubmap(
+          if (cV == nullptr) {
+            LOG_IF(INFO, config_.verbosity >= 5)
+              <<"Class Voxel with null ptr for submap with id: "
+              << other.getID();
+          } else if (!classVoxelBelongsToSubmap(
                   *cV)) {
             distance = other.getConfig().truncation_distance;
           }
