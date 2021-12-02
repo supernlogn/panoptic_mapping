@@ -24,8 +24,7 @@ class PathVisualizer(object):
             self.sub = rospy.Subscriber("~pose_in", TransformStamped,
                                         self.transform_cb)
         else:
-            self.sub = rospy.Subscriber("~pose_in", TransformStamped,
-                                        self.pose_cb)
+            self.sub = rospy.Subscriber("~pose_in", PoseStamped, self.pose_cb)
 
         if self.use_noise:
             self.pub = rospy.Publisher("~path_noisy", Marker, queue_size=10)
