@@ -1,13 +1,16 @@
-#include "odometry_drift_simulator/odometry_drift_simulator.h"
+#ifndef PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_DRIFT_GENERATOR_H_
+#define PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_DRIFT_GENERATOR_H_
+
+#include <fstream>
 #include <memory>
 #include <string>
-#include <fstream>
 
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
+#include "odometry_drift_simulator/odometry_drift_simulator.h"
 
 class DriftGenerator {
  public:
@@ -17,14 +20,13 @@ class DriftGenerator {
         std::string save_file_path;
         bool save_to_file;
         std::string noisy_pose_topic;
-        std::string ground_truth_Pose_topic;
-        std::string sensor_frame_name="depth_cam";
-        std::string global_frame_name="world";
-        // Write config values to stream, e.g. for logging
-        // friend std::ostream& operator<<(std::ostream& os, const Config& config);
+        std::string ground_truth_pose_topic;
+        std::string sensor_frame_name = "depth_camera";
+        std::string global_frame_name = "world";
     };
-    
-    explicit DriftGenerator(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+
+    explicit DriftGenerator(const ros::NodeHandle& nh,
+                            const ros::NodeHandle& nh_private);
     ~DriftGenerator() = default;
 
   // ROS callbacks
@@ -32,14 +34,15 @@ class DriftGenerator {
   void startupCallback(const ros::TimerEvent&);
   void onShutdown();  // called by the sigint handler
   static std::ofstream  initializeStreamFromRosParams(Config cfg) {
-    if(cfg.save_to_file) {
+    if (cfg.save_to_file) {
       std::ofstream outstream(cfg.save_file_path.c_str(), std::ofstream::out);
       return outstream;
     }
     return std::ofstream("no_text.txt", std::ofstream::app);
   }
+
  private:
-   // ROS
+  // ROS
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher noisy_pose_pub_;
@@ -54,5 +57,6 @@ class DriftGenerator {
   Config config_;
   // constants
   const std::string simulator_frame_name_ = "noisy_frame";
-
 };
+
+#endif  // PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_DRIFT_GENERATOR_H_
