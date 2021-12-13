@@ -70,6 +70,7 @@ class Submap {
   const voxblox::MeshLayer& getMeshLayer() const { return *mesh_layer_; }
   const Transformation& getT_M_S() const { return T_M_S_; }
   const Transformation& getT_S_M() const { return T_M_S_inv_; }
+  const Transformation& getT_M_Sinit() const { return T_M_S_init_; }
   bool isActive() const { return is_active_; }
   bool wasTracked() const { return was_tracked_; }
   bool hasClassLayer() const { return has_class_layer_; }
@@ -92,6 +93,7 @@ class Submap {
 
   // Setters.
   void setT_M_S(const Transformation& T_M_S);
+  void setT_M_Sinit(const Transformation& T_M_S);
   void setInstanceID(int id) { instance_id_ = id; }
   void setClassID(int id) { class_id_ = id; }
   void setLabel(PanopticLabel label) { label_ = label; }
@@ -172,6 +174,8 @@ class Submap {
 
   const PoseIdHistory& getPoseHistory() const { return pose_id_history_; }
 
+  PoseIdHistory* getPoseHistoryPtr() { return &pose_id_history_; }
+
  private:
   friend class SubmapCollection;
   const Config config_;
@@ -236,6 +240,8 @@ class Submap {
   std::string frame_name_;
   Transformation T_M_S_;  // Transformation mission to submap.
   Transformation T_M_S_inv_;
+  Transformation T_M_S_init_;  // The first transformation
+                               // to mission assigned to submap
 
   // Map.
   std::shared_ptr<TsdfLayer> tsdf_layer_;
@@ -249,7 +255,6 @@ class Submap {
 
   // History of how the robot moved through the submap
   PoseIdHistory pose_id_history_;
-  Transformation T_O_S_initial_;
 };
 
 }  // namespace panoptic_mapping

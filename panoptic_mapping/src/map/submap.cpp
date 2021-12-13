@@ -62,7 +62,7 @@ void Submap::initialize() {
   // Initialize with identity transformation.
   T_M_S_.setIdentity();
   T_M_S_inv_.setIdentity();
-  T_O_S_initial_ = T_M_S_;
+  T_M_S_init_ = T_M_S_;
 
   // Setup layers.
   tsdf_layer_ =
@@ -85,6 +85,8 @@ void Submap::setT_M_S(const Transformation& T_M_S) {
   T_M_S_ = T_M_S;
   T_M_S_inv_ = T_M_S_.inverse();
 }
+
+void Submap::setT_M_Sinit(const Transformation& T_M_S) { T_M_S_init_ = T_M_S; }
 
 void Submap::getProto(SubmapProto* proto) const {
   CHECK_NOTNULL(proto);
@@ -238,6 +240,7 @@ std::unique_ptr<Submap> Submap::loadFromStream(
       submap_proto.transform();
   cblox::conversions::transformProtoToKindr(transformation_proto, &T_M_S);
   submap->setT_M_S(T_M_S);
+  submap->setT_M_Sinit(T_M_S);
   submap->setFrameName(submap_proto.frame_name());
 
   return submap;
