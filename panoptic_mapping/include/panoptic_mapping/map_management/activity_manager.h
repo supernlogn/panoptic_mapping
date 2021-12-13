@@ -28,6 +28,10 @@ class ActivityManager {
         0;  // Deactivate submaps when not observed for x frames. Use 0 to
             // ignore.
 
+    // If this is > 0, then the background frames are re-created per
+    // this number of frames.
+    int new_background_per_n_ticks = 0;  // deactivated
+
     Config() { setConfigName("ActivityManager"); }
 
    protected:
@@ -40,6 +44,8 @@ class ActivityManager {
 
   // Check all criteria.
   void processSubmaps(SubmapCollection* submaps);
+  // Special background handling if specified by new_background_per_n_ticks
+  void handleBackground(SubmapCollection* submaps, Submap* submap);
 
  private:
   bool checkRequiredRedetection(Submap* submap);
@@ -51,6 +57,7 @@ class ActivityManager {
   // Tracking data.
   std::unordered_map<int, int> submap_redetection_counts_;
   std::unordered_map<int, int> submap_missed_detection_counts_;
+  int current_background_tracked_number_tracked_frames_ = 0;
 };
 
 }  // namespace panoptic_mapping

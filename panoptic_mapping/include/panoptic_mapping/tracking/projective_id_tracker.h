@@ -90,6 +90,8 @@ class ProjectiveIDTracker : public IDTrackerBase {
   TrackingInfo renderTrackingInfoVertices(const Submap& submap,
                                           const InputData& input) const;
 
+  bool getLabelIfExists(const int input_id, LabelEntry* label) const;
+
  private:
   static config_utilities::Factory::RegistrationRos<
       IDTrackerBase, ProjectiveIDTracker, std::shared_ptr<Globals>>

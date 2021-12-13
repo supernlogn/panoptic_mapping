@@ -1,6 +1,7 @@
 #include "panoptic_mapping/map_management/activity_manager.h"
 
 #include <unordered_set>
+#include <utility>
 
 namespace panoptic_mapping {
 
@@ -13,6 +14,7 @@ void ActivityManager::Config::setupParamsAndPrinting() {
   setupParam("required_reobservations", &required_reobservations);
   setupParam("deactivate_after_missed_detections",
              &deactivate_after_missed_detections);
+  setupParam("new_background_per_n_ticks", &new_background_per_n_ticks);
 }
 
 ActivityManager::ActivityManager(const Config& config)
@@ -30,8 +32,11 @@ void ActivityManager::processSubmaps(SubmapCollection* submaps) {
       continue;
     }
 
-    // Check for re-detections of new submaps.
-    if (!checkRequiredRedetection(&submap)) {
+    if (config_.new_background_per_n_ticks > 0 &&
+        submap.getLabel() == PanopticLabel::kBackground) {
+      handleBackground(submaps, &submap);
+      // Check for re-detections of new submaps.
+    } else if (!checkRequiredRedetection(&submap)) {
       submaps_to_delete.insert(submap.getID());
       continue;
     }
@@ -48,6 +53,18 @@ void ActivityManager::processSubmaps(SubmapCollection* submaps) {
   // Reset.
   for (Submap& submap : *submaps) {
     submap.setWasTracked(false);
+  }
+}
+
+void ActivityManager::handleBackground(SubmapCollection* submaps,
+                                       Submap* submap) {
+  CHECK(submap->getLabel() == PanopticLabel::kBackground)
+      << "label provided is not background";
+  ++current_background_tracked_number_tracked_frames_;
+  if (current_background_tracked_number_tracked_frames_ >=
+      config_.new_background_per_n_ticks) {
+    submaps->deregisterBackground(submap);
+    current_background_tracked_number_tracked_frames_ = 1;
   }
 }
 
@@ -90,8 +107,8 @@ void ActivityManager::checkMissedDetections(Submap* submap) {
       // First missed detection, add to counter.
       it = submap_missed_detection_counts_.insert(
           submap_missed_detection_counts_.end(),
-          std::pair(submap->getID(),
-                    config_.deactivate_after_missed_detections));
+          std::pair<int, int>(submap->getID(),
+                              config_.deactivate_after_missed_detections));
     }
     it->second--;
     if (it->second <= 0) {

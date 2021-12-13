@@ -9,10 +9,12 @@
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
-#include "panoptic_mapping/map/submap.h"
 #include "panoptic_mapping/map/pose_manager.h"
+#include "panoptic_mapping/map/submap.h"
 
 namespace panoptic_mapping {
+
+constexpr int invalid_background_id_value = -2;
 
 /***
  * @brief This class contains and manages access to all submaps. It represents
@@ -68,9 +70,10 @@ class SubmapCollection {
    * SubmapID and InstanceID trackers.
    */
   void clear();
-  
+
   // Modifying poses
-  // PoseManager::poseIdType createNewPose(const Transformation & pose, const ros::Time & poseTime);
+  // PoseManager::poseIdType createNewPose(const Transformation & pose, const
+  // ros::Time & poseTime);
 
   // Access.
   size_t size() const { return submaps_.size(); }
@@ -132,6 +135,38 @@ class SubmapCollection {
    */
   static std::string checkMapFileExtension(const std::string& file);
 
+  void deregisterBackground(Submap* current_background_submap) {
+    current_background_submap->finishActivePeriod();
+    current_background_submap->setWasTracked(false);
+    Submap* new_background_submap =
+        createSubmap(current_background_submap->getConfig());
+    new_background_submap->setClassID(current_background_submap->getClassID());
+    new_background_submap->setLabel(PanopticLabel::kBackground);
+    new_background_submap->setName(current_background_submap->getName());
+    new_background_submap->setWasTracked(true);
+    new_background_submap->setIsActive(true);
+    background_id_ = new_background_submap->getID();
+
+    LOG(INFO) << " removed old background: "
+              << current_background_submap->getID()
+              << " and created new: " << background_id_;
+  }
+
+  bool backgroundExists() const {
+    return (background_id_ != invalid_background_id_value);
+  }
+
+  Submap* getBackground() {
+    assert(backgroundExists());
+    return getSubmapPtr(background_id_);
+  }
+
+  int getBackgroundID() const { return background_id_; }
+
+  void setBackgroundID(const int background_id) {
+    background_id_ = background_id;
+  }
+
  private:
   // IDs are managed within a submap collection.
   SubmapIDManager submap_id_manager_;
@@ -143,6 +178,9 @@ class SubmapCollection {
   std::unordered_map<int, size_t> id_to_index_;
   std::unordered_map<int, std::unordered_set<int>> instance_to_submap_ids_;
   int active_freespace_submap_id_ = -1;
+
+  // keeping only a single background
+  int background_id_ = invalid_background_id_value;
 
  public:
   // Iterators over submaps.

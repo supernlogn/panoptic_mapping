@@ -84,9 +84,21 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     float value;
     bool any_overlap;
     std::stringstream logging_details;
+    // see if it is background and there is already an active background
+    LabelEntry label;
+    const bool label_exists = getLabelIfExists(input_id, &label);
+    const bool is_2new_background =
+        (label_exists && label.label == PanopticLabel::kBackground &&
+         submaps->backgroundExists());
 
     // Find matches.
-    if (config_.use_class_data_for_matching || config_.verbosity >= 4) {
+    if (is_2new_background) {
+      // if there is a a background and
+      // new background is detected
+      matched = true;
+      submap_id = submaps->getBackgroundID();
+      value = 1.f;
+    } else if (config_.use_class_data_for_matching || config_.verbosity >= 4) {
       std::vector<std::pair<int, float>> ids_values;
       any_overlap = tracking_data.getAllMetrics(input_id, &ids_values,
                                                 config_.tracking_metric);
@@ -144,6 +156,12 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     } else if (allocate_new_submap) {
       n_new++;
       Submap* new_submap = allocateSubmap(input_id, submaps, input);
+      if (new_submap->getLabel() == PanopticLabel::kBackground) {
+        // this should occur only once, when there is no background submap
+        submaps->setBackgroundID(new_submap->getID());
+        new_submap->setIsActive(true);
+        new_submap->setWasTracked(true);
+      }
       if (new_submap) {
         input_to_output[input_id] = new_submap->getID();
       } else {
@@ -156,10 +174,12 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     alloc_timer.Pause();
 
     // Add current pose to all tracked submaps
-    const auto pose_id = PoseManager::getGlobalInstance()->createPose(input->T_M_C(), ros::Time(input->timestamp()));
-    for(auto it=submaps->begin(); it != submaps->end(); it++) {
+    const auto pose_id = PoseManager::getGlobalInstance()->createPose(
+        input->T_M_C(), ros::Time(input->timestamp()));
+    for (auto it = submaps->begin(); it != submaps->end(); it++) {
       if (it->isActive()) {
-        PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id, it->getID());
+        PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id,
+                                                            it->getID());
         it->addPoseID(pose_id);
       }
     }
@@ -183,7 +203,18 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     }
   }
   detail_timer.Stop();
-
+  int count_active_backgrounds = 0;
+  for (auto it_submap = submaps->begin(); it_submap != submaps->end();
+       it_submap++) {
+    if (it_submap->getLabel() == PanopticLabel::kBackground &&
+        it_submap->isActive()) {
+      ++count_active_backgrounds;
+    }
+  }
+  if (count_active_backgrounds > 1) {
+    ROS_ERROR("in project_id_tracker active backgrounds: %d",
+              count_active_backgrounds);
+  }
   // Translate the id image.
   for (auto it = input->idImagePtr()->begin<int>();
        it != input->idImagePtr()->end<int>(); ++it) {
@@ -225,6 +256,15 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
   }
 }
 
+bool ProjectiveIDTracker::getLabelIfExists(const int input_id,
+                                           LabelEntry* label) const {
+  bool ret = globals_->labelHandler()->segmentationIdExists(input_id);
+  if (ret) {
+    *label = globals_->labelHandler()->getLabelEntry(input_id);
+  }
+  return ret;
+}
+
 Submap* ProjectiveIDTracker::allocateSubmap(int input_id,
                                             SubmapCollection* submaps,
                                             InputData* input) {
@@ -248,10 +288,11 @@ TrackingInfoAggregator ProjectiveIDTracker::computeTrackingData(
   // Render each active submap in parallel to collect overlap statistics.
   SubmapIndexGetter index_getter(
       globals_->camera()->findVisibleSubmapIDs(*submaps, input->T_M_C()));
-  std::vector<std::future<std::vector<TrackingInfo>>> threads;
+  std::vector<std::future<std::vector<TrackingInfo>>> threads(
+      config_.rendering_threads);
   TrackingInfoAggregator tracking_data;
   for (int i = 0; i < config_.rendering_threads; ++i) {
-    threads.emplace_back(std::async(
+    threads[i] = (std::async(
         std::launch::async,
         [this, i, &tracking_data, &index_getter, submaps,
          input]() -> std::vector<TrackingInfo> {

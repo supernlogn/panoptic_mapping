@@ -5,10 +5,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ros/ros.h"
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/labels/label_handler_base.h"
 #include "panoptic_mapping/tracking/id_tracker_base.h"
+
+#include "ros/ros.h"
 
 namespace panoptic_mapping {
 
@@ -46,6 +47,8 @@ class GroundTruthIDTracker : public IDTrackerBase {
   bool parseInputInstance(int instance, SubmapCollection* submaps,
                           InputData* input);
 
+  bool getLabelIfExists(const int input_id, LabelEntry* label) const;
+
   /**
    * @brief Print all warnings of missing submaps to console and reset the
    * counter.
@@ -53,16 +56,13 @@ class GroundTruthIDTracker : public IDTrackerBase {
   void printAndResetWarnings();
 
  private:
-
   static config_utilities::Factory::RegistrationRos<
       IDTrackerBase, GroundTruthIDTracker, std::shared_ptr<Globals>>
       registration_;
   const Config config_;
   std::unordered_map<int, int> instance_to_id_;  // Track active maps.
   std::unordered_map<int, int> unknown_ids;      // For error handling.
-
 };
-
 
 }  // namespace panoptic_mapping
 

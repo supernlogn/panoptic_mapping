@@ -5,9 +5,8 @@
 #include <utility>
 #include <vector>
 
-#include <minkindr_conversions/kindr_tf.h>
 #include <minkindr_conversions/kindr_msg.h>
-
+#include <minkindr_conversions/kindr_tf.h>
 
 namespace panoptic_mapping {
 
@@ -60,7 +59,7 @@ void GroundTruthIDTracker::processInput(SubmapCollection* submaps,
       *it = it2->second;
     }
   }
-  
+
   // Allocate free space map if required.
   freespace_allocator_->allocateSubmap(submaps, input);
 }
@@ -68,22 +67,33 @@ void GroundTruthIDTracker::processInput(SubmapCollection* submaps,
 bool GroundTruthIDTracker::parseInputInstance(int instance,
                                               SubmapCollection* submaps,
                                               InputData* input) {
+  LabelEntry label;
+  const bool label_exists = getLabelIfExists(instance, &label);
+  const bool is_2new_background =
+      (label_exists && label.label == PanopticLabel::kBackground &&
+       submaps->backgroundExists());
   // Known existing submap.
-  auto it = instance_to_id_.find(instance);
-  if (it != instance_to_id_.end()) {
-    if (submaps->submapIdExists(it->second)) {
-      submaps->getSubmapPtr(it->second)->setWasTracked(true);
-      return true;
-    } else {
-      LOG_IF(WARNING, config_.verbosity >= 2)
-          << "Submap '" << it->second << "' for instance ID '" << instance
-          << "' has been deleted.";
-      instance_to_id_.erase(it);
+  if (is_2new_background) {
+    Submap* submap = submaps->getBackground();
+    submap->setWasTracked(true);
+    return true;
+  } else {
+    auto it = instance_to_id_.find(instance);
+    if (it != instance_to_id_.end()) {
+      if (submaps->submapIdExists(it->second)) {
+        Submap* submap = submaps->getSubmapPtr(it->second);
+        submap->setWasTracked(true);
+        return true;
+      } else {
+        LOG_IF(WARNING, config_.verbosity >= 2)
+            << "Submap '" << it->second << "' for instance ID '" << instance
+            << "' has been deleted.";
+        instance_to_id_.erase(it);
+      }
     }
   }
-
   // Check whether the instance code is known.
-  if (!globals_->labelHandler()->segmentationIdExists(instance)) {
+  if (!label_exists) {
     auto error_it = unknown_ids.find(instance);
     if (error_it == unknown_ids.end()) {
       unknown_ids[instance] = 1;
@@ -94,19 +104,31 @@ bool GroundTruthIDTracker::parseInputInstance(int instance,
   }
 
   // Allocate new submap.
-  const panoptic_mapping::LabelEntry & submapLabel = globals_->labelHandler()->getLabelEntry(instance);
-  Submap* new_submap = submap_allocator_->allocateSubmap(
-      submaps, input, instance,
-      submapLabel);
+  Submap* new_submap =
+      submap_allocator_->allocateSubmap(submaps, input, instance, label);
   if (new_submap) {
     new_submap->setInstanceID(instance);
     instance_to_id_[instance] = new_submap->getID();
+    if (label.label == PanopticLabel::kBackground) {
+      // backgroundExists() == false
+      // this can occur only at tracking start
+      submaps->setBackgroundID(new_submap->getID());
+    }
     return true;
   } else {
     LOG_IF(WARNING, config_.verbosity >= 2)
         << "Submap allocation failed for input ID '" << instance << "'.";
     return false;
   }
+}
+
+bool GroundTruthIDTracker::getLabelIfExists(const int instance,
+                                            LabelEntry* label) const {
+  bool ret = globals_->labelHandler()->segmentationIdExists(instance);
+  if (ret) {
+    *label = globals_->labelHandler()->getLabelEntry(instance);
+  }
+  return ret;
 }
 
 void GroundTruthIDTracker::printAndResetWarnings() {
