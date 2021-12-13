@@ -146,42 +146,6 @@ Transformation PoseManager::getPoseCorrectionTFInv(
   return result;
 }
 
-void PoseManager::addPoseMemoriamForSubmap(const submapIdType submap_id,
-                                           const Transformation& pose) {
-  if (submap_id_to_memoriam_id_.find(submap_id) !=
-      submap_id_to_memoriam_id_.end()) {
-    // just push the pose to the memoriam vector
-    const poseMemoriamIdType memoriam_id =
-        submap_id_to_memoriam_id_.at(submap_id);
-    memoriam_id_to_pose_vector_[memoriam_id].emplace_back(pose);
-  } else {
-    // create entry from submap_id to memoriam
-    // create entry from memoriam to a new vector
-    // add the pose to this vector
-    const poseMemoriamIdType memoriam_id = memoriam_id_to_pose_vector_.size();
-    submap_id_to_memoriam_id_[submap_id] = memoriam_id;
-    memoriam_id_to_pose_vector_[memoriam_id] = std::vector<Transformation>();
-    memoriam_id_to_pose_vector_[memoriam_id].emplace_back(pose);
-  }
-}
-
-void PoseManager::addPoseMemoriamForPose(const poseIdType pose_id) {
-  const Transformation& past_pose = getPoseTransformation(pose_id);
-  if (pose_id_to_memoriam_id_.find(pose_id) != pose_id_to_memoriam_id_.end()) {
-    // just push the pose to the memoriam vector
-    const poseMemoriamIdType memoriam_id = pose_id_to_memoriam_id_.at(pose_id);
-    memoriam_id_to_pose_vector_[memoriam_id].emplace_back(past_pose);
-  } else {
-    // create entry from pose_id to memoriam
-    // create entry from memoriam to a new vector
-    // add the pose to this vector
-    const poseMemoriamIdType memoriam_id = memoriam_id_to_pose_vector_.size();
-    pose_id_to_memoriam_id_[pose_id] = memoriam_id;
-    memoriam_id_to_pose_vector_[memoriam_id] = std::vector<Transformation>();
-    memoriam_id_to_pose_vector_[memoriam_id].emplace_back(past_pose);
-  }
-}
-
 PoseManager::PoseInformation PoseManager::getPoseInformation(
     const poseIdType pose_id) const {
   const auto it = poses_info_.find(pose_id);
@@ -247,41 +211,6 @@ bool PoseManager::hasPose(const poseIdType pose_id) const {
   auto it = poses_info_.find(pose_id);
   bool has_pose = (it != poses_info_.end());
   return has_pose;
-}
-
-const std::vector<Transformation>& PoseManager::getPoseMemoriamForSubmap(
-    const submapIdType submap_id) const {
-  if (submap_id_to_memoriam_id_.find(submap_id) !=
-      submap_id_to_memoriam_id_.end()) {
-    const poseMemoriamIdType memoriam_id =
-        submap_id_to_memoriam_id_.at(submap_id);
-    const std::vector<Transformation>& ret =
-        memoriam_id_to_pose_vector_.at(memoriam_id);
-    return ret;
-  }
-  return invalid_vector_;
-}
-
-const std::vector<Transformation>& PoseManager::getPoseMemoriamForPose(
-    const poseIdType pose_id) const {
-  if (pose_id_to_memoriam_id_.find(pose_id) != pose_id_to_memoriam_id_.end()) {
-    const poseMemoriamIdType memoriam_id = pose_id_to_memoriam_id_.at(pose_id);
-    const std::vector<Transformation>& ret =
-        memoriam_id_to_pose_vector_.at(memoriam_id);
-    return ret;
-  }
-  return invalid_vector_;
-}
-
-const std::vector<Transformation>& PoseManager::getPoseMemoriamForMemoriam(
-    const poseMemoriamIdType memoriam_id) const {
-  if (memoriam_id_to_pose_vector_.find(memoriam_id) !=
-      memoriam_id_to_pose_vector_.end()) {
-    const std::vector<Transformation>& ret =
-        memoriam_id_to_pose_vector_.at(memoriam_id);
-    return ret;
-  }
-  return invalid_vector_;
 }
 
 };  // namespace panoptic_mapping

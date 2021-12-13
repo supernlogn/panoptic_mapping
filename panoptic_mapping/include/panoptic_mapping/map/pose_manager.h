@@ -23,7 +23,6 @@ class PoseManager {
   typedef int poseIdType;
   typedef int poseIdxType;
   typedef int submapIdType;
-  typedef int poseMemoriamIdType;
 
   typedef struct {
     ros::Time time;
@@ -104,26 +103,6 @@ class PoseManager {
   Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
                                         const Transformation& other_pose) const;
 
-  /**
-   * @brief add past pose to the memoriam_id_to_pose_vector_ linked to this
-   * submap_id. After this function, the vector containing the past poses for
-   * this submap id will contain the pose at the end.
-   *
-   * @param submap_id the submap id to add the past pose to its memoriam.
-   * @param pose the past pose of the submap
-   */
-  void addPoseMemoriamForSubmap(const submapIdType submap_id,
-                                const Transformation& pose);
-
-  /**
-   * @brief add current pose with pose_id to the memoriam_id_to_pose_vector_
-   * linked to this pose_id. After this function, the vector containing the past
-   * poses for this pose id will contain the past_pose at the end.
-   *
-   * @param pose_id the pose id to add the past pose to its memoriam.
-   */
-  void addPoseMemoriamForPose(const poseIdType pose_id);
-
   // const accessors -- fetching elements
   // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;
@@ -132,13 +111,6 @@ class PoseManager {
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
   bool hasPose(const poseIdType pose_id) const;
-  // for the memoriam
-  const std::vector<Transformation>& getPoseMemoriamForSubmap(
-      const submapIdType submap_id) const;
-  const std::vector<Transformation>& getPoseMemoriamForPose(
-      const poseIdType submap_id) const;
-  const std::vector<Transformation>& getPoseMemoriamForMemoriam(
-      const poseMemoriamIdType memoriam_id) const;
 
  private:
   // pose-id - submap-id graph and the pose information
@@ -146,12 +118,6 @@ class PoseManager {
   std::map<submapIdType, std::set<poseIdType>> submap_id_to_pose_id_;
   std::map<poseIdType, std::set<submapIdType>> pose_id_to_submap_id_;
   poseIdType next_pose_id_index_ = 0;
-  // pose memoriam
-  std::map<poseIdType, poseMemoriamIdType> pose_id_to_memoriam_id_;
-  std::map<submapIdType, poseMemoriamIdType> submap_id_to_memoriam_id_;
-  std::map<poseMemoriamIdType, std::vector<Transformation>>
-      memoriam_id_to_pose_vector_;
-  const std::vector<Transformation> invalid_vector_;
   // handling next_pose access/creation
   poseIdType createNewPoseId() {
     const poseIdxType ret = next_pose_id_index_;
