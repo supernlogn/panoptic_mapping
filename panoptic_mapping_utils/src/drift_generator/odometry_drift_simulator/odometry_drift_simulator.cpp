@@ -13,8 +13,7 @@ OdometryDriftSimulator::OdometryDriftSimulator(Config config)
   reset();
   // initialize the random generator's seed
   NormalDistribution::seed_num = config.noise_config_seed;
-  VLOG(1) << "Initialized drifting odometry simulator, with config:\n"
-          << config_;
+  LOG(INFO) << "Drifting odometry simulator:\n" << config_;
 }
 
 void OdometryDriftSimulator::reset() {
@@ -148,7 +147,12 @@ OdometryDriftSimulator::VelocityNoiseDistributions::VelocityNoiseDistributions(
     : x(velocity_noise_configs.at("x")),
       y(velocity_noise_configs.at("y")),
       z(velocity_noise_configs.at("z")),
-      yaw(velocity_noise_configs.at("yaw")) {}
+      yaw(velocity_noise_configs.at("yaw")) {
+  LOG(INFO) << "x: " << velocity_noise_configs.at("x");
+  LOG(INFO) << "y: " << velocity_noise_configs.at("y");
+  LOG(INFO) << "z: " << velocity_noise_configs.at("z");
+  LOG(INFO) << "yaw: " << velocity_noise_configs.at("yaw");
+}
 
 OdometryDriftSimulator::PoseNoiseDistributions::PoseNoiseDistributions(
     const OdometryDriftSimulator::Config::NoiseConfigMap& pose_noise_configs)
@@ -157,7 +161,14 @@ OdometryDriftSimulator::PoseNoiseDistributions::PoseNoiseDistributions(
       z(pose_noise_configs.at("z")),
       yaw(pose_noise_configs.at("yaw")),
       pitch(pose_noise_configs.at("pitch")),
-      roll(pose_noise_configs.at("roll")) {}
+      roll(pose_noise_configs.at("roll")) {
+  LOG(INFO) << "x: " << pose_noise_configs.at("x");
+  LOG(INFO) << "y: " << pose_noise_configs.at("y");
+  LOG(INFO) << "z: " << pose_noise_configs.at("z");
+  LOG(INFO) << "yaw: " << pose_noise_configs.at("yaw");
+  LOG(INFO) << "pitch: " << pose_noise_configs.at("pitch");
+  LOG(INFO) << "roll: " << pose_noise_configs.at("roll");
+}
 
 void OdometryDriftSimulator::publishSimulatedPoseTf() const {
   transform_broadcaster_.sendTransform(getSimulatedPoseMsg());
