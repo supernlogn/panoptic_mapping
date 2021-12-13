@@ -1,21 +1,19 @@
 #!/usr/bin/env python
-
 import os
 import json
 import csv
 
+import tf
 import rospy
-from rospy.client import get_param
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from cv_bridge import CvBridge
-import cv2
-from PIL import Image as PilImage
-import numpy as np
-import tf
-
 from std_srvs.srv import Empty, EmptyResponse
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
+from PIL import Image as PilImage
+
+import numpy as np
+import cv2
 
 
 class FlatDataPlayer(object):
@@ -100,7 +98,8 @@ class FlatDataPlayer(object):
         now = rospy.Time.now()
         if self.start_time is None:
             self.start_time = now
-        if self.times[self.current_index] > self.play_rate * (now - self.start_time).to_sec():
+        if self.times[self.current_index] > self.play_rate * (
+                now - self.start_time).to_sec():
             return
         now = rospy.Time.from_sec(self.times[self.current_index])
         # now = self.times[self.current_index]
@@ -188,8 +187,8 @@ class FlatDataPlayer(object):
             pose_msg.transform.rotation.y = rotation[1]
             pose_msg.transform.rotation.z = rotation[2]
             pose_msg.transform.rotation.w = rotation[3]
-            pose_msg.child_frame_id = ""
-            self.pose_pub.publish(pose_msg)  # TODO: change this to publish
+            pose_msg.child_frame_id = self.sensor_frame_name
+            self.pose_pub.publish(pose_msg)
         else:
             self.tf_broadcaster.sendTransform(position, rotation, now,
                                               self.sensor_frame_name,
