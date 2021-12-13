@@ -1,17 +1,18 @@
 #ifndef PANOPTIC_MAPPING_MAP_POSE_MANAGER_H_
 #define PANOPTIC_MAPPING_MAP_POSE_MANAGER_H_
 
+#include <algorithm>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <map>
-#include <algorithm>
-#include <set>
-#include <iostream>
 
-#include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
+#include "panoptic_mapping/common/common.h"
+
 #include "tf/tf.h"
 
 namespace panoptic_mapping {
@@ -22,11 +23,12 @@ class PoseManager {
   typedef int poseIdType;
   typedef int poseIdxType;
   typedef int submapIdType;
+  typedef int poseMemoriamIdType;
 
   typedef struct {
-      ros::Time time;
-      poseIdxType pose_idx;
-      Transformation pose;
+    ros::Time time;
+    poseIdxType pose_idx;
+    Transformation pose;
   } PoseInformation;
 
   PoseManager() = default;
@@ -38,37 +40,36 @@ class PoseManager {
     return &instance;
   }
   // copying information
-  void copy(PoseManager * other) const;
+  void copy(PoseManager* other) const;
   // updating information
   void correctPoseRangeTransformation(
-                        const poseIdType start_pose_id,
-                        const poseIdType end_pose_id,
-                        const Transformation & corr_transformation);
+      const poseIdType start_pose_id, const poseIdType end_pose_id,
+      const Transformation& corr_transformation);
 
   void correctPoseRangeTransformation(
-                        const std::set<poseIdType> & pose_ids,
-                        const Transformation & corr_transformation);
+      const std::set<poseIdType>& pose_ids,
+      const Transformation& corr_transformation);
 
   void correctPoseRangeTransformation(
-                        const std::vector<poseIdType> & pose_ids,
-                        const Transformation & corr_transformation);
+      const std::vector<poseIdType>& pose_ids,
+      const Transformation& corr_transformation);
 
   void updateSinglePoseTransformation(const poseIdType pose_id,
-                                      const Transformation & new_pose);
+                                      const Transformation& new_pose);
 
   // adding information
-  poseIdType createPose(const Transformation & new_pose,
-                        const ros::Time & pose_time);
+  poseIdType createPose(const Transformation& new_pose,
+                        const ros::Time& pose_time);
 
   void addSubmapIdToPose(const poseIdType pose_id,
                          const submapIdType submap_id);
 
   void addSubmapIdToPoses(const poseIdType submap_id,
-                          const std::set<poseIdType> & pose_ids);
+                          const std::set<poseIdType>& pose_ids);
 
   // removing information
   void removeSubmapIdFromPoses(const submapIdType submap_id,
-                          const std::set<poseIdType> & pose_ids);
+                               const std::set<poseIdType>& pose_ids);
 
   void removeSubmapIdFromAllPoses(const submapIdType submap_id);
 
@@ -77,46 +78,80 @@ class PoseManager {
    */
   void clear();
 
-  /** 
+  /**
    * @brief erases submap id from submaps_id_associated of
    * each pose information
-   * The poses that will be affected are those with id inside pose_ids 
+   * The poses that will be affected are those with id inside pose_ids
    **/
   void removeSubmapIdFromPose(const poseIdType pose_id,
                               const submapIdType submap_id);
 
   // const accessors -- computing transformations
   /** @brief return a way to turn the pose at pose_id
-  * to other_pose by multiplying the result
-  * so that the below sentence holds true:
-  * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
-  **/
+   * to other_pose by multiplying the result
+   * so that the below sentence holds true:
+   * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
+   **/
   Transformation getPoseCorrectionTF(const poseIdType pose_id,
-                               const Transformation & other_pose) const;
+                                     const Transformation& other_pose) const;
 
   /**
    * @brief return a way to turn the other_pose
-   * to the pose at pose_id by multiplying the result 
+   * to the pose at pose_id by multiplying the result
    * so that the below sentence holds true:
    * getPoseCorrectionTF(pose_id, other_pose) * other_pose == pose@pose_id
    **/
   Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
-                              const Transformation & other_pose) const;
+                                        const Transformation& other_pose) const;
+
+  /**
+   * @brief add past pose to the memoriam_id_to_pose_vector_ linked to this
+   * submap_id. After this function, the vector containing the past poses for
+   * this submap id will contain the pose at the end.
+   *
+   * @param submap_id the submap id to add the past pose to its memoriam.
+   * @param pose the past pose of the submap
+   */
+  void addPoseMemoriamForSubmap(const submapIdType submap_id,
+                                const Transformation& pose);
+
+  /**
+   * @brief add current pose with pose_id to the memoriam_id_to_pose_vector_
+   * linked to this pose_id. After this function, the vector containing the past
+   * poses for this pose id will contain the past_pose at the end.
+   *
+   * @param pose_id the pose id to add the past pose to its memoriam.
+   */
+  void addPoseMemoriamForPose(const poseIdType pose_id);
 
   // const accessors -- fetching elements
+  // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;
   Transformation getPoseTransformation(const poseIdType pose_id) const;
   poseIdType getPoseIdAtTime(const ros::Time time) const;
-  const PoseInformation * getPoseInformationAtTime(const ros::Time time) const;
+  const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
   bool hasPose(const poseIdType pose_id) const;
+  // for the memoriam
+  const std::vector<Transformation>& getPoseMemoriamForSubmap(
+      const submapIdType submap_id) const;
+  const std::vector<Transformation>& getPoseMemoriamForPose(
+      const poseIdType submap_id) const;
+  const std::vector<Transformation>& getPoseMemoriamForMemoriam(
+      const poseMemoriamIdType memoriam_id) const;
 
  private:
+  // pose-id - submap-id graph and the pose information
   std::map<poseIdType, PoseInformation> poses_info_;
   std::map<submapIdType, std::set<poseIdType>> submap_id_to_pose_id_;
   std::map<poseIdType, std::set<submapIdType>> pose_id_to_submap_id_;
   poseIdType next_pose_id_index_ = 0;
-
+  // pose memoriam
+  std::map<poseIdType, poseMemoriamIdType> pose_id_to_memoriam_id_;
+  std::map<submapIdType, poseMemoriamIdType> submap_id_to_memoriam_id_;
+  std::map<poseMemoriamIdType, std::vector<Transformation>>
+      memoriam_id_to_pose_vector_;
+  const std::vector<Transformation> invalid_vector_;
   // handling next_pose access/creation
   poseIdType createNewPoseId() {
     const poseIdxType ret = next_pose_id_index_;
