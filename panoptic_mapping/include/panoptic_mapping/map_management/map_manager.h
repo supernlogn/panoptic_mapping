@@ -2,22 +2,21 @@
 #define PANOPTIC_MAPPING_MAP_MANAGEMENT_MAP_MANAGER_H_
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
-#include <queue>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
-#include "panoptic_mapping/map/submap.h"
-#include "panoptic_mapping/map/pseudo_submap.h"
-#include "panoptic_mapping/map/submap_collection.h"
 #include "panoptic_mapping/map/pose_manager.h"
+#include "panoptic_mapping/map/pseudo_submap.h"
+#include "panoptic_mapping/map/submap.h"
+#include "panoptic_mapping/map/submap_collection.h"
 #include "panoptic_mapping/map_management/activity_manager.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
-
 
 #include "cblox_msgs/MapHeader.h"
 #include "cblox_msgs/MapPoseUpdates.h"
@@ -45,7 +44,7 @@ class MapManager : public MapManagerBase {
     int num_submaps_to_merge_for_voxgraph = 1;
     // If true deactivated background submaps
     // don't get merged with other submaps.
-    bool avoid_merging_deactivated_backhround_submaps = false;
+    bool avoid_merging_deactivated_background_submaps = false;
     // If true background submaps will be published (and sent) to a voxgraph
     // node, when they get deactivated
     bool send_deactivated_submaps_to_voxgraph = false;
@@ -57,11 +56,16 @@ class MapManager : public MapManagerBase {
     // discraded afterwards when submaps are deactivated. This saves memory at
     // the loss of classification information.
     bool apply_class_layer_when_deactivating_submaps = false;
+    // If true the submaps contained by a background submap
+    // will also be updated using a weighted update
+    bool update_contained_submaps_with_voxblox = false;
+    double update_contained_submaps_sigma = 0.2;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
-      "/panoptic_mapper/background_submap_out";
+        "/panoptic_mapper/background_submap_out";
     std::string optimized_background_poses_topic_name =
-      "/voxgraph_mapper/submap_poses";
+        "/voxgraph_mapper/submap_poses";
+    std::string voxgraph_finish_map_srv_name = "/voxgraph_mapper/finish_map";
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
@@ -91,12 +95,12 @@ class MapManager : public MapManagerBase {
   bool mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
                              int* merged_id = nullptr);
   /**
-   * @brief   Receives an optimized middle pose from Voxgraph 
+   * @brief   Receives an optimized middle pose from Voxgraph
    *  for a previously published deactivated background submap.
-   *  It computes the transformation that can transform the 
-   *  middle pose of this background submap in panoptic mapping 
+   *  It computes the transformation that can transform the
+   *  middle pose of this background submap in panoptic mapping
    *  to the optimized one received from Voxgraph.
-   * 
+   *
    * @param msg The message comming from voxgraph with
    *            the optimized pose for the last background submap
    */
@@ -105,30 +109,41 @@ class MapManager : public MapManagerBase {
 
  protected:
   /**
-   * @brief Publish the background submaps when new ones are deactivated. 
+   * @brief Publish the background submaps when new ones are deactivated.
    * It should run in each cycle to be as much updated as possible.
-   * 
-   * @param submaps 
+   *
+   * @param submaps
    */
   void updatePublishedSubmaps(SubmapCollection* submaps);
 
   /**
    * @brief Publishes a given submap to voxgraph's submap topic.
-   * @param submapToPublish the most recent deactivated background submap to be published to voxgraph
-   * The publishing is done in the topic defined by optimized_background_poses_topic_name in config.
+   * @param submapToPublish the most recent deactivated background submap to be
+   * published to voxgraph The publishing is done in the topic defined by
+   * optimized_background_poses_topic_name in config.
    */
-  void publishSubmapToVoxGraph(SubmapCollection * submaps,
-                               const Submap & submapToPublish);
+  void publishSubmapToVoxGraph(SubmapCollection* submaps,
+                               const Submap& submapToPublish);
+
+  /**
+   * @brief evaluates the current trajectory of the submaps by computing the
+   * distance to the ground truth trajectory using an euclidean metric
+   *
+   * @param submaps
+   */
+  void evaluateTrajectory(SubmapCollection* submaps);
+
   /**
    * @brief Merges a pseudo submap fo A into a pseudo submap B.
-   * 
-   * @param submapA a PseudoSubmap to merge with PseudoSubmap B. 
-   *                This will be invalid after the merge. 
+   *
+   * @param submapA a PseudoSubmap to merge with PseudoSubmap B.
+   *                This will be invalid after the merge.
    * @param submapB This is a PseudoSubmap which will take place
-   *                into merging but also the merging result will be stored here.
+   *                into merging but also the merging result will be stored
+   * here.
    */
-  void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap & submapA,
-                                  PseudoSubmap * submapB);
+  void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap& submapA,
+                                         PseudoSubmap* submapB);
 
   std::string pruneBlocks(Submap* submap) const;
   std::vector<PseudoSubmap> pseudo_submaps_sent_;
@@ -146,12 +161,19 @@ class MapManager : public MapManagerBase {
   ros::NodeHandle nh_;
   ros::Publisher background_submap_publisher_;
   std::vector<int> published_submap_ids_to_voxgraph_;
+  size_t sent_counter_;
   // For receiving optimized poses from voxgraph
   ros::Subscriber optimized_background_poses_sub_;
   std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
+  size_t received_counter_;
   // For voxgraph_correction_tfs_ access synchronization
   static std::mutex callback_mutex_;
 
+  double poseInterpolationFunction(
+      const Eigen::Matrix<voxblox::FloatingPoint, 6, 1>& point_log_pose,
+      const Eigen::Matrix<voxblox::FloatingPoint, 6, 1>& base_log_pose,
+      const double point_time, const double base_time) const;
+  std::vector<geometry_msgs::TransformStamped> ground_truth_poses_;
   // Action tick counters.
   class Ticker {
    public:
