@@ -340,6 +340,7 @@ bool PanopticMapper::loadMap(const std::string& file_path) {
 
   // Loaded submaps are 'from the past' so set them to inactive.
   for (Submap& submap : *loaded_map) {
+    submap.setBackground_id_on_deactivation(loaded_map->getBackgroundID());
     submap.finishActivePeriod();
     if (config_.load_submaps_conservative) {
       submap.setChangeState(ChangeState::kUnobserved);
