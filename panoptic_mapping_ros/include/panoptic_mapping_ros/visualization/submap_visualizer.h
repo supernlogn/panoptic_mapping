@@ -32,6 +32,8 @@ class SubmapVisualizer {
     bool visualize_free_space = true;
     bool visualize_bounding_volumes = true;
     bool include_free_space = false;
+    bool use_different_colors_for_background = true;
+    int initial_background_color = 15;
     std::string ros_namespace;
 
     Config() { setConfigName("SubmapVisualizer"); }

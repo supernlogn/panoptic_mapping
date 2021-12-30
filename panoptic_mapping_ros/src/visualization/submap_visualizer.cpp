@@ -33,6 +33,9 @@ void SubmapVisualizer::Config::setupParamsAndPrinting() {
   setupParam("visualize_free_space", &visualize_free_space);
   setupParam("visualize_bounding_volumes", &visualize_bounding_volumes);
   setupParam("include_free_space", &include_free_space);
+  setupParam("use_different_colors_for_background",
+             &use_different_colors_for_background);
+  setupParam("initial_background_color", &initial_background_color);
 }
 
 void SubmapVisualizer::Config::printFields() const {
@@ -55,7 +58,6 @@ SubmapVisualizer::SubmapVisualizer(const Config& config,
   setVisualizationMode(visualizationModeFromString(config_.visualization_mode));
   setColorMode(colorModeFromString(config_.color_mode));
   id_color_map_.setItemsPerRevolution(config_.submap_color_discretization);
-
   // Setup publishers.
   nh_ = ros::NodeHandle(config_.ros_namespace);
   if (config_.visualize_free_space) {
@@ -533,6 +535,14 @@ void SubmapVisualizer::setSubmapVisColor(const Submap& submap,
       }
       case ColorMode::kSubmaps: {
         info->color = id_color_map_.colorLookup(info->id);
+        if (config_.use_different_colors_for_background &&
+            submap.getLabel() == PanopticLabel::kBackground) {
+          info->color = id_color_map_.colorLookup(
+              info->id + config_.initial_background_color);
+          // info->color = Color(0,0, (uint8_t)(256.0 * (float) info->id /
+          // (float) config_.submap_color_discretization));
+        }
+
         break;
       }
       case ColorMode::kClasses: {
