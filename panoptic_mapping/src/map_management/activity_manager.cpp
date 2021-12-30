@@ -42,7 +42,7 @@ void ActivityManager::processSubmaps(SubmapCollection* submaps) {
     }
 
     // Check tracking for active submaps.
-    checkMissedDetections(&submap);
+    checkMissedDetections(submaps, &submap);
   }
 
   // Remove requested submaps.
@@ -93,7 +93,8 @@ bool ActivityManager::checkRequiredRedetection(Submap* submap) {
   return false;
 }
 
-void ActivityManager::checkMissedDetections(Submap* submap) {
+void ActivityManager::checkMissedDetections(SubmapCollection* submaps,
+                                            Submap* submap) {
   // Check whether a submap was not detected for X consecutive frames.
   if (config_.deactivate_after_missed_detections <= 0) {
     return;
@@ -113,6 +114,7 @@ void ActivityManager::checkMissedDetections(Submap* submap) {
     it->second--;
     if (it->second <= 0) {
       submap->finishActivePeriod();
+      submap->setBackground_id_on_deactivation(submaps->getBackgroundID());
     }
   }
 }

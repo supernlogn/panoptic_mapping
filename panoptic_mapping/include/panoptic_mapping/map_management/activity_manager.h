@@ -49,7 +49,7 @@ class ActivityManager {
 
  private:
   bool checkRequiredRedetection(Submap* submap);
-  void checkMissedDetections(Submap* submap);
+  void checkMissedDetections(SubmapCollection* submaps, Submap* submap);
 
  private:
   const Config config_;
