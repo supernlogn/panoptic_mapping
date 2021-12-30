@@ -10,8 +10,8 @@
   <arg name="max_frames" default="1e9"/>
   <arg name="global_frame_name" default="world"/>
   <arg name="sensor_frame_name" default="depth_camera"/>
-  <arg name="use_noise" default="true"/>
-  <arg name="drift_type" default="severe"/>
+  <arg name="use_noise" default="false"/>
+  <arg name="drift_type" default="none"/>
   <arg name="use_sim_time" default="false"/>
 
 <!-- ============ Play Data ============ -->
