@@ -40,7 +40,7 @@ class LayerManipulator {
                                 float truncation_distance) const;
 
   void mergeSubmapAintoB(const Submap& A, Submap* B) const;
-  
+
   void mergePseudoSubmapAintoB(const PseudoSubmap& A, PseudoSubmap* B) const;
   /**
    * @brief Convert a TSDF into an ESDF layer, propagating shortest distances
