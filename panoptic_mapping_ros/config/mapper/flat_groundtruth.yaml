@@ -2,7 +2,7 @@
 verbosity: 3
 use_threadsafe_submap_collection: true
 use_transform_caching: true
-transform_lookup_time: 0.2
+transform_lookup_time: 0.5
 global_frame_name: world
 visualization_interval: -1.0
 data_logging_interval: -1.0
@@ -27,7 +27,7 @@ camera:
   
 submap_allocator:
   type: semantic  # semantic
-  verbosity: 1   
+  verbosity: 1
   
   # submaps
   voxels_per_side: &voxels_per_side 16
@@ -63,9 +63,9 @@ id_tracker:
   min_allocation_size: 2000 # px, for submap allocation.
   use_class_data_for_matching: true  
 
-tsdf_integrator:  
+tsdf_integrator:
   type: class_projective # projective, class_projective, single_tsdf
-  verbosity: 1     
+  verbosity: 1
 
   # Projective
   use_weight_dropoff: true
@@ -93,43 +93,46 @@ map_management:
   
   # voxgraph publishing
   num_submaps_to_merge_for_voxgraph: 3
-  avoid_merging_deactivated_backhround_submaps: false
-
+  avoid_merging_deactivated_background_submaps: true
+  
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
-  merge_deactivated_submaps_if_possible: false
+  merge_deactivated_submaps_if_possible: true
   apply_class_layer_when_deactivating_submaps: false
-  
+
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
-  
+    new_background_per_n_ticks: 20 # Update the background submaps per so much frames. Leave 0 to disable it
+
   tsdf_registrator:
     verbosity: 3
     min_voxel_weight: 0.000001
     error_threshold: -1 # m, negative = #vs
-    match_rejection_points: 20  
+    match_rejection_points: 20
     match_rejection_percentage: 0.02
     match_acceptance_points: 20
     match_acceptance_percentage: 0.02
     normalize_by_voxel_weight: true
-    
+
   layer_manipulator:
       verbosity: 3
       use_instance_classification: *use_instance_classification
-  
+
 visualization:
   submaps:
     type: submaps  # submaps, single_tsdf
     verbosity: 1
-    color_mode: classes # submaps, instances, color, normals, classes, change, classification
-    visualization_mode: active  # all, active, active_only, inactive, persistent
-    submap_color_discretization: 20
+    color_mode: color # submaps, instances, color, normals, classes, change, classification
+    visualization_mode: all  # all, active, active_only, inactive, persistent
+    submap_color_discretization: 800
     visualize_mesh: true
     visualize_tsdf_blocks: true
     visualize_free_space: true
     visualize_bounding_volumes: true
     include_free_space: false
+    use_different_colors_for_background: true
+    initial_background_color: 450
     mesh_min_weight: 0.000001
   
   planning:
