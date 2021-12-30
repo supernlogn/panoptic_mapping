@@ -103,6 +103,11 @@ class PoseManager {
   Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
                                         const Transformation& other_pose) const;
 
+  /**
+   * @brief Get all Submaps Connected to the submap with id submap_id
+   **/
+  std::set<submapIdType> getConnectedSubmaps(
+      const submapIdType submap_id) const;
   // const accessors -- fetching elements
   // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;

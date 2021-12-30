@@ -146,6 +146,21 @@ Transformation PoseManager::getPoseCorrectionTFInv(
   return result;
 }
 
+std::set<PoseManager::submapIdType> PoseManager::getConnectedSubmaps(
+    const PoseManager::submapIdType submap_id) const {
+  std::set<submapIdType> ret;
+  // TODO(supernlogn): make it faster
+  for (const poseIdType p_id : submap_id_to_pose_id_.at(submap_id)) {
+    for (const submapIdType s_id : pose_id_to_submap_id_.at(p_id)) {
+      ret.insert(s_id);
+    }
+  }
+  if (ret.find(submap_id) != ret.end()) {
+    ret.erase(submap_id);
+  }
+  return ret;
+}
+
 PoseManager::PoseInformation PoseManager::getPoseInformation(
     const poseIdType pose_id) const {
   const auto it = poses_info_.find(pose_id);
