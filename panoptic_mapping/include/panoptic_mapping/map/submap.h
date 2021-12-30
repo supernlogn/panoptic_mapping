@@ -103,6 +103,22 @@ class Submap {
   void setIsActive(bool is_active) { is_active_ = is_active; }
   void setWasTracked(bool was_tracked) { was_tracked_ = was_tracked; }
 
+  void setBackground_id_on_reactivation(const int v) {
+    background_id_on_reactivation_ = v;
+  }
+  void setBackground_id_on_deactivation(const int v) {
+    background_id_on_deactivation_ = v;
+  }
+
+  int getResponsibleBackground() const {
+    const bool is_active = isActive();
+    if (!is_active &&
+        background_id_on_reactivation_ == background_id_on_deactivation_) {
+      return background_id_on_reactivation_;
+    }
+    return -1;  // invalid background
+  }
+
   void addPoseID(const PoseManager::poseIdType pose_id);
   // Processing.
   /**
@@ -255,6 +271,10 @@ class Submap {
 
   // History of how the robot moved through the submap
   PoseIdHistory pose_id_history_;
+  // which submap was background when it is created
+  // reactivated and when it is deactivated
+  int background_id_on_reactivation_ = -1;
+  int background_id_on_deactivation_ = -2;
 };
 
 }  // namespace panoptic_mapping
