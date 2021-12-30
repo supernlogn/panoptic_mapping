@@ -1,11 +1,11 @@
-#ifndef UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
-#define UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
+#ifndef PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
+#define PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
 
-#include <ros/ros.h>
 #include <random>
 #include <string>
 
 #include <glog/logging.h>
+#include <ros/ros.h>
 
 namespace unreal_airsim {
 class NormalDistribution {
@@ -29,7 +29,7 @@ class NormalDistribution {
     friend std::ostream& operator<<(std::ostream& os, const Config& config);
   };
 
-  explicit NormalDistribution(double mean = 0.0, double stddev = 1.0)
+  explicit NormalDistribution(double mean = 0.0, double stddev = 0.0)
       : mean_(mean), stddev_(stddev) {
     CHECK_GE(stddev_, 0.0) << "Standard deviation must be non-negative";
   }
@@ -55,7 +55,16 @@ class NormalDistribution {
     // scale it using the change of variables formula
     return normal_distribution_(noise_generator_) * stddev_ + mean_;
   }
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const NormalDistribution& nd) {
+    os << "{ mean: " << nd.mean_ << ", std: " << nd.stddev_
+       << ", seed: " << nd.seed_num << " }" << std::endl;
+    return os;
+  }
+
   static int seed_num;
+
  private:
   const double mean_, stddev_;
 
@@ -64,4 +73,4 @@ class NormalDistribution {
 };
 }  // namespace unreal_airsim
 
-#endif  // UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
+#endif  // PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_NORMAL_DISTRIBUTION_H_
