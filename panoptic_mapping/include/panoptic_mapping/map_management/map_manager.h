@@ -66,6 +66,7 @@ class MapManager : public MapManagerBase {
     std::string optimized_background_poses_topic_name =
         "/voxgraph_mapper/submap_poses";
     std::string voxgraph_finish_map_srv_name = "/voxgraph_mapper/finish_map";
+    std::string save_trajectory_on_finish = "";
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;

@@ -115,6 +115,7 @@ class PoseManager {
   poseIdType getPoseIdAtTime(const ros::Time time) const;
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
+  const std::vector<PoseInformation> getAllPoses() const;
   bool hasPose(const poseIdType pose_id) const;
 
  private:

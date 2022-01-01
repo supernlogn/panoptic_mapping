@@ -56,6 +56,7 @@ void MapManager::Config::setupParamsAndPrinting() {
              "tsdf_registrator");
   setupParam("layer_manipulator_config", &layer_manipulator_config,
              "layer_manipulator");
+  setupParam("save_trajectory_on_finish", &save_trajectory_on_finish);
 }
 
 MapManager::MapManager(const Config& config)
@@ -257,7 +258,7 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     while (sent_counter_ > received_counter_) {
       sleep(1);
     }
-    LOG(INFO) << "finished waiting the last voxgraph optimization";
+    LOG(INFO) << "Finished waiting the last voxgraph optimization";
     optimize_poses_from_voxgraph(submaps);
   }
 
@@ -268,6 +269,21 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
           << "Deactivating submap " << submap.getID();
       submap.setBackground_id_on_deactivation(submaps->getBackgroundID());
       submap.finishActivePeriod();
+    }
+  }
+
+  if (!config_.save_trajectory_on_finish.empty()) {
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Saving trajectory to " << config_.save_trajectory_on_finish;
+    std::ofstream fw(config_.save_trajectory_on_finish,
+                     std::ios::out | std::ios::binary);
+    // write trajectory to a file
+    const auto trajectory = PoseManager::getGlobalInstance()->getAllPoses();
+    fw << trajectory.size() << '\n';
+    for (const auto pose : trajectory) {
+      fw << pose.pose << '\n';
+      fw << pose.pose_idx << '\n';
+      fw << pose.time.toSec() << '\n';
     }
   }
 

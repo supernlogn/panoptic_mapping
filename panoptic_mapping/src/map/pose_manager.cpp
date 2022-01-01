@@ -222,6 +222,15 @@ Transformation PoseManager::getPoseTransformationAtTime(
   return p_info->pose;
 }
 
+const std::vector<PoseManager::PoseInformation> PoseManager::getAllPoses()
+    const {
+  std::vector<PoseManager::PoseInformation> ret;
+  for (auto it = poses_info_.begin(); it != poses_info_.end(); it++) {
+    ret.push_back(it->second);
+  }
+  return ret;
+}
+
 bool PoseManager::hasPose(const poseIdType pose_id) const {
   auto it = poses_info_.find(pose_id);
   bool has_pose = (it != poses_info_.end());
