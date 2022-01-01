@@ -97,9 +97,9 @@ map_management:
   
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
-  merge_deactivated_submaps_if_possible: true
+  merge_deactivated_submaps_if_possible: false
   apply_class_layer_when_deactivating_submaps: false
-
+  save_trajectory_on_finish: "/home/ioannis/datasets/trajectory.in"
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
