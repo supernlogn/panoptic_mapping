@@ -12,6 +12,7 @@ catkin_package()
 
 cs_add_library(${PROJECT_NAME}
         src/evaluation/map_evaluator.cpp
+        src/evaluation/trajectory_evaluator.cpp
         )
 
 # cs_add_library(${PROJECT_NAME}
@@ -31,6 +32,11 @@ cs_add_executable(multi_map_evaluation
         app/multi_map_evaluation.cpp
         )
 target_link_libraries(multi_map_evaluation ${PROJECT_NAME})
+
+cs_add_executable(trajectory_evaluation
+        app/trajectory_evaluation.cpp
+        )
+target_link_libraries(trajectory_evaluation ${PROJECT_NAME})
 
 cs_add_executable(drift_generator_node
         src/drift_generator/drift_generator_node.cpp
