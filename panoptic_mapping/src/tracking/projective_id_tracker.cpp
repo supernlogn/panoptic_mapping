@@ -78,6 +78,10 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
   int n_new = 0;
   Timer alloc_timer("tracking/allocate_submaps");
   alloc_timer.Pause();
+  // Add current pose to all tracked submaps
+  const auto pose_id = PoseManager::getGlobalInstance()->createPose(
+      input->T_M_C(), ros::Time(input->timestamp()));
+
   for (const int input_id : tracking_data.getInputIDs()) {
     int submap_id;
     bool matched = false;
@@ -173,9 +177,6 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     }
     alloc_timer.Pause();
 
-    // Add current pose to all tracked submaps
-    const auto pose_id = PoseManager::getGlobalInstance()->createPose(
-        input->T_M_C(), ros::Time(input->timestamp()));
     for (auto it = submaps->begin(); it != submaps->end(); it++) {
       if (it->isActive()) {
         PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id,
