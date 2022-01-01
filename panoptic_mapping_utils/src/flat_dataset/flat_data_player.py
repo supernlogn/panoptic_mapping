@@ -5,6 +5,7 @@ import csv
 
 import tf
 import rospy
+from rospy.timer import sleep
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from cv_bridge import CvBridge
@@ -73,6 +74,7 @@ class FlatDataPlayer(object):
         self.start_time = None
 
         if self.wait:
+            sleep(10)
             self.start_srv = rospy.Service('~start', Empty, self.start)
         else:
             self.start(None)
