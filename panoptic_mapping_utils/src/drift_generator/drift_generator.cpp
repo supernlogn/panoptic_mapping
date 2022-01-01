@@ -33,8 +33,11 @@ void DriftGenerator::generate_noisy_pose_callback(
   noisy_transform_broadcaster_.sendTransform(msg_noisy_pose);
   // save a python dictionary with the original pose and the pose with added
   // noise.
+
   if (config_.save_to_file) {
-    noise_file_output_ << "{\"original\": {";
+    noise_file_output_ << "{"
+                       << "\"time\": " << msg.header.stamp.toSec() << ", ";
+    noise_file_output_ << "\"original\": {";
     noise_file_output_ << "\"rotation\""
                        << ": [" << msg.transform.rotation.x << ", "
                        << msg.transform.rotation.y << ", "
@@ -56,7 +59,7 @@ void DriftGenerator::generate_noisy_pose_callback(
                        << ", " << msg_noisy_pose.transform.translation.y << ", "
                        << msg_noisy_pose.transform.translation.z << "]";
     noise_file_output_ << "}";
-    noise_file_output_ << "}" << std::endl;
+    noise_file_output_ << "}" << '\n';
   }
 }
 
