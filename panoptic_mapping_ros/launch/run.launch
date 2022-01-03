@@ -7,8 +7,8 @@
   <arg name="visualize" default="true"/> 
   
   <!-- Flat Dataset args -->
-  <arg name="base_path" default="/home/ioannis/datasets/flat_dataset/run1"/> 
-  <arg name="play_rate" default="5"/>  <!-- Realtime factor -->
+  <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/> 
+  <arg name="play_rate" default="1"/>  <!-- Realtime factor -->
   <arg name="wait_time" default="0"/>  <!-- s -->
   <arg name="max_frames" default="1000"/> <!-- 90 -->
   
@@ -24,15 +24,16 @@
   
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
-  <arg name="load_file" default = "/home/ioannis/datasets/map_files/run1.panmap"/>
+  <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
 
   <!-- noise args -->
   <arg name="use_noise" value="true"/>
+  <arg name="drift_type" value="light"/>
 
 <!-- ============ Run ============ -->
   <!-- Play data -->
   <arg name="wait" default="true" if="$(arg load_map)"/>
-  <include file="$(find panoptic_mapping_utils)/launch/play_noisy_flat_dataset.launch" pass_all_args="true" unless="$(arg use_rio)" />
+  <include file="$(find panoptic_mapping_utils)/launch/play_flat_dataset_with_drift.launch" pass_all_args="true" unless="$(arg use_rio)" />
   <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" />  
   
   <!-- Mapper -->

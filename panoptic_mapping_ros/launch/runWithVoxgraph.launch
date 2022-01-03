@@ -44,7 +44,7 @@
 <!-- ============ Run ============ -->
   <!-- Play data -->
   <arg name="wait" default="true" if="$(arg load_map)"/>
-  <include file="$(find panoptic_mapping_utils)/launch/play_noisy_flat_dataset.launch" pass_all_args="true" unless="$(arg use_rio)" />
+  <include file="$(find panoptic_mapping_utils)/launch/play_flat_dataset_with_drift.launch" pass_all_args="true" unless="$(arg use_rio)" />
   <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" />
   
   <!-- Mapper -->
