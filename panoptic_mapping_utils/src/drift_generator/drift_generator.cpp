@@ -87,7 +87,7 @@ bool DriftGenerator::setupROS() {
 
 bool DriftGenerator::readParamsFromRos() {
   DriftGenerator::Config defaults;
-  nh_private_.param("save_noise_file_path", config_.save_file_path,
+  nh_private_.param("generated_path_file_path", config_.save_file_path,
                     defaults.save_file_path);
   nh_private_.param("save_noise_to_file", config_.save_to_file,
                     defaults.save_to_file);
@@ -106,7 +106,8 @@ DriftGenerator::Config DriftGenerator::Config::fromRosParams(
     const ros::NodeHandle& nh) {
   DriftGenerator::Config cfg;
   DriftGenerator::Config defaults;
-  nh.param("save_noise_file_path", cfg.save_file_path, defaults.save_file_path);
+  nh.param("generated_path_file_path", cfg.save_file_path,
+           defaults.save_file_path);
   nh.param("save_noise_to_file", cfg.save_to_file, defaults.save_to_file);
   nh.param("global_frame_name", cfg.global_frame_name,
            defaults.global_frame_name);
