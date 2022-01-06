@@ -14,6 +14,7 @@
 #include "panoptic_mapping/map/submap.h"
 #include "panoptic_mapping/map/submap_collection.h"
 #include "panoptic_mapping/map_management/activity_manager.h"
+#include "panoptic_mapping/map_management/interpolation_function.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
@@ -58,8 +59,7 @@ class MapManager : public MapManagerBase {
     bool apply_class_layer_when_deactivating_submaps = false;
     // If true the submaps contained by a background submap
     // will also be updated using a weighted update
-    bool update_contained_submaps_with_voxblox = false;
-    double update_contained_submaps_sigma = 0.2;
+    bool update_contained_submaps_with_correction = false;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
         "/panoptic_mapper/background_submap_out";
@@ -71,6 +71,7 @@ class MapManager : public MapManagerBase {
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
     LayerManipulator::Config layer_manipulator_config;
+    Interpolator::Config interpolator_config;
 
     Config() { setConfigName("MapManager"); }
 
@@ -167,13 +168,11 @@ class MapManager : public MapManagerBase {
   ros::Subscriber optimized_background_poses_sub_;
   std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
   size_t received_counter_;
+  // For correcting the poses
+  std::unique_ptr<Interpolator> interpolator_;
   // For voxgraph_correction_tfs_ access synchronization
   static std::mutex callback_mutex_;
 
-  double poseInterpolationFunction(
-      const Eigen::Matrix<voxblox::FloatingPoint, 6, 1>& point_log_pose,
-      const Eigen::Matrix<voxblox::FloatingPoint, 6, 1>& base_log_pose,
-      const double point_time, const double base_time) const;
   std::vector<geometry_msgs::TransformStamped> ground_truth_poses_;
   // Action tick counters.
   class Ticker {

@@ -50,6 +50,7 @@ cs_add_library(${PROJECT_NAME}
         src/integration/projection_interpolators.cpp
         src/integration/mesh_integrator.cpp
         src/map_management/map_manager.cpp
+        src/map_management/interpolation_function.cpp
         src/map/pose_manager.cpp
         src/map_management/null_map_manager.cpp
         src/map_management/activity_manager.cpp

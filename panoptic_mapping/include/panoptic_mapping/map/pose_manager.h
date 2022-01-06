@@ -112,6 +112,7 @@ class PoseManager {
   // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;
   Transformation getPoseTransformation(const poseIdType pose_id) const;
+  Transformation getInitPoseTransformation(const poseIdType pose_id) const;
   poseIdType getPoseIdAtTime(const ros::Time time) const;
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
@@ -123,6 +124,7 @@ class PoseManager {
   std::map<poseIdType, PoseInformation> poses_info_;
   std::map<submapIdType, std::set<poseIdType>> submap_id_to_pose_id_;
   std::map<poseIdType, std::set<submapIdType>> pose_id_to_submap_id_;
+  std::map<poseIdType, std::vector<Transformation>> poses_history;
   poseIdType next_pose_id_index_ = 0;
   // handling next_pose access/creation
   poseIdType createNewPoseId() {

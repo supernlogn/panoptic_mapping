@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <set>
+#include <utility>
 #include <vector>
 
 #define INVALID_POSE_ID_NUM -1
@@ -64,6 +65,11 @@ void PoseManager::updateSinglePoseTransformation(
     return;
   } else {
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
+    if (poses_history.find(pose_idx) == poses_history.end()) {
+      poses_history.insert(
+          std::make_pair(pose_idx, std::vector<Transformation>()));
+    }
+    poses_history[pose_idx].push_back(poses_info_[pose_idx].pose);
     poses_info_[pose_idx].pose = new_pose;
   }
 }
@@ -124,7 +130,7 @@ void PoseManager::clear() {
 Transformation PoseManager::getPoseCorrectionTF(
     const poseIdType pose_id, const Transformation& T_voxgraph) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose;
+  const Transformation& pose_at_pose_id = getInitPoseTransformation(pose_id);
   Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
   // LOG(INFO) << "getPoseCorrectionTF for Panoptic mapping pose: " << std::endl
   //           << pose_at_pose_id << std::endl
@@ -139,7 +145,7 @@ Transformation PoseManager::getPoseCorrectionTF(
 Transformation PoseManager::getPoseCorrectionTFInv(
     const poseIdType pose_id, const Transformation& T_voxgraph) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose;
+  const Transformation& pose_at_pose_id = getInitPoseTransformation(pose_id);
   Transformation result = T_voxgraph.inverse() * pose_at_pose_id;
 
   assert(result * T_voxgraph == pose_at_pose_id);
@@ -173,6 +179,18 @@ Transformation PoseManager::getPoseTransformation(
   assert(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& pose_transformation = poses_info_.at(pose_id).pose;
   return pose_transformation;
+}
+
+Transformation PoseManager::getInitPoseTransformation(
+    const poseIdType pose_id) const {
+  assert(poses_info_.find(pose_id) != poses_info_.end());
+  Transformation ret;
+  if (poses_history.find(pose_id) != poses_history.end()) {
+    ret = poses_history.at(pose_id)[0];
+  } else {
+    ret = getPoseTransformation(pose_id);
+  }
+  return ret;
 }
 
 PoseManager::poseIdType PoseManager::getPoseIdAtTime(

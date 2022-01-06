@@ -99,7 +99,8 @@ map_management:
   send_deactivated_submaps_to_voxgraph: true
   merge_deactivated_submaps_if_possible: false
   apply_class_layer_when_deactivating_submaps: false
-  save_trajectory_on_finish: "/home/ioannis/datasets/trajectory.in"
+  update_contained_submaps_with_correction: true
+
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
@@ -118,6 +119,11 @@ map_management:
   layer_manipulator:
       verbosity: 3
       use_instance_classification: *use_instance_classification
+
+  interpolator:
+      verbosity: 4
+      func_name: "exponentialSimpleTime"
+      function_config: [0.0, 0.5]
 
 visualization:
   submaps:

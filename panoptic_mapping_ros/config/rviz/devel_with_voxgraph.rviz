@@ -88,113 +88,51 @@ Visualization Manager:
           Unreliable: false
           Value: true
           Visible:
-            0_SM_Sofa_a: true
-            100_SM_Journal_a: true
-            101_SM_Dimmer_b: true
-            103_SM_Floor_a: true
-            106_SM_Picture_c: true
-            107_SM_Plant_a: true
-            108_SM_Journal_c: true
-            10_SM_Sofa_a: true
-            112_SM_Stack_of_Books_a: true
-            113_SM_Table_b: true
-            117_SM_Bed_a: true
-            11_SM_Table_Decor_a: true
-            126_SM_Floor_a: true
-            127_SM_Bed_b: true
-            128_SM_Ceiling_lamp_e: true
-            129_SM_Ceiling_lamp_i: true
-            12_SM_Tumblr_a: true
-            130_SM_Ceiling_lamp_k: true
-            131_SM_Office_Chair_base_a: true
-            132_SM_Ceiling_lamp_j: true
-            136_SM_Bed_a: true
-            13_SM_Coffee_Machine_a: true
-            142_SM_Office_Chair_base_a: true
-            144_SM_Floor_a: true
-            145_SM_Cup_c: true
-            146_SM_Coffee_table_a: true
-            147_SM_Cup_b: true
-            148_SM_Decor_a: true
-            149_SM_Kitchen_a: true
-            14_SM_TV_a: true
-            150_SM_Dimmer_a: true
-            151_SM_Cup_a: true
-            154_SM_Dimmer_b: true
-            155_SM_Decor_b: true
-            159_SM_Journal_c: true
-            160_SM_Picture_c: true
-            161_SM_Floor_a: true
-            162_SM_Picture_b: true
-            164_SM_Remote_a: true
-            165_SM_Picture_d: true
-            168_SM_Plate_b: true
-            16_SM_Wall_Clock_a: true
-            173_SM_Floor_a: true
-            174_SM_Plate_a: true
-            177_SM_Picture_b: true
-            178_SM_Kitchen_a: true
-            179_SM_Picture_a: true
-            17_SM_Floor_a: true
-            180_SM_Decor_b: true
-            181_SM_Cup_a: true
-            182_SM_Dimmer_b: true
-            183_SM_Coffee_table_a: true
-            184_SM_Floor_a: true
-            185_SM_Picture_c: true
-            186_SM_Journal_a: true
-            187_SM_Digital_Clock_a: true
-            189_SM_Remote_a: true
-            190_SM_Picture_c: true
-            191_SM_Picture_a: true
-            192_SM_Plant_a: true
-            193_SM_Journal_c: true
-            195_SM_Picture_d: true
-            1_SM_Stack_of_Books_c: true
-            206_SM_Floor_a: true
-            255_SM_Floor_a: true
-            29_SM_Floor_a: true
-            2_SM_Stack_of_Books_b: true
-            302_SM_Floor_a: true
-            337_SM_Floor_a: true
-            34_SM_Wall_Clock_a: true
-            3_SM_Stack_of_Books_d: true
-            435_SM_Floor_a: true
-            43_SM_Laptop_a: true
-            4_SM_Stack_of_Books_a: true
-            501_SM_Floor_a: true
-            52_SM_Wall_Clock_a: true
-            543_SM_Floor_a: true
-            599_SM_Floor_a: true
-            5_SM_Table_a: true
-            64_SM_Floor_a: true
-            665_SM_Floor_a: true
-            68_SM_Laptop_a: true
-            69_SM_Table_a: true
-            6_SM_Floor_a: true
-            70_SM_Coffee_Machine_a: true
-            71_SM_Stack_of_Books_a: true
-            728_SM_Floor_a: true
-            73_SM_TV_a: true
-            74_SM_Floor_a: true
-            75_SM_Kitchen_a: true
-            765_SM_Floor_a: true
-            76_SM_Table_b: true
-            796_SM_Floor_a: true
-            84_SM_Floor_a: true
-            86_SM_Journal_c: true
-            882_SM_Floor_a: true
-            88_SM_Coffee_table_a: true
-            8_SM_Stack_of_Books_e: true
-            90_SM_Picture_a: true
-            91_SM_Digital_Clock_a: true
-            93_SM_Cup_b: true
-            946_SM_Floor_a: true
-            961_UninitializedName: true
-            97_SM_Decor_b: true
-            98_SM_Cup_c: true
-            99_SM_Decor_a: true
-            9_SM_Stack_of_Books_f: true
+            103_SM_Wall_Clock_a: true
+            106_SM_Floor_a: true
+            119_SM_Laptop_a: true
+            120_SM_Table_a: true
+            121_SM_Coffee_Machine_a: true
+            122_SM_Floor_a: true
+            123_SM_Stack_of_Books_a: true
+            125_SM_TV_a: true
+            126_SM_Kitchen_a: true
+            127_SM_Table_b: true
+            134_SM_Floor_a: true
+            1_SM_Floor_a: true
+            24_SM_Floor_a: true
+            2_SM_Kitchen_a: true
+            33_SM_Table_a: true
+            39_SM_Kitchen_a: true
+            3_SM_Journal_c: true
+            42_SM_Table_b: true
+            43_SM_Floor_a: true
+            44_SM_TV_a: true
+            45_SM_Wall_Clock_a: true
+            46_SM_Coffee_Machine_a: true
+            47_SM_Table_Decor_a: true
+            48_SM_Coffee_Machine_a: true
+            49_SM_Tumblr_a: true
+            50_SM_Tumblr_b: true
+            52_SM_Sofa_a: true
+            53_SM_Table_Decor_a: true
+            54_SM_Floor_a: true
+            55_SM_Stack_of_Books_c: true
+            56_SM_Stack_of_Books_b: true
+            57_SM_Stack_of_Books_d: true
+            58_SM_Stack_of_Books_a: true
+            59_SM_Table_a: true
+            60_SM_Stack_of_Books_e: true
+            61_SM_Stack_of_Books_f: true
+            62_SM_Table_Decor_a: true
+            63_SM_Tumblr_a: true
+            64_SM_Coffee_Machine_a: true
+            65_SM_TV_a: true
+            67_SM_Wall_Clock_a: true
+            68_SM_Floor_a: true
+            77_SM_Floor_a: true
+            85_SM_Wall_Clock_a: true
+            94_SM_Laptop_a: true
             Value: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
@@ -326,27 +264,9 @@ Visualization Manager:
                 Value: true
                 submap_0: true
                 submap_1: true
-                submap_10: true
-                submap_11: true
-                submap_12: true
-                submap_13: true
-                submap_14: true
-                submap_15: true
-                submap_16: true
-                submap_17: true
-                submap_19: true
                 submap_2: true
-                submap_20: true
-                submap_21: true
-                submap_22: true
-                submap_23: true
                 submap_3: true
                 submap_4: true
-                submap_5: true
-                submap_6: true
-                submap_7: true
-                submap_8: true
-                submap_9: true
           Enabled: true
           Name: Meshes
         - Class: rviz/Marker
@@ -381,7 +301,7 @@ Visualization Manager:
           Topic: /voxgraph_mapper/pose_history
           Unreliable: false
           Value: false
-      Enabled: true
+      Enabled: false
       Name: Voxgraph
     - Class: rviz/TF
       Enabled: false
