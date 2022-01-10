@@ -4,7 +4,7 @@
   <arg name="clock_refresh_rate" default="50" />
   <arg name="data_player_refresh_rate" default="100" />
   <arg name="sim_speed_multiplier" default="5" />  
-  <arg name="wait" default="false"/>
+  <arg name="wait" default="true"/>
   <arg name="namespace" default="data"/>
   <arg name="use_detectron" default="false"/>
   <arg name="max_frames" default="1e9"/>
@@ -13,8 +13,7 @@
   <arg name="use_noise" default="false"/>
   <arg name="drift_type" default="none"/>
   <arg name="use_sim_time" default="false"/>
-  <arg name="generated_path_file_path" default="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt"/>
-  <arg name="save_noise_to_file" default="true"/>
+  <arg name="generated_path_file_path" default=""/>
 
 <!-- ============ Play Data ============ -->
   <param name="use_sim_time" value="$(arg use_sim_time)" />
@@ -41,7 +40,6 @@
     <param name="noisy_pose_topic" value="$(arg namespace)/pose" />
     <param name="ground_truth_pose_topic" value="$(arg namespace)/pose_ground_truth" />
     <param name="generated_path_file_path" value="$(arg generated_path_file_path)" />
-    <param name="save_noise_to_file" value="$(arg save_noise_to_file)" />
     <param name="global_frame_name" value="$(arg global_frame_name)" />
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
     <rosparam command="load" file="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/drift_$(arg drift_type).yaml" />

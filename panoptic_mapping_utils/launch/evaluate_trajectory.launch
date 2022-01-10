@@ -4,7 +4,7 @@
   <arg name="generated_path_file_path" default="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt"/>
   
   <!-- Params -->
-  <arg name="evaluate_only_optimized_points" default="true"/>
+  <arg name="evaluate_only_optimized_points" default="false"/>
   <arg name="trajectory_file_path" default="/home/ioannis/datasets/trajectory.in"/>
   <arg name="output_file_path" default="/home/ioannis/datasets/trajectory_evaluation.csv"/>
 

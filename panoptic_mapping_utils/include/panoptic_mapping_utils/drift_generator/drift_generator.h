@@ -18,7 +18,6 @@ class DriftGenerator {
         // Initialize from ROS params
         static Config fromRosParams(const ros::NodeHandle& nh);
         std::string save_file_path;
-        bool save_to_file;
         std::string noisy_pose_topic;
         std::string ground_truth_pose_topic;
         std::string sensor_frame_name = "depth_camera";
@@ -34,7 +33,7 @@ class DriftGenerator {
   void startupCallback(const ros::TimerEvent&);
   void onShutdown();  // called by the sigint handler
   static std::ofstream  initializeStreamFromRosParams(Config cfg) {
-    if (cfg.save_to_file) {
+    if (!cfg.save_file_path.empty()) {
       std::ofstream outstream(cfg.save_file_path.c_str(), std::ofstream::out);
       return outstream;
     }

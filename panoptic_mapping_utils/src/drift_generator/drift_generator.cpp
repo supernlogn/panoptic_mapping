@@ -34,7 +34,7 @@ void DriftGenerator::generate_noisy_pose_callback(
   // save a python dictionary with the original pose and the pose with added
   // noise.
 
-  if (config_.save_to_file) {
+  if (!config_.save_file_path.empty()) {
     noise_file_output_ << "{"
                        << "\"time\": " << msg.header.stamp.toSec() << ", ";
     noise_file_output_ << "\"original\": {";
@@ -73,10 +73,7 @@ void DriftGenerator::onShutdown() {
 }
 
 bool DriftGenerator::setupROS() {
-  // int queue_length = 50;
-  // if(config_.save_to_file) {
-  int queue_length = 100;
-  // }
+  const int queue_length = 100;
   noisy_pose_pub_ = nh_.advertise<geometry_msgs::TransformStamped>(
       config_.noisy_pose_topic, queue_length);
   pose_sub_ =
@@ -89,8 +86,6 @@ bool DriftGenerator::readParamsFromRos() {
   DriftGenerator::Config defaults;
   nh_private_.param("generated_path_file_path", config_.save_file_path,
                     defaults.save_file_path);
-  nh_private_.param("save_noise_to_file", config_.save_to_file,
-                    defaults.save_to_file);
   nh_private_.param("global_frame_name", config_.global_frame_name,
                     defaults.global_frame_name);
   nh_private_.param("sensor_frame_name", config_.sensor_frame_name,
@@ -108,7 +103,6 @@ DriftGenerator::Config DriftGenerator::Config::fromRosParams(
   DriftGenerator::Config defaults;
   nh.param("generated_path_file_path", cfg.save_file_path,
            defaults.save_file_path);
-  nh.param("save_noise_to_file", cfg.save_to_file, defaults.save_to_file);
   nh.param("global_frame_name", cfg.global_frame_name,
            defaults.global_frame_name);
   nh.param("sensor_frame_name", cfg.sensor_frame_name,

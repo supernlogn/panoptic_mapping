@@ -19,8 +19,20 @@ import multiprocessing
 import logging
 import yaml
 import rospy
+import coloredlogs
 
-logger = logging.getLogger("run_evaluations")
+
+def getLogger():
+    ret = logging.getLogger("run_evaluations")
+    ret.setLevel(logging.DEBUG)
+    fmt = ('[%(asctime)s] - %(name)s -'
+           ' {line:%(lineno)d} %(levelname)s - %(message)s')
+    coloredlogs.install(fmt=fmt, level='DEBUG', logger=ret)
+    return ret
+
+
+logger = getLogger()
+INSPECT_CALLS = False
 
 
 def getWindowId(window_name):
@@ -42,7 +54,7 @@ def getWindowId(window_name):
 
 
 def takeScreenshot(window_id, screenshot_path, start=None, size=None):
-    """ Take a screenshot of a window and crop it given
+    """ Takes a screenshot of a window and crops it given
     upper left corner (start) and area size of its
     final cropped form. The result is stored under screenshot_path.
 
@@ -64,31 +76,46 @@ def takeScreenshot(window_id, screenshot_path, start=None, size=None):
 
 
 def closeExperiment():
-    """ Close experiment by first signaling a shutdown of all ros application
-     and then killing the rosmaster and roscore
+    """ Closes an experiment by first signaling a shutdown of all ros
+    application and then killing the rosmaster and roscore.
     """
     rospy.signal_shutdown("experiment_process_shutdown")
     os.system("pkill -9 rosmaster")
     os.system("pkill -9 roscore")
 
 
-def runEvaluation(map_path):
-    """ Launched the panoptic mapping evaluation scripts
+def runEvaluation(map_path, generated_path_file_path, trajectory_file_path,
+                  trajectory_evaluation_path):
+    """ Launches the panoptic mapping evaluation scripts
     given the path of the map to evaluate.
 
     Args:
       map_path (str): path of the map to evaluate.
     """
     logger.info("launching map evaluation of map_file: %s", map_path)
-    os.system("roslaunch panoptic_mapping_utils evaluate_panmap.launch " +
-              "map_file:=%s" % map_path)
+    evaluate_map_cmd = "roslaunch panoptic_mapping_utils evaluate_panmap.launch"
+    evaluate_map_cmd += " map_file:=%s" % map_path
+    logger.debug(evaluate_map_cmd)
+    if not INSPECT_CALLS:
+        os.system(evaluate_map_cmd)
+    evaluate_trajectory_cmd = "roslaunch panoptic_mapping_utils"
+    evaluate_trajectory_cmd += " evaluate_trajectory.launch"
+    evaluate_trajectory_cmd += (" generated_path_file_path:=%s" %
+                                generated_path_file_path)
+    evaluate_trajectory_cmd += (" trajectory_file_path:=%s" %
+                                trajectory_file_path)
+    evaluate_trajectory_cmd += (" output_file_path:=%s" %
+                                trajectory_evaluation_path)
+    logger.debug(evaluate_trajectory_cmd)
+    if not INSPECT_CALLS:
+        os.system(evaluate_trajectory_cmd)
 
 
 def evaluateAfterMapIsBuilt(experiment_name,
                             map_file_path,
                             window_name,
                             screenshot_name,
-                            screenshots_dir="",
+                            experiments_dir="",
                             closing_func=None):
     """ This waits for the map of the panoptic mapping to be built
     and afterwards takes a screenshot of the rviz window and runs
@@ -101,29 +128,50 @@ def evaluateAfterMapIsBuilt(experiment_name,
     window_name (str): name of the window to take a screenshot from
     screenshot_name (str): name of the screenshot image file.
                     If it doesn't end with .png, a .png will be appended.
-    screenshots_dir (str, optional): directory to store screenshots to.
+    experiments_dir (str, optional): directory to store experiment data to.
                                      Defaults to "".
     closing_func (function, optional): function to launch for closing the
              experiments. If None, closeExperiment is used. Defaults to None.
     """
-    if os.path.exists(map_file_path):
-        os.system("rm %s" % map_file_path)
-    # wait till the map file appears
-    while not os.path.exists(map_file_path):
-        time.sleep(20)
+    generated_path_file_path = os.path.join(experiments_dir,
+                                            'generated_path.txt')
+    trajectory_file_path = os.path.join(experiments_dir, 'trajectory.in')
+    trajectory_evaluation_path = os.path.join(experiments_dir,
+                                              'trajectory.out')
+    if not INSPECT_CALLS:
+        if os.path.exists(map_file_path):
+            os.system("rm %s" % map_file_path)
+        if os.path.exists(trajectory_file_path):
+            os.system("rm %s" % trajectory_file_path)
+        # wait till the map and trajectory files appear
+        while not (os.path.exists(map_file_path)
+                   and os.path.exists(trajectory_file_path)):
+            time.sleep(20)
     logger.info("taking screenshot for %s", experiment_name)
     if not screenshot_name.endswith(".png"):
         screenshot_name += ".png"
-    screenshot_path = os.path.join(screenshots_dir, screenshot_name)
-    window_id = getWindowId(window_name)
-    takeScreenshot(window_id, screenshot_path)
+    screenshot_path = os.path.join(experiments_dir, screenshot_name)
+    if not INSPECT_CALLS:
+        window_id = getWindowId(window_name)
+        takeScreenshot(window_id, screenshot_path)
+
     logger.info("launching evaluations for %s", experiment_name)
-    runEvaluation(map_path=map_file_path)
+    runEvaluation(map_file_path, generated_path_file_path,
+                  trajectory_file_path, trajectory_evaluation_path)
     # stop all ros processes
     if closing_func is None:
         closeExperiment()
     else:
         closing_func()
+
+
+def changeBaseDictDataWithOtherDict(base_dict, other_dict):
+    for k, v in other_dict.items():
+        if isinstance(v, dict):
+            base_dict[k] = changeBaseDictDataWithOtherDict(base_dict[k], v)
+        else:
+            base_dict[k] = v
+    return base_dict
 
 
 def runExperiment(yaml_data, experiment_index, experiments_dir=""):
@@ -143,6 +191,19 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
     args_specific = yaml_data['experiment' + str(index)]
     for k, v in args_specific.items():
         args_experiment[k] = v
+    if 'base_panoptic_yaml_data' in yaml_data.keys():
+        with open(yaml_data['base_panoptic_yaml_data'], 'rb') as fr:
+            base_panoptic_yaml_data = yaml.load(fr, Loader=yaml.FullLoader)
+            experiment_panoptic_yaml_data_changes = args_experiment[
+                'panoptic_yaml_data']
+            args_experiment.pop('panoptic_yaml_data')
+        data_to_yaml_generated = changeBaseDictDataWithOtherDict(
+            base_panoptic_yaml_data, experiment_panoptic_yaml_data_changes)
+        with open(
+                os.path.join(
+                    os.path.dirname(yaml_data['base_panoptic_yaml_data']),
+                    args_experiment['config'] + '.yaml'), 'w') as fw:
+            yaml.dump(data_to_yaml_generated, fw)
     base_name = args_experiment.pop('base_name')
     experiment_name = base_name + args_experiment['name']
     window_name = "devel_with_voxgraph.rviz - RViz"
@@ -150,11 +211,16 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
                                                experiment_name + ".panmap")
     args_experiment[
         'save_map_path_when_finished'] = save_map_path_when_finished
+    generated_path_file_path = os.path.join(experiments_dir,
+                                            'generated_path.txt')
+    trajectory_file_path = os.path.join(experiments_dir, 'trajectory.in')
     # create complete call to panoptic mapping
     line_strs = [
         "%s:=%s" % (k, str(v)) for k, v in args_experiment.items()
         if k != 'name'
     ]
+    line_strs += ["generated_path_file_path:=%s" % generated_path_file_path
+                  ] + ["save_trajectory_on_finish:=%s" % trajectory_file_path]
     line = " ".join(line_strs)
     logger.debug(line)
     complete_call = " ".join(
@@ -163,7 +229,8 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
 
     # process functions
     def start_panoptic():
-        os.system(complete_call)
+        if not INSPECT_CALLS:
+            os.system(complete_call)
 
     def start_evaluation_wait():
         evaluateAfterMapIsBuilt(experiment_name, save_map_path_when_finished,
@@ -193,18 +260,27 @@ def main():
         argv (list, optional): It contains from 2 to 3 elements.
             Element [1] is the path of the yaml config file
             and element [2] can be the experiments directory.
-            Defaults to sys.argv.
+            Defaults to sys.argv. Element [2] is the number of
+            experiments already executed, so that no re-execution
+            occurs.
     """
     argv = sys.argv
+    logger.setLevel(logging.DEBUG)
     if len(argv) < 2:
         logger.error("Not enough arguments")
         return
     if len(argv) > 2:
         experiments_dir = argv[2]
     else:
+        argv1_strip = argv[1].strip()
+        last_dir = argv1_strip[argv1_strip.rindex('/') + 1:-len(".yaml")]
         experiments_dir = os.path.join(os.getenv('HOME'), "datasets/",
-                                       argv[1].strip()[:-len(".yaml")])
+                                       last_dir)
         logger.info("experiments directory set to = %s", experiments_dir)
+    continue_from_dir = 0  # allow not re-executing the experiments
+    # and start from this one
+    if len(argv) > 3:
+        continue_from_dir = int(argv[3])
     if not os.path.exists(experiments_dir):
         os.makedirs(experiments_dir)
     yaml_data = {}
@@ -213,7 +289,14 @@ def main():
     num_experiments = len(
         [k for k in yaml_data.keys() if k.startswith("experiment")])
     for i in range(num_experiments):
-        runExperiment(yaml_data, i, experiments_dir)
+        if i < continue_from_dir:
+            continue
+        experiment_i_dir = os.path.join(experiments_dir, 'experiment' + str(i))
+        try:
+            os.makedirs(experiment_i_dir)
+        except OSError:
+            pass
+        runExperiment(yaml_data, i, experiment_i_dir)
 
 
 if __name__ == "__main__":

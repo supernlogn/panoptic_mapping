@@ -9,7 +9,7 @@ from rospy.timer import sleep
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from cv_bridge import CvBridge
-from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import EmptyResponse
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from PIL import Image as PilImage
 
@@ -72,12 +72,11 @@ class FlatDataPlayer(object):
         self.times = sorted(self.times)
         self.times = [(x - self.times[0]) for x in self.times]
         self.start_time = None
-
-        if self.wait:
-            sleep(10)
-            self.start_srv = rospy.Service('~start', Empty, self.start)
-        else:
-            self.start(None)
+        sleep(10)
+        # if self.wait:
+        #     self.start_srv = rospy.Service('~start', Empty, self.start)
+        # else:
+        self.start(None)
 
     def start(self, _):
         self.running = True
