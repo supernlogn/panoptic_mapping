@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <cblox_ros/submap_conversions.h>
+#include <kindr/minimal/quat-transformation.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
 #include <std_srvs/Empty.h>
@@ -441,7 +442,7 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
                    (config_.num_submaps_to_merge_for_voxgraph / 2);
       int loop_index = 0;
       Transformation::Vector6 log_mid_pose_prev;
-      Transformation::Vector6 correction_log_tf_prev;
+      Transformation T_M_S_correction_prev;
       double mid_pose_time_prev = -1.0;
       // for all the map headers in the message
       for (const auto map_header : msg.map_headers) {
@@ -516,19 +517,22 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
                 InterpolationResult weights = interpolator_->interpolate(
                     log_c_s_middle_pose, log_mid_pose_prev, log_mid_pose,
                     c_s_time, mid_pose_time_prev, mid_pose_time);
-                const auto log_total_correction =
-                    weights.weight_prev * correction_log_tf_prev +
-                    weights.weight_after * correction_log_tf;
+
+                Transformation total_correction =
+                    kindr::minimal::interpolateComponentwise(
+                        T_M_S_correction, T_M_S_correction_prev,
+                        weights.weight_prev /
+                            sqrt(weights.weight_prev * weights.weight_prev +
+                                 weights.weight_after * weights.weight_after));
+
                 // update the connected submap's trajectory
                 PoseManager::getGlobalInstance()
                     ->updateSinglePoseTransformation(
-                        c_s_middle_pose_id,
-                        Transformation::exp(log_c_s_middle_pose +
-                                            log_total_correction));
+                        c_s_middle_pose_id, c_s_middle_pose * total_correction);
+
                 // update the connected submap's pose
                 const Transformation& c_s_initial_pose = c_s->getT_M_Sinit();
-                c_s->setT_M_S(c_s_initial_pose *
-                              Transformation::exp(log_total_correction));
+                c_s->setT_M_S(c_s_initial_pose * total_correction);
               }
             }
             PoseManager::getGlobalInstance()->updateSinglePoseTransformation(
@@ -536,8 +540,11 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
             LOG_IF(INFO, config_.verbosity >= 4)
                 << submaps_changed << "out of" << connected_submaps_ids.size()
                 << "submaps related to background changed \n";
-            correction_log_tf_prev = correction_log_tf;
           }
+
+          // if (config_.update_whole_trajectory) {
+          // }
+          T_M_S_correction_prev = T_M_S_correction;
           LOG_IF(INFO, config_.verbosity >= 4)
               << "pose for submap id:" << *id_it << " was set" << std::endl;
         } else {
