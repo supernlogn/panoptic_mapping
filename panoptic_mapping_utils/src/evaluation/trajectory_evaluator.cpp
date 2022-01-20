@@ -140,13 +140,10 @@ std::pair<double, double> distanceMetric(const Transformation& poseL,
   const auto logDiff = Transformation::log(poseL) - Transformation::log(poseR);
   double positional_error =
       (poseL.getPosition() - poseR.getPosition()).squaredNorm();
-  Eigen::Matrix<float, 3, 3> diagonalM;
-  diagonalM << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
+  const voxblox::Rotation qr =
+      poseL.getRotation() * poseR.getRotation().inverse();
   double rotational_error =
-      ((poseL.getRotation() * poseR.getRotation().inverse())
-           .getRotationMatrix() -
-       diagonalM)
-          .norm();
+      kindr::minimal::AngleAxisTemplate<float>(qr).angle();
   return std::make_pair(positional_error, rotational_error);
 }
 
@@ -176,9 +173,9 @@ std::string computeTrajectoryDistances(
     }
     numIncludedPoints++;
     totalSqError[0] += r_pos;
-    totalSqError[1] += r_rot;
+    totalSqError[1] += r_rot * r_rot;
     totalNormError[0] += sqrt(r_pos);
-    totalNormError[1] += sqrt(r_rot);
+    totalNormError[1] += r_rot;
   }
   std::stringstream ss;
   if (numPoints == 0) {
@@ -274,18 +271,18 @@ bool TrajectoryEvaluator::evaluate(
       request, optimized_trajectory_, ground_truth_trajectory_, matched_pairs);
   output_file_.open(request.output_file_path);
   output_file_ << "dg_mean_pos[m],"
-               << "dg_mean_rot[m],"
+               << "dg_mean_rot[rad],"
                << "dg_stddev_pos[m],"
-               << "dg_stddev_rot[m],"
+               << "dg_stddev_rot[rad],"
                << "dg_rmse_pos[m],"
-               << "dg_rmse_rot[m],"
+               << "dg_rmse_rot[rad],"
                << "dg_num_points,"
                << "og_mean_pos[m],"
-               << "og_mean_rot[m],"
+               << "og_mean_rot[rad],"
                << "og_stddev_pos[m],"
-               << "og_stddev_rot[m],"
+               << "og_stddev_rot[rad],"
                << "og_rmse_pos[m],"
-               << "og_rmse_rot[m],"
+               << "og_rmse_rot[rad],"
                << "og_num_points[m]" << '\n';
   output_file_ << dg_trajectories_errors << ',' << og_trajectories_errors
                << '\n';
