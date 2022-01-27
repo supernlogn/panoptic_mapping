@@ -42,7 +42,7 @@ class FlatDataPlayer(object):
         self.minimum_distance = self.cameraInfo['min_range']
         self.use_detectron = False
         self.flatten_distance = self.maximum_distance
-        self.tf_broadcaster = tf.TransformBroadcaster()
+        # self.tf_broadcaster = tf.TransformBroadcaster()
         # setup
         self.cv_bridge = CvBridge()
         stamps_file = os.path.join(self.data_path, 'timestamps.csv')
@@ -135,7 +135,7 @@ class FlatDataPlayer(object):
         data = np.transpose(np.vstack((x, y, z, rgb)))
         msg = PointCloud2()
         msg.header.stamp = now
-        msg.header.frame_id = 'camera'
+        msg.header.frame_id = self.sensor_frame_name
         msg.width = data.shape[0]
         msg.height = 1
         msg.fields = [
@@ -160,20 +160,19 @@ class FlatDataPlayer(object):
                     transform[row, col] = pose_data[row * 4 + col]
             rotation = tf.transformations.quaternion_from_matrix(transform)
             position = transform[:, 3]
+            pose_msg = TransformStamped()
+            pose_msg.header.stamp = now
+            pose_msg.header.frame_id = self.global_frame_name
+            pose_msg.transform.translation.x = position[0]
+            pose_msg.transform.translation.y = position[1]
+            pose_msg.transform.translation.z = position[2]
 
-        pose_msg = TransformStamped()
-        pose_msg.header.stamp = now
-        pose_msg.header.frame_id = self.global_frame_name
-        pose_msg.transform.translation.x = position[0]
-        pose_msg.transform.translation.y = position[1]
-        pose_msg.transform.translation.z = position[2]
-
-        pose_msg.transform.rotation.x = rotation[0]
-        pose_msg.transform.rotation.y = rotation[1]
-        pose_msg.transform.rotation.z = rotation[2]
-        pose_msg.transform.rotation.w = rotation[3]
-        pose_msg.child_frame_id = "camera"
-        self.pose_pub.publish(pose_msg)
+            pose_msg.transform.rotation.x = rotation[0]
+            pose_msg.transform.rotation.y = rotation[1]
+            pose_msg.transform.rotation.z = rotation[2]
+            pose_msg.transform.rotation.w = rotation[3]
+            pose_msg.child_frame_id = self.sensor_frame_name
+            self.pose_pub.publish(pose_msg)
         # self.tf_broadcaster.sendTransform(position, rotation, now, "camera",
         #                                   "world")
 
