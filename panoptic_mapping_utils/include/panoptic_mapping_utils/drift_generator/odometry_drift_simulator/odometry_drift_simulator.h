@@ -1,5 +1,5 @@
-#ifndef UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
-#define UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#ifndef PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#define PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
 
 #include <map>
 #include <string>
@@ -11,7 +11,7 @@
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include "normal_distribution.h"
+#include "drift_generator/odometry_drift_simulator/normal_distribution.h"
 
 namespace unreal_airsim {
 class OdometryDriftSimulator {
@@ -107,8 +107,7 @@ class OdometryDriftSimulator {
   // Transform publishing
   mutable tf2_ros::TransformBroadcaster transform_broadcaster_;
   void publishSimulatedPoseTf() const;
-  void publishGroundTruthPoseTf() const;
 };
 }  // namespace unreal_airsim
 
-#endif  // UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#endif  // PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
