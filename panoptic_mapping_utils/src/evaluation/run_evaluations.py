@@ -138,14 +138,19 @@ def evaluateAfterMapIsBuilt(experiment_name,
     trajectory_file_path = os.path.join(experiments_dir, 'trajectory.in')
     trajectory_evaluation_path = os.path.join(experiments_dir,
                                               'trajectory.out')
+    voxgraph_trajectory_file_path = os.path.join(experiments_dir,
+                                                 'voxgraph_traj.bag')
     if not INSPECT_CALLS:
         if os.path.exists(map_file_path):
             os.system("rm %s" % map_file_path)
         if os.path.exists(trajectory_file_path):
             os.system("rm %s" % trajectory_file_path)
+        if os.path.exists(voxgraph_trajectory_file_path):
+            os.system("rm %s" % voxgraph_trajectory_file_path)
         # wait till the map and trajectory files appear
         while not (os.path.exists(map_file_path)
-                   and os.path.exists(trajectory_file_path)):
+                   and os.path.exists(trajectory_file_path)
+                   and os.path.exists(voxgraph_trajectory_file_path)):
             time.sleep(20)
     logger.info("taking screenshot for %s", experiment_name)
     if not screenshot_name.endswith(".png"):
@@ -199,10 +204,12 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
             args_experiment.pop('panoptic_yaml_data')
         data_to_yaml_generated = changeBaseDictDataWithOtherDict(
             base_panoptic_yaml_data, experiment_panoptic_yaml_data_changes)
-        with open(
-                os.path.join(
-                    os.path.dirname(yaml_data['base_panoptic_yaml_data']),
-                    args_experiment['config'] + '.yaml'), 'w') as fw:
+        logger.info(data_to_yaml_generated)
+        yaml_file_path = os.path.join(
+            os.path.dirname(yaml_data['base_panoptic_yaml_data']),
+            args_experiment['config'] + '.yaml')
+        with open(yaml_file_path, 'w') as fw:
+            logger.debug("Writting yaml data to %s", yaml_file_path)
             yaml.dump(data_to_yaml_generated, fw)
     base_name = args_experiment.pop('base_name')
     experiment_name = base_name + args_experiment['name']
@@ -214,13 +221,18 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
     generated_path_file_path = os.path.join(experiments_dir,
                                             'generated_path.txt')
     trajectory_file_path = os.path.join(experiments_dir, 'trajectory.in')
+    voxgraph_traj_file_path = os.path.join(experiments_dir,
+                                           'voxgraph_traj.bag')
     # create complete call to panoptic mapping
     line_strs = [
         "%s:=%s" % (k, str(v)) for k, v in args_experiment.items()
         if k != 'name'
     ]
-    line_strs += ["generated_path_file_path:=%s" % generated_path_file_path
-                  ] + ["save_trajectory_on_finish:=%s" % trajectory_file_path]
+    line_strs += [
+        "generated_path_file_path:=%s" % generated_path_file_path
+    ] + ["save_trajectory_on_finish:=%s" % trajectory_file_path] + [
+        "save_voxgraph_trajectory_on_finish:=%s" % voxgraph_traj_file_path
+    ]
     line = " ".join(line_strs)
     logger.debug(line)
     complete_call = " ".join(

@@ -1,0 +1,179 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth.yaml"
+defaults:
+  base_name: "runWithVoxgraph_interpolation_"
+  name: default
+  use_noise: true
+  drift_type: severe
+  use_sim_time: false
+  play_rate: 5
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+# no interpolation
+experiment1:
+  name: light_none
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "none"
+
+experiment2:
+  name: moderate_none
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "none"
+
+experiment3:
+  name: strong_none
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "none"
+
+experiment4:
+  name: severe_none
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "none"
+
+# linear
+experiment5:
+  name: light_linear
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linear"
+
+experiment6:
+  name: moderate_linear
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linear"
+
+experiment7:
+  name: strong_linear
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linear"
+
+experiment8:
+  name: severe_linear
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linear"
+
+# linear with time
+experiment9:
+  name: light_linearTime
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linearTime"
+
+experiment10:
+  name: moderate_linearTime
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linearTime"
+
+experiment11:
+  name: strong_linearTime
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linearTime"
+
+experiment12:
+  name: severe_linearTime
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "linearTime"
+
+# exponential
+experiment13:
+  name: light_exponentialSimple
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimple" 
+
+experiment14:
+  name: moderate_exponentialSimple
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimple" 
+
+experiment15:
+  name: strong_exponentialSimple
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimple" 
+
+experiment16:
+  name: severe_exponentialSimple
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimple"
+
+# exponentialTime
+experiment17:
+  name: light_exponentialSimpleTime
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimpleTime"
+
+experiment18:
+  name: moderate_exponentialSimpleTime
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimpleTime" 
+
+experiment19:
+  name: strong_exponentialSimpleTime
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimpleTime" 
+
+experiment20:
+  name: severe_exponentialSimpleTime
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      interpolator:
+        func_name: "exponentialSimpleTime" 

@@ -1,0 +1,102 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth.yaml"
+defaults:
+  base_name: "runWithVoxgraph_al_"
+  name: default
+  use_noise: true
+  drift_type: severe
+  use_sim_time: false
+  play_rate: 5
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+experiment1:
+  name: light_w_alingment
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+      merge_deactivated_submaps_if_possible: false
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: true
+      update_whole_trajectory_with_voxgraph_tf: true
+
+experiment2:
+  name: moderate_w_alingment
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+      merge_deactivated_submaps_if_possible: false
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: true
+      update_whole_trajectory_with_voxgraph_tf: true
+
+experiment3:
+  name: strong_w_alingment
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+      merge_deactivated_submaps_if_possible: false
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: true
+      update_whole_trajectory_with_voxgraph_tf: true
+
+experiment4:
+  name: severe_w_alingment
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+      merge_deactivated_submaps_if_possible: false
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: true
+      update_whole_trajectory_with_voxgraph_tf: true
+
+experiment5:
+  name: light_wo_alingment
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+      merge_deactivated_submaps_if_possible: true
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: false
+      update_whole_trajectory_with_voxgraph_tf: false
+
+experiment6:
+  name: moderate_wo_alingment
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+      merge_deactivated_submaps_if_possible: true
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: false
+      update_whole_trajectory_with_voxgraph_tf: false
+
+experiment7:
+  name: strong_wo_alingment
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+      merge_deactivated_submaps_if_possible: true
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: false
+      update_whole_trajectory_with_voxgraph_tf: false
+
+experiment8:
+  name: severe_wo_alingment
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+      merge_deactivated_submaps_if_possible: true
+      apply_class_layer_when_deactivating_submaps: false
+      update_contained_submaps_with_correction: false
+      update_whole_trajectory_with_voxgraph_tf: false
