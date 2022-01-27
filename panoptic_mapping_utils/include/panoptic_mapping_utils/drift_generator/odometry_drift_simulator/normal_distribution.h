@@ -59,7 +59,7 @@ class NormalDistribution {
   friend std::ostream& operator<<(std::ostream& os,
                                   const NormalDistribution& nd) {
     os << "{ mean: " << nd.mean_ << ", std: " << nd.stddev_
-       << ", seed: " << nd.seed_num << " }" << std::endl;
+       << ", seed: " << nd.seed_num << " }" << '\n';
     return os;
   }
 
