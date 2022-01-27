@@ -5,15 +5,16 @@
 
 #include <glog/logging.h>
 #include <ros/ros.h>
+#include <tf/tfMessage.h>
 
 #include "panoptic_mapping_utils/drift_generator/odometry_drift_simulator/odometry_drift_simulator.h"
+
+#include "voxgraph/tools/io.h"
 
 DriftGenerator::DriftGenerator(const ros::NodeHandle& nh,
                                const ros::NodeHandle& nh_private)
     : nh_(nh),
       nh_private_(nh_private),
-      noise_file_output_(initializeStreamFromRosParams(
-          DriftGenerator::Config::fromRosParams(nh_private))),
       odometry_drift_simulator_(
           unreal_airsim::OdometryDriftSimulator::Config::fromRosParams(
               nh_private)) {
@@ -29,38 +30,20 @@ void DriftGenerator::generate_noisy_pose_callback(
   this->noisy_pose_pub_.publish(msg_noisy_pose);
   msg_noisy_pose.child_frame_id = config_.sensor_frame_name;
   msg_noisy_pose.header.frame_id = config_.global_frame_name;
-  msg_noisy_pose.header.stamp = msg.header.stamp;
-  noisy_transform_broadcaster_.sendTransform(msg_noisy_pose);
-  // save a python dictionary with the original pose and the pose with added
-  // noise.
-
-  if (!config_.save_file_path.empty()) {
-    noise_file_output_ << "{"
-                       << "\"time\": " << msg.header.stamp.toSec() << ", ";
-    noise_file_output_ << "\"original\": {";
-    noise_file_output_ << "\"rotation\""
-                       << ": [" << msg.transform.rotation.x << ", "
-                       << msg.transform.rotation.y << ", "
-                       << msg.transform.rotation.z << ", "
-                       << msg.transform.rotation.w << "], ";
-    noise_file_output_ << "\"translation\""
-                       << ": [" << msg.transform.translation.x << ", "
-                       << msg.transform.translation.y << ", "
-                       << msg.transform.translation.z << "]";
-    noise_file_output_ << "}, ";
-    noise_file_output_ << "\"noisy\":{";
-    noise_file_output_ << "\"rotation\""
-                       << ": [" << msg_noisy_pose.transform.rotation.x << ", "
-                       << msg_noisy_pose.transform.rotation.y << ", "
-                       << msg_noisy_pose.transform.rotation.z << ", "
-                       << msg_noisy_pose.transform.rotation.w << "], ";
-    noise_file_output_ << "\"translation\""
-                       << ": [" << msg_noisy_pose.transform.translation.x
-                       << ", " << msg_noisy_pose.transform.translation.y << ", "
-                       << msg_noisy_pose.transform.translation.z << "]";
-    noise_file_output_ << "}";
-    noise_file_output_ << "}" << '\n';
+  if (msg.header.stamp < ros::TIME_MIN) {
+    msg_noisy_pose.header.stamp = ros::TIME_MIN;
+  } else {
+    msg_noisy_pose.header.stamp = msg.header.stamp;
   }
+  noisy_transform_broadcaster_.sendTransform(msg_noisy_pose);
+  geometry_msgs::TransformStamped ground_truth_msg;
+  ground_truth_msg.child_frame_id = config_.sensor_frame_name;
+  ground_truth_msg.header = msg.header;
+  ground_truth_msg.transform = msg.transform;
+  // store poses to two vectors to save them later to a bag
+  // file.
+  ground_truth_poses_.push_back(ground_truth_msg);
+  noisy_poses_.push_back(msg_noisy_pose);
 }
 
 void DriftGenerator::startupCallback(const ros::TimerEvent&) {
@@ -69,6 +52,28 @@ void DriftGenerator::startupCallback(const ros::TimerEvent&) {
 }
 
 void DriftGenerator::onShutdown() {
+  // Write the poses generated to a rosbag
+  rosbag::Bag bag;
+  bag.open(config_.save_file_path, rosbag::bagmode::Write);
+  for (geometry_msgs::TransformStamped tf_stamped : ground_truth_poses_) {
+    if (tf_stamped.header.stamp < ros::TIME_MIN) {
+      tf_stamped.header.stamp = ros::TIME_MIN;
+    }
+    bag.write(config_.ground_truth_pose_topic, tf_stamped.header.stamp,
+              tf_stamped);
+  }
+  for (const geometry_msgs::TransformStamped& tf_stamped : noisy_poses_) {
+    bag.write(config_.noisy_pose_topic, tf_stamped.header.stamp, tf_stamped);
+  }
+  // write to /tf
+  for (const geometry_msgs::TransformStamped& tf_stamped : noisy_poses_) {
+    tf::tfMessage tf_msg;
+    tf_msg.transforms =
+        std::vector<geometry_msgs::TransformStamped>{tf_stamped};
+    bag.write("/tf", tf_stamped.header.stamp, tf_msg);
+  }
+  bag.close();
+  // inform for closing
   LOG(INFO) << "Shutting down: resetting DriftGenerator.";
 }
 
