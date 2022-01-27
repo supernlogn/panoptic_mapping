@@ -103,7 +103,6 @@ class FlatDataPlayer(object):
                 now - self.start_time).to_sec():
             return
         now = rospy.Time.from_sec(self.times[self.current_index])
-        # now = self.times[self.current_index]
         # Get all data and publish.
         file_id = os.path.join(self.data_path, self.ids[self.current_index])
 
