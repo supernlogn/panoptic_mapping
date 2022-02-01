@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <opencv2/core/mat.hpp>
@@ -76,6 +77,11 @@ class ProjectiveIDTracker : public IDTrackerBase {
 
  protected:
   // Internal methods.
+  void processBackgroundInput(SubmapCollection* submaps, InputData* input,
+                              std::unordered_map<int, int>* input_to_output,
+                              const std::vector<int> input_ids);
+  std::pair<std::vector<int>, std::vector<int>> seperateBackgroundIds(
+      const std::vector<int> input_ids);
   virtual bool classesMatch(int input_id, int submap_class_id);
   virtual Submap* allocateSubmap(int input_id, SubmapCollection* submaps,
                                  InputData* input);
@@ -97,6 +103,8 @@ class ProjectiveIDTracker : public IDTrackerBase {
       IDTrackerBase, ProjectiveIDTracker, std::shared_ptr<Globals>>
       registration_;
 
+  bool has_floor_z_ = false;
+  float current_floor_z = 100.0;
   // Members
   const Config config_;
 
