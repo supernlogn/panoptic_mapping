@@ -69,7 +69,7 @@ void MapManager::Config::setupParamsAndPrinting() {
   setupParam("rotZ", &rotZ);
 }
 
-Transformation computeT_S_O(const double rotX, const double rotY,
+Transformation computeT_C_R(const double rotX, const double rotY,
                             const double rotZ) {
   Eigen::Matrix3f rotMat1, rotMat2, rotMat3;
   kindr::minimal::AngleAxis rot1(rotX * M_PI / 180.0, Eigen::Vector3d::UnitX());
@@ -117,8 +117,7 @@ MapManager::MapManager(const Config& config)
   if (config_.send_deactivated_submaps_to_voxgraph) {
     interpolator_ =
         std::make_unique<Interpolator>(config_.interpolator_config, nh_);
-    T_S_O_ = computeT_S_O(config_.rotX, config_.rotY, config_.rotZ);
-    LOG(INFO) << "T_S_O = " << T_S_O_;
+    T_C_R_ = computeT_C_R(config_.rotX, config_.rotY, config_.rotZ);
     sent_counter_ = 0;
     received_counter_ = 0;
     background_submap_publisher_ = nh_.advertise<voxblox_msgs::Submap>(
@@ -524,7 +523,7 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
 
           const Transformation T_M_S_correction =
               PoseManager::getGlobalInstance()->getPoseCorrectionTF(
-                  mid_pose_id, T_optimal, T_S_O_);
+                  mid_pose_id, T_optimal, T_C_R_);
           const Transformation& submaps_initial_pose =
               submapToChange->getT_M_Sinit();
           submapToChange->setT_M_S(T_M_S_correction * submaps_initial_pose);
@@ -670,7 +669,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
 
       const Transformation& T_C_S =
           PoseManager::getGlobalInstance()->getInitPoseTransformation(pose_id);
-      const Transformation pose = T_C_S * T_S_O_;
+      const Transformation pose = T_C_S * T_C_R_;
       tf::poseKindrToMsg(pose.cast<double>(), &pose_msg.pose);
       submap_msg.trajectory.poses.emplace_back(pose_msg);
     }

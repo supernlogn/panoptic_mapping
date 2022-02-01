@@ -206,7 +206,7 @@ class MapManager : public MapManagerBase {
   ros::Publisher background_submap_publisher_;
   std::vector<int> published_submap_ids_to_voxgraph_;
   size_t sent_counter_;
-  Transformation T_S_O_;
+  Transformation T_C_R_;
   // For receiving optimized poses from voxgraph
   ros::Subscriber optimized_background_poses_sub_;
   std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
