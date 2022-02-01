@@ -23,6 +23,7 @@ class DriftGenerator {
     std::string ground_truth_pose_topic;
     std::string sensor_frame_name = "depth_camera";
     std::string global_frame_name = "world";
+    bool use_tf_transforms = true;
   };
 
   explicit DriftGenerator(const ros::NodeHandle& nh,

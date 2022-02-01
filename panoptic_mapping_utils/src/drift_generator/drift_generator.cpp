@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <tf/tfMessage.h>
 
+#include "panoptic_mapping_utils/drift_generator/odometry_drift_simulator/normal_distribution.h"
 #include "panoptic_mapping_utils/drift_generator/odometry_drift_simulator/odometry_drift_simulator.h"
 
 #include "voxgraph/tools/io.h"
@@ -27,7 +28,6 @@ void DriftGenerator::generate_noisy_pose_callback(
   odometry_drift_simulator_.tick(msg);
   geometry_msgs::TransformStamped msg_noisy_pose =
       odometry_drift_simulator_.getSimulatedPoseMsg();
-  this->noisy_pose_pub_.publish(msg_noisy_pose);
   msg_noisy_pose.child_frame_id = config_.sensor_frame_name;
   msg_noisy_pose.header.frame_id = config_.global_frame_name;
   if (msg.header.stamp < ros::TIME_MIN) {
@@ -35,7 +35,11 @@ void DriftGenerator::generate_noisy_pose_callback(
   } else {
     msg_noisy_pose.header.stamp = msg.header.stamp;
   }
-  noisy_transform_broadcaster_.sendTransform(msg_noisy_pose);
+  if (config_.use_tf_transforms) {
+    noisy_transform_broadcaster_.sendTransform(msg_noisy_pose);
+  } else {
+    noisy_pose_pub_.publish(msg_noisy_pose);
+  }
   geometry_msgs::TransformStamped ground_truth_msg;
   ground_truth_msg.child_frame_id = config_.sensor_frame_name;
   ground_truth_msg.header = msg.header;
@@ -99,6 +103,8 @@ bool DriftGenerator::readParamsFromRos() {
                     defaults.noisy_pose_topic);
   nh_private_.param("ground_truth_pose_topic", config_.ground_truth_pose_topic,
                     defaults.ground_truth_pose_topic);
+  nh_private_.param("use_tf_transforms", config_.use_tf_transforms,
+                    defaults.use_tf_transforms);
   return true;
 }
 
@@ -115,5 +121,7 @@ DriftGenerator::Config DriftGenerator::Config::fromRosParams(
   nh.param("noisy_pose_topic", cfg.noisy_pose_topic, defaults.noisy_pose_topic);
   nh.param("ground_truth_pose_topic", cfg.ground_truth_pose_topic,
            defaults.ground_truth_pose_topic);
+  nh.param("use_tf_transforms", cfg.use_tf_transforms,
+           defaults.use_tf_transforms);
   return cfg;
 }
