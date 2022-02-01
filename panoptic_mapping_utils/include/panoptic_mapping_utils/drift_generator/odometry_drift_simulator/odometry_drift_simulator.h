@@ -11,7 +11,7 @@
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include "drift_generator/odometry_drift_simulator/normal_distribution.h"
+#include "normal_distribution.h"  // NOLINT
 
 namespace unreal_airsim {
 class OdometryDriftSimulator {
@@ -72,7 +72,6 @@ class OdometryDriftSimulator {
       const geometry_msgs::TransformStamped& simulated_pose_msg) const;
   geometry_msgs::TransformStamped convertGroundTruthToDriftedPoseMsg(
       const geometry_msgs::TransformStamped& ground_truth_pose_msg) const;
-
   void publishTfs() const;
 
  private:
