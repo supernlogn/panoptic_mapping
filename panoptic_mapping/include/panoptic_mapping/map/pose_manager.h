@@ -92,7 +92,8 @@ class PoseManager {
    * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
    **/
   Transformation getPoseCorrectionTF(const poseIdType pose_id,
-                                     const Transformation& other_pose) const;
+                                     const Transformation& other_pose,
+                                     const Transformation& T_pm_voxgraph) const;
 
   /**
    * @brief return a way to turn the other_pose
@@ -117,7 +118,12 @@ class PoseManager {
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
   const std::vector<PoseInformation> getAllPoses() const;
+  std::vector<Transformation> getAllPosesTransformation() const;
+  std::set<PoseManager::poseIdType> getAllPosesId() const;
   bool hasPose(const poseIdType pose_id) const;
+
+ protected:
+  Transformation gravityAlignPose(const Transformation& input_pose) const;
 
  private:
   // pose-id - submap-id graph and the pose information

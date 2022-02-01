@@ -22,7 +22,7 @@ void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
                                                  const poseIdType end_pose_id,
                                                  const Transformation& T_corr) {
   LOG_IF(INFO, true) << "correcting " << (end_pose_id - start_pose_id + 1)
-                     << " transformations with " << T_corr << std::endl;
+                     << " transformations with " << T_corr << '\n';
   for (auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
@@ -35,7 +35,7 @@ void PoseManager::correctPoseRangeTransformation(
     const std::set<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
   LOG_IF(INFO, true) << "correcting " << pose_ids.size()
-                     << " transformations with " << T_corr << std::endl;
+                     << " transformations with " << T_corr << '\n';
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
@@ -48,7 +48,7 @@ void PoseManager::correctPoseRangeTransformation(
     const std::vector<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
   LOG_IF(INFO, true) << "correcting " << pose_ids.size()
-                     << " transformations with " << T_corr << std::endl;
+                     << " transformations with " << T_corr << '\n';
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
@@ -62,6 +62,7 @@ void PoseManager::updateSinglePoseTransformation(
   const auto it = poses_info_.find(pose_id);
   if (it == poses_info_.end()) {
     // not found
+    LOG(WARNING) << "pose " << pose_id << " not found";
     return;
   } else {
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
@@ -128,27 +129,23 @@ void PoseManager::clear() {
 }
 
 Transformation PoseManager::getPoseCorrectionTF(
-    const poseIdType pose_id, const Transformation& T_voxgraph) const {
+    const poseIdType pose_id, const Transformation& T_voxgraph,
+    const Transformation& T_pm_voxgraph) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = getInitPoseTransformation(pose_id);
-  Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
-  // LOG(INFO) << "getPoseCorrectionTF for Panoptic mapping pose: " << std::endl
-  //           << pose_at_pose_id << std::endl
-  //           << "and optimized pose:" << std::endl
-  //           << T_voxgraph << std::endl
-  //           << "correction transformation" << std::endl
-  //           << result << std::endl;
-  assert(pose_at_pose_id * result == T_voxgraph);
+  const Transformation& pose_at_pose_id =
+      getInitPoseTransformation(pose_id) * T_pm_voxgraph;
+  const Transformation gr_aligned_pose_at_pose_id =
+      gravityAlignPose(pose_at_pose_id);
+  Transformation result = T_voxgraph * gr_aligned_pose_at_pose_id.inverse();
+  assert(result * gr_aligned_pose_at_pose_id == T_voxgraph);
   return result;
 }
 
 Transformation PoseManager::getPoseCorrectionTFInv(
     const poseIdType pose_id, const Transformation& T_voxgraph) const {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = getInitPoseTransformation(pose_id);
-  Transformation result = T_voxgraph.inverse() * pose_at_pose_id;
-
-  assert(result * T_voxgraph == pose_at_pose_id);
+  Transformation result =
+      getPoseCorrectionTF(pose_id, T_voxgraph, Transformation()).inverse();
+  // result * T_voxgraph == gr_aligned_pose_at_pose_id
   return result;
 }
 
@@ -247,6 +244,38 @@ const std::vector<PoseManager::PoseInformation> PoseManager::getAllPoses()
     ret.push_back(it->second);
   }
   return ret;
+}
+
+std::vector<Transformation> PoseManager::getAllPosesTransformation() const {
+  std::vector<Transformation> ret;
+  for (auto it = poses_info_.begin(); it != poses_info_.end(); it++) {
+    ret.push_back(it->second.pose);
+  }
+  return ret;
+}
+
+std::set<PoseManager::poseIdType> PoseManager::getAllPosesId() const {
+  std::set<PoseManager::poseIdType> ret;
+  for (auto it = poses_info_.begin(); it != poses_info_.end(); it++) {
+    ret.insert(it->second.pose_idx);
+  }
+  return ret;
+}
+
+Transformation PoseManager::gravityAlignPose(
+    const Transformation& input_pose) const {
+  // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
+  Transformation::Vector6 T_vec = input_pose.log();
+
+  // Print a warning if the original pitch & roll components were large
+  constexpr float angle_threshold_rad = 30.f /* deg */ / 180.f * M_PI;
+  // Set the roll and pitch to zero
+  T_vec[3] = 0;
+  T_vec[4] = 0;
+
+  // Return the gravity aligned pose as a translation + quaternion,
+  // using the exponential map
+  return Transformation::exp(T_vec);
 }
 
 bool PoseManager::hasPose(const poseIdType pose_id) const {

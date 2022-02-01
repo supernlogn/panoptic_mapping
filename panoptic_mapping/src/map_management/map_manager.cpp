@@ -13,8 +13,10 @@
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
 #include <std_srvs/Empty.h>
+#include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/conversions.h>
 #include <voxgraph/frontend/submap_collection/voxgraph_submap.h>
+#include <voxgraph/tools/io.h>
 
 namespace panoptic_mapping {
 
@@ -58,6 +60,30 @@ void MapManager::Config::setupParamsAndPrinting() {
              "layer_manipulator");
   setupParam("interpolator_config", &interpolator_config, "interpolator");
   setupParam("save_trajectory_on_finish", &save_trajectory_on_finish);
+  setupParam("save_voxgraph_trajectory_on_finish",
+             &save_voxgraph_trajectory_on_finish);
+  setupParam("update_whole_trajectory_with_voxgraph_tf",
+             &update_whole_trajectory_with_voxgraph_tf);
+  setupParam("rotX", &rotX);
+  setupParam("rotY", &rotY);
+  setupParam("rotZ", &rotZ);
+}
+
+Transformation computeT_S_O(const double rotX, const double rotY,
+                            const double rotZ) {
+  Eigen::Matrix3f rotMat1, rotMat2, rotMat3;
+  kindr::minimal::AngleAxis rot1(rotX * M_PI / 180.0, Eigen::Vector3d::UnitX());
+  kindr::minimal::AngleAxis rot2(rotY * M_PI / 180.0, Eigen::Vector3d::UnitY());
+  kindr::minimal::AngleAxis rot3(rotZ * M_PI / 180.0, Eigen::Vector3d::UnitZ());
+  rotMat1 =
+      rot1.getRotationMatrix()
+          .cast<voxblox::FloatingPoint>();  // -90 around x-axis --> rotation
+                                            // around the side axis2
+  rotMat2 = rot2.getRotationMatrix().cast<voxblox::FloatingPoint>();
+  rotMat3 = rot3.getRotationMatrix().cast<voxblox::FloatingPoint>();
+  voxblox::Quaternion q123(rotMat1 * rotMat2 * rotMat3);
+  const Transformation T_S_O(Eigen::Vector3f(0, 0, 0), q123);
+  return T_S_O;
 }
 
 MapManager::MapManager(const Config& config)
@@ -91,6 +117,8 @@ MapManager::MapManager(const Config& config)
   if (config_.send_deactivated_submaps_to_voxgraph) {
     interpolator_ =
         std::make_unique<Interpolator>(config_.interpolator_config, nh_);
+    T_S_O_ = computeT_S_O(config_.rotX, config_.rotY, config_.rotZ);
+    LOG(INFO) << "T_S_O = " << T_S_O_;
     sent_counter_ = 0;
     received_counter_ = 0;
     background_submap_publisher_ = nh_.advertise<voxblox_msgs::Submap>(
@@ -163,7 +191,7 @@ void MapManager::pruneActiveBlocks(SubmapCollection* submaps) {
       if (published_id == id) {
         LOG(INFO) << "HAVE TO remove submap : " << id
                   << "from published_submap_ids_to_voxgraph_"
-                  << " at " << __LINE__ << std::endl;
+                  << " at " << __LINE__ << '\n';
         break;
       }
     }
@@ -231,7 +259,7 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
         if (current_id == id) {
           LOG_IF(INFO, config_.verbosity >= 4)
               << "Submap " << id << " was deactivated, could not be matched."
-              << std::endl;
+              << '\n';
         }
       }
     }
@@ -243,9 +271,6 @@ void MapManager::performChangeDetection(SubmapCollection* submaps) {
 }
 
 void MapManager::finishMapping(SubmapCollection* submaps) {
-  // call voxgraph for one last time
-  std_srvs::Empty empty_message;
-
   // Remove all empty blocks.
   std::stringstream info;
   info << "Finished mapping: ";
@@ -254,6 +279,7 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
   }
   LOG_IF(INFO, config_.verbosity >= 3) << info.str();
 
+  // call voxgraph for one last time
   // send the last background submaps to voxgraph
   // and call for a full graph optimization
   if (config_.send_deactivated_submaps_to_voxgraph) {
@@ -263,6 +289,20 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     }
     LOG(INFO) << "Finished waiting the last voxgraph optimization";
     optimize_poses_from_voxgraph(submaps);
+    // call voxgraph's service to save trajectory provided
+    if (!config_.save_voxgraph_trajectory_on_finish.empty()) {
+      LOG_IF(INFO, config_.verbosity >= 3)
+          << "Saving Voxgraph trajectory to:"
+          << config_.save_voxgraph_trajectory_on_finish;
+      ros::ServiceClient sec = nh_.serviceClient<voxblox_msgs::FilePath>(
+          "/voxgraph_mapper/save_pose_history_to_file");
+      voxblox_msgs::FilePath msg;
+      msg.request.file_path = config_.save_voxgraph_trajectory_on_finish;
+      if (!sec.call(msg)) {
+        LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
+                   << sec.exists();
+      }
+    }
   }
 
   // Deactivate last submaps.
@@ -278,16 +318,23 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
   if (!config_.save_trajectory_on_finish.empty()) {
     LOG_IF(INFO, config_.verbosity >= 3)
         << "Saving trajectory to " << config_.save_trajectory_on_finish;
-    std::ofstream fw(config_.save_trajectory_on_finish,
-                     std::ios::out | std::ios::binary);
     // write trajectory to a file
     const auto trajectory = PoseManager::getGlobalInstance()->getAllPoses();
-    fw << trajectory.size() << '\n';
-    for (const auto pose : trajectory) {
-      fw << pose.pose << '\n';
-      fw << pose.pose_idx << '\n';
-      fw << pose.time.toSec() << '\n';
+    std::vector<geometry_msgs::PoseStamped> trajectoryPoses;
+    for (const auto& p_info : trajectory) {
+      geometry_msgs::PoseStamped pose_stamped_msg;
+      // avoid time 0
+      if (p_info.time < ros::TIME_MIN) {
+        pose_stamped_msg.header.stamp = ros::TIME_MIN;
+      } else {
+        pose_stamped_msg.header.stamp = p_info.time;
+      }
+      pose_stamped_msg.header.frame_id = "world";
+      tf::poseKindrToMsg(p_info.pose.cast<double>(), &pose_stamped_msg.pose);
+      trajectoryPoses.push_back(pose_stamped_msg);
     }
+    voxgraph::io::savePoseHistoryToFile(config_.save_trajectory_on_finish,
+                                        trajectoryPoses);
   }
 
   LOG_IF(INFO, config_.verbosity >= 3) << "Merging Submaps:";
@@ -323,7 +370,7 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
         if (published_id == id) {
           LOG(INFO) << "HAVE TO remove submap : " << id
                     << "from published_submap_ids_to_voxgraph_"
-                    << " at " << __LINE__ << std::endl;
+                    << " at " << __LINE__ << '\n';
           break;
         }
       }
@@ -385,7 +432,7 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
           if (*it == submap_id) {
             LOG(INFO) << "HAVE TO remove submap : " << submap_id
                       << "from published_submap_ids_to_voxgraph_"
-                      << " at " << __LINE__ << std::endl;
+                      << " at " << __LINE__ << '\n';
             *it = other.getID();
           }
         }
@@ -413,7 +460,7 @@ void MapManager::optimized_voxgraph_submaps_callback(
       << "received for time " << msg.header.stamp.toSec() << "with"
       << msg.map_headers.size() << " map_headers."
       << "Current number of submap ids stored is: "
-      << published_submap_ids_to_voxgraph_.size() << std::endl;
+      << published_submap_ids_to_voxgraph_.size() << '\n';
   // push the message received to the queue of messages.
   {
     std::lock_guard<std::mutex> guard(callback_mutex_);
@@ -441,18 +488,21 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
       auto id_it = published_submap_ids_to_voxgraph_.begin() +
                    (config_.num_submaps_to_merge_for_voxgraph / 2);
       int loop_index = 0;
-      Transformation::Vector6 log_mid_pose_prev;
+      V6_t log_mid_pose_prev;
       Transformation T_M_S_correction_prev;
-      double mid_pose_time_prev = -1.0;
+      double mid_pose_time_prev = 0.0;
+      // int mid_pose_id_prev = -2;
+      LOG(INFO) << "msg.map_headers.size = " << msg.map_headers.size();
       // for all the map headers in the message
       for (const auto map_header : msg.map_headers) {
         // get the actual transformation coming from Voxgraph
         kindr::minimal::QuatTransformationTemplate<double> tf_received;
         tf::poseMsgToKindr(map_header.pose_estimate.map_pose, &tf_received);
-        const Transformation T_optimal(tf_received.cast<FloatingPoint>());
-
+        const Transformation T_optimal(
+            tf_received.cast<voxblox::FloatingPoint>());
+        // LOG(INFO) << "T_optimal received: " << T_optimal.getPosition();
         if (id_it == published_submap_ids_to_voxgraph_.end()) {
-          ROS_ERROR("There are less ids than map_headers");
+          LOG(ERROR) << "There are less ids than map_headers";
           break;
         }
         // get middle pose from pose history
@@ -464,7 +514,7 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
         const Transformation mid_pose =
             PoseManager::getGlobalInstance()->getInitPoseTransformation(
                 mid_pose_id);
-        const auto log_mid_pose = Transformation::log(mid_pose);
+        const V6_t log_mid_pose = Transformation::log(mid_pose);
         const double mid_pose_time = PoseManager::getGlobalInstance()
                                          ->getPoseInformation(mid_pose_id)
                                          .time.toSec();
@@ -473,83 +523,35 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
           Submap* submapToChange = submaps->getSubmapPtr(*id_it);
 
           const Transformation T_M_S_correction =
-              PoseManager::getGlobalInstance()->getPoseCorrectionTF(mid_pose_id,
-                                                                    T_optimal);
+              PoseManager::getGlobalInstance()->getPoseCorrectionTF(
+                  mid_pose_id, T_optimal, T_S_O_);
           const Transformation& submaps_initial_pose =
               submapToChange->getT_M_Sinit();
-          PoseManager::getGlobalInstance()->updateSinglePoseTransformation(
-              mid_pose_id, T_optimal);
-          submapToChange->setT_M_S(submaps_initial_pose * T_M_S_correction);
+          submapToChange->setT_M_S(T_M_S_correction * submaps_initial_pose);
+
           if (config_.update_contained_submaps_with_correction) {
             const auto correction_log_tf =
                 Transformation::log(T_M_S_correction);
             const auto connected_submaps_ids =
                 PoseManager::getGlobalInstance()->getConnectedSubmaps(*id_it);
-            int submaps_changed = 0;
             // for every submap sharing trajectory with the background submap
             for (const int c_s_id : connected_submaps_ids) {
               if (!submaps->submapIdExists(c_s_id)) {
                 continue;
               }
-              ++submaps_changed;
               Submap* c_s = submaps->getSubmapPtr(c_s_id);
-              int r_b_id = c_s->getResponsibleBackground();
-              if (r_b_id >= 0) {
-                // get middle pose of the connected submap
-                const Submap::PoseIdHistory& c_s_pose_id_hist =
-                    c_s->getPoseHistory();
-                auto c_s_poseHistory_iterator = c_s_pose_id_hist.begin();
-                std::advance(c_s_poseHistory_iterator,
-                             c_s_pose_id_hist.size() / 2);
-                const int c_s_middle_pose_id = *c_s_poseHistory_iterator;
-                // compute the update weight function
-                // a gaussian type is used here
-                const Transformation c_s_middle_pose =
-                    PoseManager::getGlobalInstance()->getInitPoseTransformation(
-                        c_s_middle_pose_id);
-                const auto log_c_s_middle_pose =
-                    Transformation::log(c_s_middle_pose);
-                const double c_s_time =
-                    PoseManager::getGlobalInstance()
-                        ->getPoseInformation(c_s_middle_pose_id)
-                        .time.toSec();
-
-                InterpolationResult weights = interpolator_->interpolate(
-                    log_c_s_middle_pose, log_mid_pose_prev, log_mid_pose,
-                    c_s_time, mid_pose_time_prev, mid_pose_time);
-
-                Transformation total_correction =
-                    kindr::minimal::interpolateComponentwise(
-                        T_M_S_correction, T_M_S_correction_prev,
-                        weights.weight_prev /
-                            sqrt(weights.weight_prev * weights.weight_prev +
-                                 weights.weight_after * weights.weight_after));
-
-                // update the connected submap's trajectory
-                PoseManager::getGlobalInstance()
-                    ->updateSinglePoseTransformation(
-                        c_s_middle_pose_id, c_s_middle_pose * total_correction);
-
-                // update the connected submap's pose
-                const Transformation& c_s_initial_pose = c_s->getT_M_Sinit();
-                c_s->setT_M_S(c_s_initial_pose * total_correction);
-              }
+              updateForegroundSubmapPose(c_s, T_M_S_correction, log_mid_pose,
+                                         mid_pose_time, T_M_S_correction_prev,
+                                         log_mid_pose_prev, mid_pose_time_prev);
             }
-            PoseManager::getGlobalInstance()->updateSinglePoseTransformation(
-                mid_pose_id, T_optimal);
-            LOG_IF(INFO, config_.verbosity >= 4)
-                << submaps_changed << "out of" << connected_submaps_ids.size()
-                << "submaps related to background changed \n";
           }
-
-          // if (config_.update_whole_trajectory) {
-          // }
+          if (config_.update_whole_trajectory_with_voxgraph_tf) {
+            correctSubmapTrajectory(*submapToChange);
+          }
           T_M_S_correction_prev = T_M_S_correction;
-          LOG_IF(INFO, config_.verbosity >= 4)
-              << "pose for submap id:" << *id_it << " was set" << std::endl;
         } else {
-          ROS_ERROR("TRYING TO CHANGE SUBMAP ID %d THAT DOES NOT EXIST",
-                    *id_it);
+          LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
+                     << " THAT DOES NOT EXIST";
         }
         ++id_it;
         ++loop_index;
@@ -558,6 +560,47 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
       }
       voxgraph_correction_tfs_.pop();
     }
+  }
+}
+
+void MapManager::updateForegroundSubmapPose(
+    Submap* c_s, const Transformation& T_M_S_correction,
+    const V6_t& log_mid_pose, const double mid_pose_time,
+    const Transformation& T_M_S_correction_prev, const V6_t& log_mid_pose_prev,
+    const double mid_pose_time_prev) {
+  // get middle pose of the connected submap
+  const Submap::PoseIdHistory& c_s_pose_id_hist = c_s->getPoseHistory();
+  auto c_s_poseHistory_iterator = c_s_pose_id_hist.begin();
+  const int c_s_middle_pose_id = *c_s_poseHistory_iterator;
+  std::advance(c_s_poseHistory_iterator, c_s_pose_id_hist.size() / 2);
+  const Transformation c_s_middle_pose =
+      PoseManager::getGlobalInstance()->getInitPoseTransformation(
+          c_s_middle_pose_id);
+  const auto log_c_s_middle_pose = Transformation::log(c_s_middle_pose);
+  const double c_s_time = PoseManager::getGlobalInstance()
+                              ->getPoseInformation(c_s_middle_pose_id)
+                              .time.toSec();
+  InterpolationResult weights = interpolator_->interpolate(
+      log_c_s_middle_pose, log_mid_pose_prev, log_mid_pose, c_s_time,
+      mid_pose_time_prev, mid_pose_time);
+
+  double lambda =
+      weights.weight_prev / sqrt(weights.weight_prev * weights.weight_prev +
+                                 weights.weight_after * weights.weight_after);
+  Transformation total_correction = kindr::minimal::interpolateComponentwise(
+      T_M_S_correction, T_M_S_correction_prev, lambda);
+  // update the connected submap's pose
+  const Transformation& c_s_initial_pose = c_s->getT_M_Sinit();
+  c_s->setT_M_S(c_s_initial_pose * total_correction);
+}
+void MapManager::correctSubmapTrajectory(const Submap& submap_to_update) {
+  const Transformation T_M_S = submap_to_update.getT_M_S();
+  for (const int pose_id : submap_to_update.getPoseHistory()) {
+    PoseManager::getGlobalInstance()->updateSinglePoseTransformation(
+        pose_id,
+        submap_to_update.getT_M_S() *
+            PoseManager::getGlobalInstance()->getInitPoseTransformation(
+                pose_id));
   }
 }
 
@@ -604,6 +647,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
         << "merging submaps" << submapToPublish.getID() << "and" << prev_id
         << " for publishing";
   }
+
   pseudo_submaps_sent_.emplace_back(new_pseudo_submap);
   // create the submap message
   voxblox_msgs::Submap submap_msg;
@@ -617,17 +661,23 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
       auto pose_info =
           PoseManager::getGlobalInstance()->getPoseInformation(pose_id);
       geometry_msgs::PoseStamped pose_msg;
-      pose_msg.header.stamp = ros::Time(pose_info.time);
+      if (pose_info.time < ros::TIME_MIN) {
+        pose_msg.header.stamp = ros::TIME_MIN;
+      } else {
+        pose_msg.header.stamp = pose_info.time;
+      }
       pose_msg.header.frame_id = "world";
-      const Transformation& pose =
-          PoseManager::getGlobalInstance()->getPoseTransformation(pose_id);
+
+      const Transformation& T_C_S =
+          PoseManager::getGlobalInstance()->getInitPoseTransformation(pose_id);
+      const Transformation pose = T_C_S * T_S_O_;
       tf::poseKindrToMsg(pose.cast<double>(), &pose_msg.pose);
       submap_msg.trajectory.poses.emplace_back(pose_msg);
     }
   }
   LOG_IF(INFO, config_.verbosity >= 4)
       << "Publishing submap to Voxgraph with "
-      << new_pseudo_submap.getPoseHistory().size() << " poses" << std::endl;
+      << new_pseudo_submap.getPoseHistory().size() << " poses" << '\n';
   background_submap_publisher_.publish(submap_msg);
   ++sent_counter_;
 }

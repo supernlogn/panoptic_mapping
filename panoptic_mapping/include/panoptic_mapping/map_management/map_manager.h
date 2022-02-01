@@ -60,19 +60,34 @@ class MapManager : public MapManagerBase {
     // If true the submaps contained by a background submap
     // will also be updated using a weighted update
     bool update_contained_submaps_with_correction = false;
+    // If true then the whole trajectory is updated when optimized
+    // transformations are received from voxgraph
+    bool update_whole_trajectory_with_voxgraph_tf = true;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
         "/panoptic_mapper/background_submap_out";
     std::string optimized_background_poses_topic_name =
         "/voxgraph_mapper/submap_poses";
+    // Voxgraph's service to launch finish mapping
+    // when panoptic mapping is about to exit
     std::string voxgraph_finish_map_srv_name = "/voxgraph_mapper/finish_map";
+    // Voxgraph's service to save its stored trajectory
+    std::string voxgraph_trajectory_srv_name =
+        "/voxgraph_mapper/save_pose_history_to_file";
+    // If not empty the trajectory stored in panoptic mapping is saved
+    // to this file in a custom format
     std::string save_trajectory_on_finish = "";
+    // If not empty then voxgraph's trajectory is saved to
+    // this file as a .bag file
+    std::string save_voxgraph_trajectory_on_finish = "";
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
     LayerManipulator::Config layer_manipulator_config;
     Interpolator::Config interpolator_config;
-
+    double rotX = 0;
+    double rotY = 0;
+    double rotZ = 0;
     Config() { setConfigName("MapManager"); }
 
    protected:
@@ -128,13 +143,13 @@ class MapManager : public MapManagerBase {
                                const Submap& submapToPublish);
 
   /**
-   * @brief evaluates the current trajectory of the submaps by computing the
-   * distance to the ground truth trajectory using an euclidean metric
+   * @brief update the trajectory of the submap by transforming
+   * its trajectory pose with the submap's transformation
    *
-   * @param submaps
+   * @param submap_to_update The submap to update. Typically a background
+   * submap.
    */
-  void evaluateTrajectory(SubmapCollection* submaps);
-
+  void correctSubmapTrajectory(const Submap& submap_to_update);
   /**
    * @brief Merges a pseudo submap fo A into a pseudo submap B.
    *
@@ -146,6 +161,33 @@ class MapManager : public MapManagerBase {
    */
   void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap& submapA,
                                          PseudoSubmap* submapB);
+  /**
+   * @brief Updates a single non-baclkground submap T_M_S
+   *
+   * @param c_s The non-background submap to update
+   * @param T_M_S_correction The correction transformation used by the linked
+   * background submap
+   * @param log_mid_pose The kindr logarithm of the linked background submap's
+   * middle pose
+   * @param mid_pose_time The time the middle pose of the linked background
+   * submap was captured
+   * @param T_M_S_correction_prev The correction transformation used by the
+   * previous background submap
+   * @param log_mid_pose_prev The kindr logarithm of the previous background
+   * submap's middle pose
+   * @param mid_pose_time_prev The time the middle pose of the previous
+   * background submap was captured
+   * @note: As previous background, is defined the one that was last used by the
+   * caller function. Since the submaps are found based on their linked
+   * backround and then updated.
+   */
+  void updateForegroundSubmapPose(Submap* c_s,
+                                  const Transformation& T_M_S_correction,
+                                  const V6_t& log_mid_pose,
+                                  const double mid_pose_time,
+                                  const Transformation& T_M_S_correction_prev,
+                                  const V6_t& log_mid_pose_prev,
+                                  const double mid_pose_time_prev);
 
   std::string pruneBlocks(Submap* submap) const;
   std::vector<PseudoSubmap> pseudo_submaps_sent_;
@@ -164,6 +206,7 @@ class MapManager : public MapManagerBase {
   ros::Publisher background_submap_publisher_;
   std::vector<int> published_submap_ids_to_voxgraph_;
   size_t sent_counter_;
+  Transformation T_S_O_;
   // For receiving optimized poses from voxgraph
   ros::Subscriber optimized_background_poses_sub_;
   std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
