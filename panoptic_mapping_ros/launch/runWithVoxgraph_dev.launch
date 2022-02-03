@@ -27,11 +27,12 @@
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
-
+  <arg name="save_trajectory_on_finish" default="/home/ioannis/datasets/trajectory.in"/>
+  <arg name="save_voxgraph_trajectory_on_finish" default="/home/ioannis/datasets/voxg_traj.bag"/>
   <!-- noise args -->
   <arg name="use_noise" default="false"/>
   <arg name="drift_type" default="none"/>
-
+  <arg name="generated_path_file_path" default=""/>
   <!-- Voxgraph supplied arguments -->
   <arg name="pointcloud_topic" value="pointcloud" doc="ROS topic for pointcloud input"/>
   <!-- debug -->
@@ -54,6 +55,8 @@
     <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
     <param name="shutdown_when_finished" value="$(arg shutdown_when_finished)" />
     <param name="save_map_path_when_finished" value="$(arg save_map_path_when_finished)"/>
+    <param name="map_management/save_trajectory_on_finish" value="$(arg save_trajectory_on_finish)"/>
+    <param name="map_management/save_voxgraph_trajectory_on_finish" value="$(arg save_voxgraph_trajectory_on_finish)"/>
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
