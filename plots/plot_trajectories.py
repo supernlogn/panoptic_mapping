@@ -13,15 +13,6 @@ PI = math.pi
 import rosbag
 import yaml
 
-
-class LocalQuaternion:
-    def __init__(self, l):
-        self.x = l[0]
-        self.y = l[1]
-        self.z = l[2]
-        self.w = l[3]
-
-
 # The 24 posible rotations of 0, 90,-90, 180 around the 3 axis
 picks = [[[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
          [[-1, 0, 0], [0, 0, -1], [0, -1, 0]],
@@ -44,6 +35,28 @@ picks = [[[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
          [[1, 0, 0], [0, -1, 0], [0, 0, -1]], [[1, 0, 0], [0, 0, 1],
                                                [0, -1, 0]],
          [[1, 0, 0], [0, 0, -1], [0, 1, 0]], [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]
+
+
+# rotations around axis
+def createArrayAroundZ(angle):
+    cosAngle = math.cos(angle)
+    sinAngle = math.sin(angle)
+    return np.array([[cosAngle, -sinAngle, 0], [sinAngle, cosAngle, 0],
+                     [0, 0, 1]])
+
+
+def createArrayAroundY(angle):
+    cosAngle = math.cos(angle)
+    sinAngle = math.sin(angle)
+    return np.array([[cosAngle, 0, sinAngle], [0, 1, 0],
+                     [-sinAngle, 0, cosAngle]])
+
+
+def createArrayAroundX(angle):
+    cosAngle = math.cos(angle)
+    sinAngle = math.sin(angle)
+    return np.array([[1, 0, 0], [0, cosAngle, -sinAngle],
+                     [0, sinAngle, cosAngle]])
 
 
 def getYawPitchRoll(q):
@@ -451,27 +464,6 @@ def plotPerAxisDirectory(base_dir,
     fig2.savefig(os.path.join(base_dir, figName + "_angles.png"))
 
 
-def createArrayAroundZ(angle):
-    cosAngle = math.cos(angle)
-    sinAngle = math.sin(angle)
-    return np.array([[cosAngle, -sinAngle, 0], [sinAngle, cosAngle, 0],
-                     [0, 0, 1]])
-
-
-def createArrayAroundY(angle):
-    cosAngle = math.cos(angle)
-    sinAngle = math.sin(angle)
-    return np.array([[cosAngle, 0, sinAngle], [0, 1, 0],
-                     [-sinAngle, 0, cosAngle]])
-
-
-def createArrayAroundX(angle):
-    cosAngle = math.cos(angle)
-    sinAngle = math.sin(angle)
-    return np.array([[1, 0, 0], [0, cosAngle, -sinAngle],
-                     [0, sinAngle, cosAngle]])
-
-
 def plotFullExperiment(yaml_file_path):
     dir_final_name = os.path.basename(yaml_file_path)[:-len(".yaml")]
     yaml_data = {}
@@ -508,22 +500,21 @@ def plotFullExperiment(yaml_file_path):
             plotPerAxisDirectory(experiment_path, figName, T_C_R)
 
 
-def main():
-    home_dir = os.getenv("HOME")
-    gt_tr, wd_tr, _ = getGroundTruthTrajectory(
-        home_dir + "/datasets/experiments_w_wo_alignment/experiment2/"
-        "generated_path.txt")
-    op_tr, op_tr_times = getOptimizedTrajectory(
-        home_dir + "/datasets/experiments_w_wo_alignment/experiment2/"
-        "trajectory.in")
-    voxgraph_tr, voxgraph_times = getVoxgraphTrajectory(
-        home_dir +
-        "/datasets/voxgraph_traj_large_flat/voxgraph_traj_icp_off_strong.bag")
-    plotPerAxis(gt_tr, wd_tr, op_tr, voxgraph_tr, N=None)
-    plt.show()
-    # plot3D(gt_tr, wd_tr, op_tr, voxgraph_tr)
-    # plot_dev()
+# def main():
+#     home_dir = os.getenv("HOME")
+#     gt_tr, wd_tr, _ = getGroundTruthTrajectory(
+#         home_dir + "/datasets/experiments_w_wo_alignment/experiment2/"
+#         "generated_path.txt")
+#     op_tr, op_tr_times = getOptimizedTrajectory(
+#         home_dir + "/datasets/experiments_w_wo_alignment/experiment2/"
+#         "trajectory.in")
+#     voxgraph_tr, voxgraph_times = getVoxgraphTrajectory(
+#         home_dir +
+#         "/datasets/voxgraph_traj_large_flat/voxgraph_traj_icp_off_strong.bag")
+#     plotPerAxis(gt_tr, wd_tr, op_tr, voxgraph_tr, N=None)
+#     plt.show()
+#     # plot3D(gt_tr, wd_tr, op_tr, voxgraph_tr)
+#     # plot_dev()
 
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
