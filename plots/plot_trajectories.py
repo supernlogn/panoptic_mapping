@@ -491,10 +491,10 @@ def plotFullExperiment(yaml_file_path):
             arX = createArrayAroundX(rotX)
             arY = createArrayAroundY(rotY)
             arZ = createArrayAroundY(rotZ)
-            # R_S_O = arX @ arY @ arZ
+            # R_C_R = arX @ arY @ arZ
             print(len(picks), int_fd)
-            R_S_O = picks[int_fd]
-            T_C_R = np.pad(R_S_O, pad_width=(0, 1))
+            R_C_R = picks[int_fd]
+            T_C_R = np.pad(R_C_R, pad_width=(0, 1))
             T_C_R[-1][-1] = 1
             print(rotX, rotY, rotZ, T_C_R)
             plotPerAxisDirectory(experiment_path, figName, T_C_R)
