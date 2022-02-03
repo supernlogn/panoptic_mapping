@@ -66,7 +66,7 @@
   <!-- Run voxblox in sliding window mode -->
   <group>
   <!-- voxblox publish submaps if there are subscribers -->
-  <node name="voxblox" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true" if="$(arg use_noise)">
+  <node name="voxblox" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true">
     <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
     <remap from="/transform" to="/data/pose" if="$(arg use_noise)" />
     <remap from="/transform" to="/player/pose" unless="$(arg use_noise)"/>
