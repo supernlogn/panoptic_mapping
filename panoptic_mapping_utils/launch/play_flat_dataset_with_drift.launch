@@ -54,13 +54,13 @@
     <remap from="~pose_in" to="$(arg namespace)/pose" />
     <param name="use_arrow" value="false" />
     <param name="length" value="0.5" />
-    <param name="use_noise" value="$(arg use_noise)" />
+    <remap from="~marker_out" to="~path_gt"/>
   </node>
   <node pkg="panoptic_mapping_utils" type="path_visualizer.py" name="path_visualizer_gt" output="screen">
     <remap from="~pose_in" to="$(arg namespace)/pose_ground_truth" />
     <param name="use_arrow" value="false" />
     <param name="length" value="0.01" />
-    <param name="use_noise" value="$(arg use_noise)" />
+    <remap from="~marker_out" to="~path_noisy"/>
     <param name="r" value="0"/>
     <param name="g" value="1"/>
   </node>
