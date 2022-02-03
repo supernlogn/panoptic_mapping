@@ -7,7 +7,7 @@ import tf
 import rospy
 from rospy.timer import sleep
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import TransformStamped
 from cv_bridge import CvBridge
 from std_srvs.srv import EmptyResponse
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
@@ -37,18 +37,15 @@ class FlatDataPlayer(object):
         self.color_pub = rospy.Publisher("~color_image", Image, queue_size=100)
         self.depth_pub = rospy.Publisher("~depth_image", Image, queue_size=100)
         self.id_pub = rospy.Publisher("~id_image", Image, queue_size=100)
+        self.sec_to_wait = rospy.get_param('~sec_to_wait', 5)
         if self.use_detectron:
             self.label_pub = rospy.Publisher("~labels",
                                              DetectronLabels,
                                              queue_size=100)
-        if self.use_noise:
-            self.pose_pub = rospy.Publisher("~pose",
-                                            TransformStamped,
-                                            queue_size=100)
-        else:
-            self.pose_pub = rospy.Publisher("~pose",
-                                            PoseStamped,
-                                            queue_size=100)
+
+        self.pose_pub = rospy.Publisher("~pose",
+                                        TransformStamped,
+                                        queue_size=100)
 
         self.tf_broadcaster = tf.TransformBroadcaster()
 
@@ -175,36 +172,19 @@ class FlatDataPlayer(object):
             rotation = tf.transformations.quaternion_from_matrix(transform)
             position = transform[:, 3]
 
-        if self.use_noise:
-            pose_msg = TransformStamped()
-            pose_msg.header.stamp = now
-            pose_msg.header.frame_id = self.global_frame_name
-            pose_msg.transform.translation.x = position[0]
-            pose_msg.transform.translation.y = position[1]
-            pose_msg.transform.translation.z = position[2]
+        pose_msg = TransformStamped()
+        pose_msg.header.stamp = now
+        pose_msg.header.frame_id = self.global_frame_name
+        pose_msg.transform.translation.x = position[0]
+        pose_msg.transform.translation.y = position[1]
+        pose_msg.transform.translation.z = position[2]
 
-            pose_msg.transform.rotation.x = rotation[0]
-            pose_msg.transform.rotation.y = rotation[1]
-            pose_msg.transform.rotation.z = rotation[2]
-            pose_msg.transform.rotation.w = rotation[3]
-            pose_msg.child_frame_id = self.sensor_frame_name
-            self.pose_pub.publish(pose_msg)
-        else:
-            self.tf_broadcaster.sendTransform(position, rotation, now,
-                                              self.sensor_frame_name,
-                                              self.global_frame_name)
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = now
-            pose_msg.header.frame_id = self.global_frame_name
-            pose_msg.pose.position.x = position[0]
-            pose_msg.pose.position.y = position[1]
-            pose_msg.pose.position.z = position[2]
-
-            pose_msg.pose.orientation.x = rotation[0]
-            pose_msg.pose.orientation.y = rotation[1]
-            pose_msg.pose.orientation.z = rotation[2]
-            pose_msg.pose.orientation.w = rotation[3]
-            self.pose_pub.publish(pose_msg)
+        pose_msg.transform.rotation.x = rotation[0]
+        pose_msg.transform.rotation.y = rotation[1]
+        pose_msg.transform.rotation.z = rotation[2]
+        pose_msg.transform.rotation.w = rotation[3]
+        pose_msg.child_frame_id = self.sensor_frame_name
+        self.pose_pub.publish(pose_msg)
 
         self.current_index += 1
         if self.current_index > self.max_frames:

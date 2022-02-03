@@ -7,7 +7,7 @@ import json
 
 from std_srvs.srv import EmptyResponse
 from sensor_msgs.msg import PointCloud2, PointField, Image
-from geometry_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import TransformStamped
 from cv_bridge import CvBridge
 import rospy
 from rospy.timer import sleep
@@ -44,16 +44,11 @@ class FlatDataPlayer(object):
         if self.use_image_data:
             self.initForImageData()
 
-        if self.use_noise:
-            self.pose_pub = rospy.Publisher("~pose",
-                                            TransformStamped,
-                                            queue_size=100)
-        else:
-            self.pose_pub = rospy.Publisher("~pose",
-                                            PoseStamped,
-                                            queue_size=100)
-
-        # self.tf_broadcaster = tf.TransformBroadcaster()
+        self.pose_pub = rospy.Publisher("~pose",
+                                        TransformStamped,
+                                        queue_size=100)
+        if not self.use_noise:
+            self.tf_broadcaster = tf.TransformBroadcaster()
         # setup
         self.cv_bridge = CvBridge()
         stamps_file = os.path.join(self.data_path, 'timestamps.csv')
@@ -265,9 +260,11 @@ class FlatDataPlayer(object):
             pose_msg.transform.rotation.z = rotation[2]
             pose_msg.transform.rotation.w = rotation[3]
             pose_msg.child_frame_id = self.sensor_frame_name
+        if self.use_noise:
             self.pose_pub.publish(pose_msg)
-        # self.tf_broadcaster.sendTransform(position, rotation, now, "camera",
-        #                                   "world")
+        else:
+            self.tf_broadcaster.sendTransform(position, rotation, now,
+                                              "camera", "world")
 
     def depth_to_3d(self, img_depth):
         """ Create point cloud from depth image and camera params.
