@@ -68,7 +68,8 @@
   <!-- voxblox publish submaps if there are subscribers -->
   <node name="voxblox" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true" if="$(arg use_noise)">
     <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
-    <remap from="/transform" to="/data/pose"/>
+    <remap from="/transform" to="/data/pose" if="$(arg use_noise)" />
+    <remap from="/transform" to="/player/pose" unless="$(arg use_noise)"/>
     <param name="use_tf_transforms" value="$(arg use_tf_transforms)"/>
     <param name="enable_icp" value="$(arg enable_icp)" />
     <rosparam command="load" file="$(find panoptic_mapping_utils)/config/voxblox/voxblox_temporal_window.yaml" />
@@ -85,18 +86,6 @@
     <rosparam command="load" file="$(find panoptic_mapping_utils)/config/drift_$(arg drift_type).yaml" />
   </node>
   </group>
-
- <group>
-  <node name="voxblox" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true" unless="$(arg use_noise)">
-    <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
-    <remap from="/transform" to="/data/pose"/>
-    <param name="use_tf_transforms" value="$(arg use_tf_transforms)"/>
-    <param name="enable_icp" value="$(arg enable_icp)" />
-    <rosparam command="load" file="$(find panoptic_mapping_utils)/config/voxblox/voxblox_temporal_window.yaml" />
-  </node>
-  </group>
-
-
 
   <!-- Run voxgraph, subscribing to voxblox's sliding window -->
   <group>
