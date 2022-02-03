@@ -1,0 +1,186 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth.yaml"
+defaults:
+  base_name: "runWithVoxgraph_interpolation"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 5
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+  use_tf_transforms: true
+  visualize: false
+
+
+experiment1:
+  name: rot1
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 0.000000
+      rotZ: 180.000000
+experiment2:
+  name: rot2
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 0.000000
+      rotZ: 180.000000
+experiment3:
+  name: rot3
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 180.000000
+      rotZ: 0.000000
+experiment4:
+  name: rot4
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 180.000000
+      rotZ: 0.000000
+experiment5:
+  name: rot5
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 180.000000
+      rotZ: 270.000000
+experiment6:
+  name: rot6
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 0.000000
+      rotZ: 90.000000
+experiment7:
+  name: rot7
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 180.000000
+      rotZ: 270.000000
+experiment8:
+  name: rot8
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 0.000000
+      rotZ: 90.000000
+experiment9:
+  name: rot9
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 270.000000
+      rotZ: 270.000000
+experiment10:
+  name: rot10
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 270.000000
+      rotZ: 180.000000
+experiment11:
+  name: rot11
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 270.000000
+      rotZ: 0.000000
+experiment12:
+  name: rot12
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 270.000000
+      rotZ: 90.000000
+experiment13:
+  name: rot13
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 90.000000
+      rotZ: 270.000000
+experiment14:
+  name: rot14
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 90.000000
+      rotZ: 180.000000
+experiment15:
+  name: rot15
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 90.000000
+      rotZ: 0.000000
+experiment16:
+  name: rot16
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 90.000000
+      rotZ: 90.000000
+experiment17:
+  name: rot17
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 0.000000
+      rotZ: 270.000000
+experiment18:
+  name: rot18
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 0.000000
+      rotZ: 270.000000
+experiment19:
+  name: rot19
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 180.000000
+      rotZ: 90.000000
+experiment20:
+  name: rot20
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 180.000000
+      rotZ: 90.000000
+experiment21:
+  name: rot21
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 180.000000
+      rotZ: 180.000000
+experiment22:
+  name: rot22
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 0.000000
+      rotZ: 0.000000
+experiment23:
+  name: rot23
+  panoptic_yaml_data:
+    map_management:
+      rotX: 90.000000
+      rotY: 180.000000
+      rotZ: 180.000000
+experiment24:
+  name: rot24
+  panoptic_yaml_data:
+    map_management:
+      rotX: 0.000000
+      rotY: 0.000000
+      rotZ: 0.000000
