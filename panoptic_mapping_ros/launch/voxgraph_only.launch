@@ -3,10 +3,10 @@
 
   <!-- <arg name="rosbag_path" default="/home/ioannis/datasets/basement/basement_dataset.bag" />  -->
   <arg name="rosbag_path" default="" /> 
-  <arg name="load_map" default = "true"/>
+  <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
   <arg name="pointcloud_topic"
-       default="/player/pointcloud" 
+       default="/player/pointcloud"
        doc="ROS topic for pointcloud input"/>
   <arg name="debug_mode"
        default="false"
@@ -23,14 +23,19 @@
   <arg name="sensor_frame_name"
        default="camera" />
   <arg name="use_noise"
-       default="false" />
+       default="true" />
   <arg name="drift_type" 
-       default="none"/>
+       default="severe"/>
+  <arg name="use_tf_transforms"
+       default="true"/>
+  <arg name="enable_icp" 
+       default="true"/>
   <arg name="base_path"
        default="/home/ioannis/datasets/large_flat/run1" />
   <arg name="play_rate"
        default="1"/>  <!-- Realtime factor -->
   <arg name="data_player_refresh_rate" default="100" />
+  <arg name="generated_path_file_path" default="/home/ioannis/datasets/generated_path.txt"/>
 
   <!-- Play the rosbag, unless no path is specified -->
   <node unless="$(eval arg('rosbag_path') is '')"
@@ -44,6 +49,10 @@
     <param name="global_frame_name" value="$(arg global_frame_name)" />
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
     <param name="refresh_rate" value="$(arg data_player_refresh_rate)" />
+    <remap from="/player/pose" to="/data/pose_ground_truth"/>
+    <param name="use_image_data" value="False"/>
+    <param name="use_point_cloud" value="True"/>
+    <param name="use_noise" value="$(arg use_noise)"/>
     <rosparam command="load" file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
   </node>
 
@@ -59,31 +68,33 @@
   <!-- voxblox publish submaps if there are subscribers -->
   <node name="voxblox" pkg="voxblox_ros" type="tsdf_server" output="screen" args="-alsologtostderr" clear_params="true" if="$(arg use_noise)">
     <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
-    <remap from="/transform" to="/player/pose_noisy"/>
+    <remap from="/transform" to="/data/pose"/>
     <param name="tsdf_voxel_size" value="0.05" />
     <param name="truncation_distance" value="0.5" />
     <param name="color_mode" value="colors" />
-    <param name="enable_icp" value="true" />
+    <param name="enable_icp" value="$(arg enable_icp)" />
     <param name="icp_refine_roll_pitch" value="false" />
     <param name="update_mesh_every_n_sec" value="1.0" />
     <param name="publish_submap_every_n_sec" value="6.0" />
     <param name="mesh_min_weight" value="2" />
     <param name="method" value="fast" />
-    <param name="max_ray_length_m" value="10.0" />
-    <param name="use_const_weight" value="true" />
+    <param name="max_ray_length_m" value="5.0" />
+    <param name="use_const_weight" value="false" />
     <param name="world_frame" value="world"/>
-    <param name="verbose" value="true" />
+    <param name="use_tf_transforms" value="$(arg use_tf_transforms)"/>
+    <param name="verbose" value="false" />
     <param name="pointcloud_queue_size" value="100" />
-    <param name="pointcloud_deintegration_queue_length" value="120" />
-    <param name="mesh_filename" value="$(find voxblox_ros)/mesh_results/$(anon basement).ply" />
+    <param name="pointcloud_deintegration_queue_length" value="20" />
+    <!-- <param name="mesh_filename" value="$(find voxblox_ros)/mesh_results/$(anon basement).ply" /> -->
   </node>
   <!-- add noise to the data -->
   <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen" if="$(arg use_noise)">
-    <param name="noisy_pose_topic" value="/player/pose_noisy" />
-    <param name="ground_truth_pose_topic" value="/player/pose" />
-    <param name="save_noise_to_file" value="false" />
+    <param name="noisy_pose_topic" value="/data/pose" />
+    <param name="ground_truth_pose_topic" value="/data/pose_ground_truth" />
+    <param name="generated_path_file_path" value="$(arg generated_path_file_path)" />
     <param name="global_frame_name" value="$(arg global_frame_name)" />
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
+    <param name="use_tf_transforms" value="$(arg use_tf_transforms)"/>
     <rosparam command="load" file="$(find panoptic_mapping_utils)/config/drift_$(arg drift_type).yaml" />
   </node>
   </group>
@@ -95,7 +106,7 @@
     <param name="tsdf_voxel_size" value="0.05" />
     <param name="truncation_distance" value="0.5" />
     <param name="color_mode" value="normals" />
-    <param name="enable_icp" value="true" />
+    <param name="enable_icp" value="$(arg enable_icp)" />
     <param name="icp_refine_roll_pitch" value="false" />
     <param name="update_mesh_every_n_sec" value="1.0" />
     <param name="publish_submap_every_n_sec" value="6.0" />
