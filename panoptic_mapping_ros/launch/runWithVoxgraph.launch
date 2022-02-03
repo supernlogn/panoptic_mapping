@@ -1,7 +1,7 @@
 <launch>
 <!-- ============ Arguments ============ -->
   <!-- General -->
-  <arg name="namespace" default="data"/> 
+  <arg name="namespace" default="/data"/> 
   <arg name="use_rio" default="false"/>
   <arg name="use_detectron" default="false"/>
   <arg name="visualize" default="true"/> 
@@ -12,8 +12,7 @@
   <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/> 
   <arg name="play_rate" default="1"/>  <!-- Realtime factor -->
   <arg name="wait_time" default="0"/>  <!-- s -->
-  <arg name="max_frames" default="1000"/> <!-- 90 -->
-
+  <arg name="data_player_refresh_rate" default="100" />
   <!-- Rio Dataset args -->
   <arg name="data_path" default="/home/ioannis/datasets/3RScan"/> 
   <arg name="scene_id" default="0"/> <!-- 0: 0-3, 1: 0-3, 2: 0-1 -->
@@ -22,16 +21,18 @@
 
   <!-- Mapper -->
   <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
-  <arg name="shutdown_when_finished" default="false"/> 
+  <arg name="shutdown_when_finished" default="true"/>
 
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
   <arg name="save_trajectory_on_finish" default="/home/ioannis/datasets/trajectory.in"/>
+  <arg name="save_voxgraph_trajectory_on_finish" default="/home/ioannis/datasets/voxg_traj.bag"/>
   <!-- noise args -->
   <arg name="use_noise" default="false"/>
   <arg name="drift_type" default="none"/>
   <arg name="generated_path_file_path" default=""/>
+  <arg name="use_tf_transforms" default="false"/>
   <!-- Voxgraph supplied arguments -->
   <arg name="pointcloud_topic" value="pointcloud" doc="ROS topic for pointcloud input"/>
   <!-- debug -->
@@ -45,8 +46,7 @@
   <!-- Play data -->
   <arg name="wait" default="true" if="$(arg load_map)"/>
   <include file="$(find panoptic_mapping_utils)/launch/play_flat_dataset_with_drift.launch" pass_all_args="true" unless="$(arg use_rio)" />
-  <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" />
-  
+  <!-- <include file="$(find panoptic_mapping_utils)/launch/play_rio_dataset.launch" pass_all_args="true" if="$(arg use_rio)" /> -->
   <!-- Mapper -->
   <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" 
    launch-prefix="$(arg launch_prefix)"><!--required="true"-->
@@ -55,6 +55,9 @@
     <param name="shutdown_when_finished" value="$(arg shutdown_when_finished)" />
     <param name="save_map_path_when_finished" value="$(arg save_map_path_when_finished)"/>
     <param name="map_management/save_trajectory_on_finish" value="$(arg save_trajectory_on_finish)"/>
+    <param name="map_management/save_voxgraph_trajectory_on_finish" value="$(arg save_voxgraph_trajectory_on_finish)"/>
+    <param name="use_tf_transforms" value="$(arg use_tf_transforms)"/>
+    <param name="tf_topic" value="/data/pose"/>
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
