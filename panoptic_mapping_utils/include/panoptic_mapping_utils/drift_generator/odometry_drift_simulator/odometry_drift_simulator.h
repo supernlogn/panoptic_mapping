@@ -4,7 +4,6 @@
 #include <map>
 #include <string>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/quat-transformation.h>
 #include <nav_msgs/Odometry.h>
