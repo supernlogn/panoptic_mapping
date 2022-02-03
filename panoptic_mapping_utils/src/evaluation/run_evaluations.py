@@ -288,7 +288,7 @@ def main():
         last_dir = argv1_strip[argv1_strip.rindex('/') + 1:-len(".yaml")]
         experiments_dir = os.path.join(os.getenv('HOME'), "datasets/",
                                        last_dir)
-        logger.info("experiments directory set to = %s", experiments_dir)
+    logger.info("experiments directory set to = %s", experiments_dir)
     continue_from_dir = 0  # allow not re-executing the experiments
     # and start from this one
     if len(argv) > 3:
