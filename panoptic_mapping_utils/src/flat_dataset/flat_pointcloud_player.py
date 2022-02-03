@@ -3,13 +3,16 @@
 import os
 import csv
 from struct import pack, unpack
+import json
 
-from std_srvs.srv import Empty, EmptyResponse
-from sensor_msgs.msg import PointCloud2, PointField
-from geometry_msgs.msg import TransformStamped
+from std_srvs.srv import EmptyResponse
+from sensor_msgs.msg import PointCloud2, PointField, Image
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from cv_bridge import CvBridge
 import rospy
+from rospy.timer import sleep
 import tf
+from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from PIL import Image as PilImage
 
 import numpy as np
@@ -20,8 +23,10 @@ class FlatDataPlayer(object):
     def __init__(self):
         """ Initialize ros node and read params """
         # params
+        home_path = os.getenv("HOME")
         self.data_path = rospy.get_param(
-            '~data_path', '/home/ioannis/datasets/flat_dataset/run1')
+            '~data_path', os.path.join(home_path,
+                                       'datasets/flat_dataset/run1'))
         self.global_frame_name = rospy.get_param('~global_frame_name', 'world')
         self.sensor_frame_name = rospy.get_param('~sensor_frame_name',
                                                  "depth_cam")
@@ -29,19 +34,25 @@ class FlatDataPlayer(object):
         self.wait = rospy.get_param('~wait', False)
         self.max_frames = rospy.get_param('~max_frames', 1e9)
         self.refresh_rate = rospy.get_param('~refresh_rate', 1)  # Hz
-        # ROS
-        self.pointCloud_pub = rospy.Publisher("~pointcloud",
-                                              PointCloud2,
-                                              queue_size=100)
-        self.pose_pub = rospy.Publisher("~pose",
-                                        TransformStamped,
-                                        queue_size=100)
-        # camera
-        self.cameraInfo = rospy.get_param("~camera")
-        self.maximum_distance = self.cameraInfo['max_range']
-        self.minimum_distance = self.cameraInfo['min_range']
-        self.use_detectron = False
-        self.flatten_distance = self.maximum_distance
+        self.use_point_cloud = rospy.get_param('~use_point_cloud', True)
+        self.use_image_data = rospy.get_param('~use_image_data', False)
+        self.sec_to_wait = rospy.get_param('~sec_to_wait', 6)
+        self.use_noise = rospy.get_param("~use_noise", False)
+        self.use_detectron = rospy.get_param("~use_detectron", False)
+        if self.use_point_cloud:
+            self.initForPointCould()
+        if self.use_image_data:
+            self.initForImageData()
+
+        if self.use_noise:
+            self.pose_pub = rospy.Publisher("~pose",
+                                            TransformStamped,
+                                            queue_size=100)
+        else:
+            self.pose_pub = rospy.Publisher("~pose",
+                                            PoseStamped,
+                                            queue_size=100)
+
         # self.tf_broadcaster = tf.TransformBroadcaster()
         # setup
         self.cv_bridge = CvBridge()
@@ -64,10 +75,30 @@ class FlatDataPlayer(object):
         self.times = [(x - self.times[0]) for x in self.times]
         self.start_time = None
 
-        if self.wait:
-            self.start_srv = rospy.Service('~start', Empty, self.start)
-        else:
-            self.start(None)
+        # # if self.wait:
+        sleep(self.sec_to_wait)
+        # # self.start_srv = rospy.Service('~start', Empty, self.start)
+        # # else:
+        self.start(None)
+
+    def initForPointCould(self):
+        self.pointCloud_pub = rospy.Publisher("~pointcloud",
+                                              PointCloud2,
+                                              queue_size=100)
+        # camera
+        self.cameraInfo = rospy.get_param("~camera")
+        self.maximum_distance = self.cameraInfo['max_range']
+        self.minimum_distance = self.cameraInfo['min_range']
+        self.flatten_distance = self.maximum_distance
+
+    def initForImageData(self):
+        if self.use_detectron:
+            self.label_pub = rospy.Publisher("~labels",
+                                             DetectronLabels,
+                                             queue_size=100)
+        self.color_pub = rospy.Publisher("~color_image", Image, queue_size=100)
+        self.depth_pub = rospy.Publisher("~depth_image", Image, queue_size=100)
+        self.id_pub = rospy.Publisher("~id_image", Image, queue_size=100)
 
     def start(self, _):
         self.running = True
@@ -101,21 +132,82 @@ class FlatDataPlayer(object):
         color_file = file_id + "_color.png"
         depth_file = file_id + "_depth.tiff"
         pose_file = file_id + "_pose.txt"
-        pred_file = file_id + "_segmentation.png"
-        files = [color_file, depth_file, pose_file, pred_file]
-
+        labels_file = ""
+        files = [color_file, depth_file, pose_file]
+        if self.use_detectron:
+            pred_file = file_id + "_predicted.png"
+            labels_file = file_id + "_labels.json"
+            files += [pred_file, labels_file]
+        else:
+            pred_file = file_id + "_segmentation.png"
+            files.append(pred_file)
         for f in files:
             if not os.path.isfile(f):
                 rospy.logwarn("Could not find file '%s', skipping frame." % f)
                 self.current_index += 1
                 return
+        cv_color_img = cv2.imread(color_file)
+        pill_img_depth = np.array(PilImage.open(depth_file))
+        cv_pred_img = cv2.imread(pred_file)
 
+        if self.use_image_data:
+            self.publishImageData(cv_color_img, pill_img_depth, cv_pred_img,
+                                  labels_file, now)
+        if self.use_point_cloud:
+            self.publishPointCloudData(cv_color_img, pill_img_depth, now)
+
+        self.loadAndPublishTransform(pose_file, now)
+        self.current_index += 1
+        if self.current_index > self.max_frames:
+            rospy.signal_shutdown("Played reached max frames (%i)" %
+                                  self.max_frames)
+
+    def publishImageData(self, cv_color_img, pill_image_depth, cv_pred_img,
+                         labels_file, now):
         # Load and publish Color image.
-        img_color = np.array(cv2.imread(color_file))
+        img_msg = self.cv_bridge.cv2_to_imgmsg(cv_color_img, "bgr8")
+        img_msg.header.stamp = now
+        img_msg.header.frame_id = self.sensor_frame_name
+        self.color_pub.publish(img_msg)
+
+        # Load and publish ID image.
+        img_msg = self.cv_bridge.cv2_to_imgmsg(cv_pred_img[:, :, 0], "8UC1")
+        img_msg.header.stamp = now
+        img_msg.header.frame_id = self.sensor_frame_name
+        self.id_pub.publish(img_msg)
+
+        # Load and publish depth image. These are optional.
+        img_msg = self.cv_bridge.cv2_to_imgmsg(pill_image_depth, "32FC1")
+        img_msg.header.stamp = now
+        img_msg.header.frame_id = self.sensor_frame_name
+        self.depth_pub.publish(img_msg)
+        # Load and publish labels.
+        if self.use_detectron:
+            label_msg = DetectronLabels()
+            label_msg.header.stamp = now
+            with open(labels_file) as json_file:
+                data = json.load(json_file)
+                for d in data:
+                    if 'instance_id' not in d:
+                        d['instance_id'] = 0
+                    if 'score' not in d:
+                        d['score'] = 0
+                    label = DetectronLabel()
+                    label.id = d['id']
+                    label.instance_id = d['instance_id']
+                    label.is_thing = d['isthing']
+                    label.category_id = d['category_id']
+                    label.score = d['score']
+                    label_msg.labels.append(label)
+            self.label_pub.publish(label_msg)
+
+    def publishPointCloudData(self, cv_color_img, pill_img_depth, now):
+        # Load and publish Color image.
+        img_color = np.array(cv_color_img)
         rgb = self.rgb_to_float(img_color)
 
         # Load and publish depth image. These are optional.
-        img_depth = np.array(PilImage.open(depth_file))
+        img_depth = pill_img_depth
         mask_depth = img_depth.reshape(-1)
         img_depth = np.clip(img_depth, self.minimum_distance,
                             self.flatten_distance)
@@ -151,6 +243,7 @@ class FlatDataPlayer(object):
         msg.data = np.float32(data).tostring()
         self.pointCloud_pub.publish(msg)
 
+    def loadAndPublishTransform(self, pose_file, now):
         # Load and publish transform.
         if os.path.isfile(pose_file):
             pose_data = [float(x) for x in open(pose_file, 'r').read().split()]
@@ -175,11 +268,6 @@ class FlatDataPlayer(object):
             self.pose_pub.publish(pose_msg)
         # self.tf_broadcaster.sendTransform(position, rotation, now, "camera",
         #                                   "world")
-
-        self.current_index += 1
-        if self.current_index > self.max_frames:
-            rospy.signal_shutdown("Played reached max frames (%i)" %
-                                  self.max_frames)
 
     def depth_to_3d(self, img_depth):
         """ Create point cloud from depth image and camera params.
