@@ -402,15 +402,19 @@ def pickLogPoseGivenTransform(p, pick):
         idx = t.nonzero()[0][0]
         finalp.append(t[idx] * p[idx])
         # print(t[idx])
+    # position = np.array(pick, np.float) @ np.array(p[:3])
     # just append angles
-    finalp = np.hstack((finalp, p[3:]))
+    angles = np.array(pick, np.float).dot(np.array(p[3:]))
+    finalp = np.hstack((finalp, angles))
 
     return np.array(finalp)
 
 
 def pickLogPoseGivenTransformPost(p, Tr):
     # only angles change
-    return np.array(p)
+    angles = np.array(p[3:]).dot(np.array(Tr, np.float))
+    position = p[:3]
+    return np.hstack((position, angles))
 
 
 def plotPerAxisDirectory(base_dir,
