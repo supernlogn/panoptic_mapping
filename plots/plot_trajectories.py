@@ -5,6 +5,7 @@ from typing import final
 import numpy as np
 from mpl_toolkits import mplot3d  # pylint: disable=W0611
 from matplotlib import pyplot as plt
+from scipy.spatial.transform import Rotation
 import os
 import math
 
@@ -396,23 +397,22 @@ def getTrajectoryFiles(base_dir, voxgraph_file=""):
     return files
 
 
-def pickLogPoseGivenTransform(p, pick):
+def pickLogPoseGivenTransform(p, Tr):
     finalp = []
-    for t in pick:
-        idx = t.nonzero()[0][0]
-        finalp.append(t[idx] * p[idx])
-        # print(t[idx])
-    # position = np.array(pick, np.float) @ np.array(p[:3])
+    position = np.array(Tr, np.float).dot(np.array(p[:3]))
     # just append angles
-    angles = np.array(pick, np.float).dot(np.array(p[3:]))
-    finalp = np.hstack((finalp, angles))
-
-    return np.array(finalp)
+    r1 = Rotation.from_matrix(Tr)
+    Tr_euler = r1.as_euler('xyz')
+    angles = np.array(p[3:]) + Tr_euler
+    finalp = np.hstack((position, angles))
+    return finalp
 
 
 def pickLogPoseGivenTransformPost(p, Tr):
     # only angles change
-    angles = np.array(p[3:]).dot(np.array(Tr, np.float))
+    r1 = Rotation.from_matrix(Tr)
+    Tr_euler = r1.as_euler('xyz')
+    angles = np.array(p[3:]) + Tr_euler
     position = p[:3]
     return np.hstack((position, angles))
 
@@ -431,19 +431,12 @@ def plotPerAxisDirectory(base_dir,
         pick = np.array(pick, np.int)
         print(pick)
         if post_mult:
-            op_tr = np.array([
-                pickLogPoseGivenTransformPost(p, np.linalg.inv(pick))
-                for p in op_tr
-            ])
             voxgraph_tr2 = np.array([
                 pickLogPoseGivenTransformPost(p, np.linalg.inv(pick))
                 for p in voxgraph_tr
             ])
+            # voxgraph_tr2 = voxgraph_tr
         else:
-            op_tr = np.array([
-                pickLogPoseGivenTransform(p, np.linalg.inv(pick))
-                for p in op_tr
-            ])
             voxgraph_tr2 = np.array([
                 pickLogPoseGivenTransform(p, np.linalg.inv(pick))
                 for p in voxgraph_tr
