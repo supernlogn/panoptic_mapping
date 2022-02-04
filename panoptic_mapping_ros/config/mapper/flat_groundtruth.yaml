@@ -55,25 +55,39 @@ freespace_allocator:
 id_tracker:
   type: projective # ground_truth, projective, detectron, single_tsdf
   verbosity: 1
-  
   # Projective ID tracker
   depth_tolerance: -1  # m, negative = #vs
   tracking_metric: IoU  # IoU, overlap
   match_acceptance_threshold: 0.1  
   min_allocation_size: 2000 # px, for submap allocation.
   use_class_data_for_matching: true  
+  # Single TSDF tracker
+  # voxel_size: 0.05
+  # use_class_layer: false
+  # use_detectron: false
+  # use_instance_classification: false
+  # truncation_distance: -2
+  # voxels_per_side: 16
+
+# tsdf_integrator:  
+#   type: single_tsdf
+#   verbosity: 1
+#   # Projective
+#   use_weight_dropoff: true
+#   max_weight: 10000
+#   interpolation_method: adaptive  # nearest, bilinear, adaptive
+#   integration_threads: 8
 
 tsdf_integrator:
   type: class_projective # projective, class_projective, single_tsdf
   verbosity: 1
-
   # Projective
   use_weight_dropoff: true
   max_weight: 10000
   interpolation_method: adaptive  # nearest, bilinear, adaptive
   foreign_rays_clear: true
-  integration_threads: 1
-  allocate_neighboring_blocks: true
+  integration_threads: 8
+  allocate_neighboring_blocks: false
   
   # Class Projective
   use_binary_classification: true
@@ -83,7 +97,10 @@ tsdf_integrator:
 map_management:
   type: submaps
   verbosity: 4
-  
+  # rotation between voxgraph frame and panoptic mapping frame
+  rotX: 90.0
+  rotY: 0
+  rotZ: 90.0
   # Frequencies
   prune_active_blocks_frequency: 0 
   activity_management_frequency: 1
@@ -92,19 +109,19 @@ map_management:
   publish_poses_to_voxgraph_frequency: 1
   
   # voxgraph publishing
-  num_submaps_to_merge_for_voxgraph: 3
+  num_submaps_to_merge_for_voxgraph: 1
   avoid_merging_deactivated_background_submaps: true
-  
+  update_whole_trajectory_with_voxgraph_tf: true
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
-  merge_deactivated_submaps_if_possible: false
+  merge_deactivated_submaps_if_possible: true
   apply_class_layer_when_deactivating_submaps: false
   update_contained_submaps_with_correction: true
 
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
-    new_background_per_n_ticks: 20 # Update the background submaps per so much frames. Leave 0 to disable it
+    new_background_per_n_ticks: 10 # Update the background submaps per so much frames. Leave 0 to disable it
 
   tsdf_registrator:
     verbosity: 3
@@ -122,7 +139,7 @@ map_management:
 
   interpolator:
       verbosity: 4
-      func_name: "exponentialSimpleTime"
+      func_name: "linearTime"
       function_config: [0.0, 0.5]
 
 visualization:
@@ -137,7 +154,7 @@ visualization:
     visualize_free_space: true
     visualize_bounding_volumes: true
     include_free_space: false
-    use_different_colors_for_background: true
+    use_different_colors_for_background: true # when in  color_mode = submaps
     initial_background_color: 450
     mesh_min_weight: 0.000001
   
