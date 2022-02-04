@@ -36,7 +36,11 @@ class InputSynchronizer : public InputSynchronizerBase {
         "";  // Empty (default) take the frame of the depth message header.
     float transform_lookup_time =
         0.1f;  // s, Maximum time to wait for transforms.
-
+    // if use_tf_transforms is true then poses are read from
+    // /tf else poses are from the topic specified in
+    // tf_topic
+    bool use_tf_transforms = true;
+    std::string tf_topic = "";
     Config() { setConfigName("InputSynchronizer"); }
 
    protected:
@@ -118,6 +122,7 @@ class InputSynchronizer : public InputSynchronizerBase {
                        const std::string& child_frame,
                        Transformation* transformation) const;
 
+  void receiveTransform(const geometry_msgs::TransformStamped& tf_stamped);
   bool getDataInQueue(const ros::Time& timestamp,
                       InputSynchronizerData** data) override;
 
@@ -133,7 +138,7 @@ class InputSynchronizer : public InputSynchronizerBase {
   // ROS.
   ros::NodeHandle nh_;
   tf::TransformListener tf_listener_;
-
+  ros::Subscriber transform_sub_;
   // Inputs.
   InputData::InputTypes requested_inputs_;
   InputData::InputTypes subscribed_inputs_;
@@ -141,7 +146,7 @@ class InputSynchronizer : public InputSynchronizerBase {
 
   // Data.
   std::vector<std::unique_ptr<InputSynchronizerData>> data_queue_;
-
+  std::vector<geometry_msgs::TransformStamped> tf_msgs;
   // Settings.
   static const std::unordered_map<InputData::InputType, std::string>
       kDefaultTopicNames_;

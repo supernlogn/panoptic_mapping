@@ -1,8 +1,10 @@
 #include "panoptic_mapping_ros/input/input_synchronizer.h"
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -27,6 +29,9 @@ void InputSynchronizer::Config::checkParams() const {
   checkParamCond(!global_frame_name.empty(),
                  "'global_frame_name' may not be empty.");
   checkParamGE(transform_lookup_time, 0.f, "transform_lookup_time");
+  checkParamCond(use_tf_transforms || !tf_topic.empty(),
+                 "use_tf_transforms should be enabled, or a topic to read "
+                 "transforms should be provided");
 }
 
 void InputSynchronizer::Config::setupParamsAndPrinting() {
@@ -35,6 +40,8 @@ void InputSynchronizer::Config::setupParamsAndPrinting() {
   setupParam("global_frame_name", &global_frame_name);
   setupParam("sensor_frame_name", &sensor_frame_name);
   setupParam("transform_lookup_time", &transform_lookup_time);
+  setupParam("use_tf_transforms", &use_tf_transforms);
+  setupParam("tf_topic", &tf_topic);
 }
 
 InputSynchronizer::InputSynchronizer(const Config& config,
@@ -43,6 +50,10 @@ InputSynchronizer::InputSynchronizer(const Config& config,
   LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
   if (!config_.sensor_frame_name.empty()) {
     used_sensor_frame_name_ = config_.sensor_frame_name;
+  }
+  if (!config_.use_tf_transforms) {
+    transform_sub_ = nh_.subscribe(config_.tf_topic, 100,
+                                   &InputSynchronizer::receiveTransform, this);
   }
 }
 
@@ -256,24 +267,75 @@ bool InputSynchronizer::lookupTransform(const ros::Time& timestamp,
                                         const std::string& child_frame,
                                         Transformation* transformation) const {
   // Try to lookup the transform for the maximum wait time.
-  tf::StampedTransform transform;
-  try {
-    tf_listener_.waitForTransform(base_frame, child_frame, timestamp,
-                                  ros::Duration(config_.transform_lookup_time));
-    tf_listener_.lookupTransform(base_frame, child_frame, timestamp, transform);
-  } catch (tf::TransformException& ex) {
-    LOG_IF(WARNING, config_.verbosity >= 2)
-        << "Unable to lookup transform between '" << base_frame << "' and '"
-        << child_frame << "' at time '" << timestamp << "' over '"
-        << config_.transform_lookup_time << "s', skipping inputs. Exception: '"
-        << ex.what() << "'.";
-    return false;
-  }
-  CHECK_NOTNULL(transformation);
   Transformation T_M_C;
-  tf::transformTFToKindr(transform, &T_M_C);
-  *transformation = T_M_C;
+  if (config_.use_tf_transforms) {
+    tf::StampedTransform transform;
+    try {
+      tf_listener_.waitForTransform(
+          base_frame, child_frame, timestamp,
+          ros::Duration(config_.transform_lookup_time));
+      tf_listener_.lookupTransform(base_frame, child_frame, timestamp,
+                                   transform);
+    } catch (tf::TransformException& ex) {
+      LOG_IF(WARNING, config_.verbosity >= 2)
+          << "Unable to lookup transform between '" << base_frame << "' and '"
+          << child_frame << "' at time '" << timestamp << "' over '"
+          << config_.transform_lookup_time
+          << "s', skipping inputs. Exception: '" << ex.what() << "'.";
+      return false;
+    }
+    CHECK_NOTNULL(transformation);
+    tf::transformTFToKindr(transform, &T_M_C);
+    *transformation = T_M_C;
+  } else {
+    size_t n = tf_msgs.size();
+    int total_sleep_time = 0;
+    const int transform_lookup_time_ms = config_.transform_lookup_time * 1000;
+    const auto one_ms = std::chrono::milliseconds(1);
+    while (n == 0 && total_sleep_time < transform_lookup_time_ms) {
+      std::this_thread::sleep_for(one_ms);
+      total_sleep_time += 1;
+      n = tf_msgs.size();
+    }
+    while (tf_msgs[n - 1].header.stamp < timestamp &&
+           total_sleep_time < transform_lookup_time_ms) {
+      std::this_thread::sleep_for(one_ms);
+      total_sleep_time += 1;
+      n = tf_msgs.size();
+    }
+    if (total_sleep_time >= transform_lookup_time_ms) {
+      LOG_IF(WARNING, config_.verbosity >= 2)
+          << "Unable to lookup transform between '" << base_frame << "' and '"
+          << child_frame << "' at time '" << timestamp << "' over '"
+          << config_.transform_lookup_time << "s', skipping inputs.";
+      return false;
+    }
+    size_t i = n;
+    geometry_msgs::TransformStamped tf_msg;
+    if (tf_msgs[i].header.stamp >= timestamp) {
+      if (i == 0) {
+        tf_msg = tf_msgs[0];
+      } else if (tf_msgs[i - 1].header.stamp < timestamp) {
+        tf_msg = tf_msgs[i];
+      } else {
+        tf_msg = tf_msgs[i - 1];
+      }
+    } else {
+      return false;
+    }
+    tf::StampedTransform transform;
+    tf::transformStampedMsgToTF(tf_msg, transform);
+    tf::transformTFToKindr(transform, &T_M_C);
+    CHECK_NOTNULL(transformation);
+    *transformation = T_M_C;
+  }
+
   return true;
+}
+
+void InputSynchronizer::receiveTransform(
+    const geometry_msgs::TransformStamped& tf_stamped) {
+  tf_msgs.push_back(tf_stamped);
 }
 
 }  // namespace panoptic_mapping
