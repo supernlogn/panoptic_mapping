@@ -7,19 +7,36 @@ import yaml
 
 import numpy as np
 
+T_C_R = np.array([[0, -1, 0, 0], [0, 0, -1, 0], [1, 0, 0, 0], [0, 0, 0, 1]])
+home = os.getenv("HOME")
+base_dir = os.path.join(home, "datasets")
+panoptic_dir = os.path.join(os.path.dirname(__file__), "..")
+config_dir = os.path.join(panoptic_dir, "panoptic_mapping_utils", "config")
+trajectory_plots = {
+    "pm+voxgraph":
+    lambda: plot_trajectories.plotPerAxisDirectory(
+        base_dir, "temp.png", T_C_R=T_C_R),
+    "voxblox+voxgraph":
+    lambda: plot_trajectories.plotPerAxisDirectory(
+        base_dir, "temp.png", include_optimized=False),
+    "voxblox+voxgraph_rotated":
+    lambda: plot_trajectories.plotPerAxisDirectory(
+        base_dir, "temp.png", include_optimized=False, T_C_R=T_C_R),
+    "experiments_w_wo_alignment":
+    lambda: plot_trajectories.plotFullExperiment(
+        os.path.join(config_dir,
+                     'evaluation_experiments/experiments_w_wo_alignment.yaml')
+    ),
+    "experiments_w_wo_interpolation":
+    lambda: plot_trajectories.plotFullExperiment(
+        os.path.join(
+            config_dir,
+            'evaluation_experiments/experiments_w_wo_interpolation.yaml'))
+}
+
 
 def main():
-    # plotFullExperiment('/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/evaluation_experiments/experiments_w_wo_interpolation.yaml')
-    # plotFullExperiment(
-    #     '/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/evaluation_experiments/experiments_w_wo_alignment.yaml'
-    # )
-    # plotPerAxisDirectory("/home/ioannis/datasets/z_fix", "z_fix.png")
-    T_C_R = (np.array([[0, -1, 0, 0], [0, 0, -1, 0], [1, 0, 0, 0],
-                       [0, 0, 0, 1]]))
-    # plot_trajectories.plotPerAxisDirectory("/home/ioannis/datasets", "temp.png")#, T_C_R=T_C_R)
-    plot_trajectories.plotPerAxisDirectory(
-        "/home/ioannis/datasets", "temp.png",
-        include_optimized=False)  #, T_C_R=T_C_R)
+    trajectory_plots["pm+voxgraph"]()
 
 
 if __name__ == "__main__":
