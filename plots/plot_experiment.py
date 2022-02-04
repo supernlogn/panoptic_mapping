@@ -15,13 +15,16 @@ config_dir = os.path.join(panoptic_dir, "panoptic_mapping_utils", "config")
 trajectory_plots = {
     "pm+voxgraph":
     lambda: plot_trajectories.plotPerAxisDirectory(
-        base_dir, "temp.png", T_C_R=T_C_R),
+        base_dir, "temp.png", T_C_R=T_C_R, post_mult=True),
     "voxblox+voxgraph":
     lambda: plot_trajectories.plotPerAxisDirectory(
         base_dir, "temp.png", include_optimized=False),
     "voxblox+voxgraph_rotated":
-    lambda: plot_trajectories.plotPerAxisDirectory(
-        base_dir, "temp.png", include_optimized=False, T_C_R=T_C_R),
+    lambda: plot_trajectories.plotPerAxisDirectory(base_dir,
+                                                   "temp.png",
+                                                   include_optimized=False,
+                                                   T_C_R=T_C_R,
+                                                   post_mult=True),
     "experiments_w_wo_alignment":
     lambda: plot_trajectories.plotFullExperiment(
         os.path.join(config_dir,
