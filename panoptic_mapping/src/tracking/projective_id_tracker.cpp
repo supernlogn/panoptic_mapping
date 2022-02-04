@@ -283,68 +283,6 @@ void ProjectiveIDTracker::processBackgroundInput(
   bck_submap->setWasTracked(true);
   // if background is just created
   // then the previous background needs to be provided
-  // getMeshNormals(bck_submap);
-
-  // get mean y (exact)
-  const Transformation T_C_S =
-      input->T_M_C().inverse() * bck_submap->getT_M_S();
-  std::vector<size_t> limits(4);  // x_min, x_max, y_min, y_max
-  const Camera::Config& cam_config = globals_->camera()->getConfig();
-  limits = {0u, static_cast<size_t>(cam_config.width), 0u,
-            static_cast<size_t>(cam_config.height)};
-  const Transformation T_S_C = T_C_S.inverse();
-  const TsdfLayer& tsdf_layer = bck_submap->getTsdfLayer();
-  double mean_z = 0.0;
-  size_t total_floor_points = 0u;
-  bool floor_found = false;
-  for (size_t u = limits[0]; u < limits[1];
-       u += config_.rendering_subsampling) {
-    for (size_t v = limits[2]; v < limits[3];
-         v += config_.rendering_subsampling) {
-      const float depth = input->depthImage().at<float>(v, u);
-      if (depth < cam_config.min_range || depth > cam_config.max_range) {
-        continue;
-      }
-      // TODO(supernlogn): Currently only for floor
-      const int floor_label = 1;
-      int input_id = input->idImage().at<int>(v, u);
-      if (input_id != floor_label) {
-        continue;
-      }
-      floor_found = true;
-      const cv::Vec3f& vertex = input->vertexMap().at<cv::Vec3f>(v, u);
-      const Point P_S = T_S_C * Point(vertex[0], vertex[1], vertex[2]);
-      // const voxblox::BlockIndex block_index =
-      //     tsdf_layer.computeBlockIndexFromCoordinates(P_S);
-      // const auto block = tsdf_layer.getBlockPtrByIndex(block_index);
-      mean_z += P_S[2];
-      ++total_floor_points;
-    }
-  }
-  // float diff_y = 0.0;
-  // if (floor_found) {
-  //   mean_z /= (double)total_floor_points;
-  //   const float y_threshold = 0.1;
-  //   if (has_floor_z_) {
-  //     diff_y = current_floor_z - (float)mean_z;
-  //     if (abs(diff_y) > y_threshold) {
-  //       LOG(ERROR) << "y_threshold (" << diff_y << ") violated";
-  //     } else {
-  //       LOG(INFO) << "diff_y at:" << diff_y;
-  //     }
-  //   } else {
-  //     has_floor_z_ = true;
-  //     current_floor_z = (float)mean_z;
-  //   }
-  // } else {
-  //   LOG(WARNING) << "No floor found: ";
-  // }
-
-  // Transformation current_T_M_C = input->T_M_C();
-  // voxblox::Point pos = current_T_M_C.getPosition();
-  // pos =  pos + voxblox::Point(0,0,diff_y);
-  // Transformation new_T_M_C(current_T_M_C.getRotation(), pos);
-  // input->setT_M_C(new_T_M_C);
 
   const int background_submap_id = bck_submap->getID();
   for (int bck_id : bck_input_ids) {
