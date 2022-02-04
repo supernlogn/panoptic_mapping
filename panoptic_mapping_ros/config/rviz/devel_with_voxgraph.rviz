@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Voxgraph1
         - /Voxblox1/Mesh1
+        - /PointCloud21
       Splitter Ratio: 0.4134078323841095
     Tree Height: 1079
   - Class: rviz/Selection
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -88,51 +89,40 @@ Visualization Manager:
           Unreliable: false
           Value: true
           Visible:
-            103_SM_Wall_Clock_a: true
-            106_SM_Floor_a: true
-            119_SM_Laptop_a: true
-            120_SM_Table_a: true
-            121_SM_Coffee_Machine_a: true
-            122_SM_Floor_a: true
-            123_SM_Stack_of_Books_a: true
-            125_SM_TV_a: true
-            126_SM_Kitchen_a: true
-            127_SM_Table_b: true
-            134_SM_Floor_a: true
-            1_SM_Floor_a: true
-            24_SM_Floor_a: true
+            0_SM_Floor_a: true
+            23_SM_Floor_a: true
             2_SM_Kitchen_a: true
-            33_SM_Table_a: true
-            39_SM_Kitchen_a: true
-            3_SM_Journal_c: true
-            42_SM_Table_b: true
-            43_SM_Floor_a: true
-            44_SM_TV_a: true
-            45_SM_Wall_Clock_a: true
-            46_SM_Coffee_Machine_a: true
-            47_SM_Table_Decor_a: true
-            48_SM_Coffee_Machine_a: true
-            49_SM_Tumblr_a: true
-            50_SM_Tumblr_b: true
-            52_SM_Sofa_a: true
-            53_SM_Table_Decor_a: true
-            54_SM_Floor_a: true
-            55_SM_Stack_of_Books_c: true
-            56_SM_Stack_of_Books_b: true
-            57_SM_Stack_of_Books_d: true
-            58_SM_Stack_of_Books_a: true
-            59_SM_Table_a: true
-            60_SM_Stack_of_Books_e: true
-            61_SM_Stack_of_Books_f: true
-            62_SM_Table_Decor_a: true
-            63_SM_Tumblr_a: true
-            64_SM_Coffee_Machine_a: true
-            65_SM_TV_a: true
-            67_SM_Wall_Clock_a: true
-            68_SM_Floor_a: true
-            77_SM_Floor_a: true
-            85_SM_Wall_Clock_a: true
-            94_SM_Laptop_a: true
+            36_SM_Table_a: true
+            41_SM_Floor_a: true
+            43_SM_Kitchen_a: true
+            46_SM_Table_b: true
+            47_SM_TV_a: true
+            48_SM_Wall_Clock_a: true
+            49_SM_Coffee_Machine_a: true
+            50_SM_Table_Decor_a: true
+            51_SM_Coffee_Machine_a: true
+            52_SM_Tumblr_a: true
+            53_SM_Tumblr_b: true
+            55_SM_Sofa_a: true
+            56_SM_Floor_a: true
+            57_SM_Table_Decor_a: true
+            58_SM_Stack_of_Books_c: true
+            59_SM_Stack_of_Books_b: true
+            60_SM_Stack_of_Books_d: true
+            61_SM_Stack_of_Books_a: true
+            62_SM_Table_a: true
+            63_SM_Stack_of_Books_e: true
+            64_SM_Floor_a: true
+            65_SM_Stack_of_Books_f: true
+            66_SM_Table_Decor_a: true
+            67_SM_Tumblr_a: true
+            68_SM_Coffee_Machine_a: true
+            69_SM_TV_a: true
+            6_SM_Journal_c: true
+            71_SM_Wall_Clock_a: true
+            72_SM_Coffee_Machine_a: true
+            73_SM_Coffee_Machine_a: true
+            74_SM_Floor_a: true
             Value: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
@@ -265,8 +255,6 @@ Visualization Manager:
                 submap_0: true
                 submap_1: true
                 submap_2: true
-                submap_3: true
-                submap_4: true
           Enabled: true
           Name: Meshes
         - Class: rviz/Marker
@@ -301,7 +289,7 @@ Visualization Manager:
           Topic: /voxgraph_mapper/pose_history
           Unreliable: false
           Value: false
-      Enabled: false
+      Enabled: true
       Name: Voxgraph
     - Class: rviz/TF
       Enabled: false
@@ -348,6 +336,34 @@ Visualization Manager:
           Visible: true
       Enabled: false
       Name: Voxblox
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /flat_data_player/pointcloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
