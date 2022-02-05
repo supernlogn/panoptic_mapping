@@ -92,7 +92,7 @@ map_management:
   publish_poses_to_voxgraph_frequency: 1
   
   # voxgraph publishing
-  num_submaps_to_merge_for_voxgraph: 1
+  num_submaps_to_merge_for_voxgraph: 3
   avoid_merging_deactivated_background_submaps: false
   
   # Behavior
