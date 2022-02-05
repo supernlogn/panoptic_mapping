@@ -92,7 +92,8 @@ class PoseManager {
    * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
    **/
   Transformation getPoseCorrectionTF(const poseIdType pose_id,
-                                     const Transformation& other_pose) const;
+                                     const Transformation& other_pose,
+                                     const Transformation& T_C_R) const;
 
   /**
    * @brief return a way to turn the other_pose

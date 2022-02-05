@@ -122,9 +122,10 @@ void PoseManager::clear() {
 }
 
 Transformation PoseManager::getPoseCorrectionTF(
-    const poseIdType pose_id, const Transformation& T_voxgraph) const {
+    const poseIdType pose_id, const Transformation& T_voxgraph,
+    const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose;
+  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose * T_C_R;
   Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
   // LOG(INFO) << "getPoseCorrectionTF for Panoptic mapping pose: " << std::endl
   //           << pose_at_pose_id << std::endl

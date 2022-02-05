@@ -1,0 +1,125 @@
+camera:
+  fx: 320
+  fy: 320
+  height: 480
+  max_range: 5
+  min_range: 0.1
+  verbosity: 1
+  vx: 320
+  vy: 240
+  width: 640
+data_logging_interval: -1.0
+freespace_allocator:
+  truncation_distance: -2
+  type: monolithic
+  verbosity: 1
+  voxel_size: 0.3
+  voxels_per_side: 16
+global_frame_name: world
+id_tracker:
+  depth_tolerance: -1
+  match_acceptance_threshold: 0.1
+  min_allocation_size: 2000
+  tracking_metric: IoU
+  type: projective
+  use_class_data_for_matching: true
+  verbosity: 1
+labels:
+  file_name: /home/ioannis/datasets/flat_dataset/groundtruth_labels.csv
+  type: csv
+map_management:
+  activity_management_frequency: 1
+  activity_manager:
+    deactivate_after_missed_detections: 5
+    new_background_per_n_ticks: 18
+    required_reobservations: 5
+  apply_class_layer_when_deactivating_submaps: false
+  avoid_merging_deactivated_background_submaps: true
+  change_detection_frequency: 5
+  interpolator:
+    func_name: linearTime
+    function_config:
+    - 0.0
+    - 0.5
+    verbosity: 4
+  layer_manipulator:
+    use_instance_classification: false
+    verbosity: 3
+  merge_deactivated_submaps_if_possible: false
+  num_submaps_to_merge_for_voxgraph: 3
+  prune_active_blocks_frequency: 0
+  publish_poses_to_voxgraph_frequency: 1
+  rotX: 0.0
+  rotY: 0.0
+  rotZ: 0.0
+  send_deactivated_submaps_to_voxgraph: true
+  tsdf_registrator:
+    error_threshold: -1
+    match_acceptance_percentage: 0.02
+    match_acceptance_points: 20
+    match_rejection_percentage: 0.02
+    match_rejection_points: 20
+    min_voxel_weight: 1.0e-06
+    normalize_by_voxel_weight: true
+    verbosity: 3
+  type: submaps
+  update_contained_submaps_with_correction: true
+  update_poses_with_voxgraph_frequency: 3
+  update_whole_trajectory_with_voxgraph_tf: true
+  verbosity: 4
+max_input_queue_length: 1000
+print_timing_interval: 0.0
+ros_spinning_threads: 8
+submap_allocator:
+  background_voxel_size: 0.05
+  clear_foreign_voxels: false
+  large_instance_voxel_size: 0.04
+  medium_instance_voxel_size: 0.03
+  required_belonging_corners: 1
+  small_instance_voxel_size: 0.02
+  truncation_distance: -2
+  type: semantic
+  unknown_voxel_size: 0.05
+  use_class_layer: true
+  verbosity: 1
+  voxels_per_side: 16
+transform_lookup_time: 0.5
+tsdf_integrator:
+  allocate_neighboring_blocks: true
+  foreign_rays_clear: true
+  integration_threads: 1
+  interpolation_method: adaptive
+  max_weight: 10000
+  type: class_projective
+  update_only_tracked_submaps: true
+  use_binary_classification: true
+  use_instance_classification: false
+  use_weight_dropoff: true
+  verbosity: 1
+use_threadsafe_submap_collection: true
+use_transform_caching: true
+verbosity: 3
+visualization:
+  planning:
+    slice_height: -0.5
+    slice_resolution: 0.1
+    verbosity: 1
+    visualize_slice: true
+  submaps:
+    color_mode: color
+    include_free_space: false
+    initial_background_color: 450
+    mesh_min_weight: 1.0e-06
+    submap_color_discretization: 800
+    type: submaps
+    use_different_colors_for_background: true
+    verbosity: 1
+    visualization_mode: persistent
+    visualize_bounding_volumes: true
+    visualize_free_space: true
+    visualize_mesh: true
+    visualize_tsdf_blocks: true
+  tracking:
+    verbosity: 1
+    visualize_tracking: true
+visualization_interval: -1.0

@@ -1,17 +1,16 @@
-#ifndef UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
-#define UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#ifndef PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#define PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
 
 #include <map>
 #include <string>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/quat-transformation.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include "normal_distribution.h"
+#include "normal_distribution.h"  // NOLINT
 
 namespace unreal_airsim {
 class OdometryDriftSimulator {
@@ -72,7 +71,6 @@ class OdometryDriftSimulator {
       const geometry_msgs::TransformStamped& simulated_pose_msg) const;
   geometry_msgs::TransformStamped convertGroundTruthToDriftedPoseMsg(
       const geometry_msgs::TransformStamped& ground_truth_pose_msg) const;
-
   void publishTfs() const;
 
  private:
@@ -107,8 +105,7 @@ class OdometryDriftSimulator {
   // Transform publishing
   mutable tf2_ros::TransformBroadcaster transform_broadcaster_;
   void publishSimulatedPoseTf() const;
-  void publishGroundTruthPoseTf() const;
 };
 }  // namespace unreal_airsim
 
-#endif  // UNREAL_AIRSIM_SIMULATOR_PROCESSING_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_
+#endif  // PANOPTIC_MAPPING_UTILS_DRIFT_GENERATOR_ODOMETRY_DRIFT_SIMULATOR_ODOMETRY_DRIFT_SIMULATOR_H_

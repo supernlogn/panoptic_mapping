@@ -92,18 +92,18 @@ map_management:
   publish_poses_to_voxgraph_frequency: 1
   
   # voxgraph publishing
-  num_submaps_to_merge_for_voxgraph: 3
-  avoid_merging_deactivated_background_submaps: true
+  num_submaps_to_merge_for_voxgraph: 1
+  avoid_merging_deactivated_background_submaps: false
   
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
   merge_deactivated_submaps_if_possible: true
-  apply_class_layer_when_deactivating_submaps: false
+  apply_class_layer_when_deactivating_submaps: true
 
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
-    new_background_per_n_ticks: 20 # Update the background submaps per so much frames. Leave 0 to disable it
+    new_background_per_n_ticks: 15 # Update the background submaps per so much frames. Leave 0 to disable it
 
   tsdf_registrator:
     verbosity: 3

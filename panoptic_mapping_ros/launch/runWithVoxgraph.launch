@@ -22,15 +22,15 @@
 
   <!-- Mapper -->
   <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
-  <arg name="shutdown_when_finished" default="false"/> 
+  <arg name="shutdown_when_finished" default="true"/> 
 
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
 
   <!-- noise args -->
-  <arg name="use_noise" default="false"/>
-  <arg name="drift_type" default="none"/>
+  <arg name="use_noise" default="true"/>
+  <arg name="drift_type" default="strong"/>
 
   <!-- Voxgraph supplied arguments -->
   <arg name="pointcloud_topic" value="pointcloud" doc="ROS topic for pointcloud input"/>

@@ -1,21 +1,38 @@
 #include "panoptic_mapping/map_management/map_manager.h"
 
-#include <minkindr_conversions/kindr_msg.h>
-#include <minkindr_conversions/kindr_tf.h>
-#include <cblox_ros/submap_conversions.h>
-#include <voxblox_ros/conversions.h>
-#include <voxgraph/frontend/submap_collection/voxgraph_submap.h>
-
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <mutex>
 
+#include <cblox_ros/submap_conversions.h>
+#include <minkindr_conversions/kindr_msg.h>
+#include <minkindr_conversions/kindr_tf.h>
+#include <voxblox_msgs/FilePath.h>
+#include <voxblox_ros/conversions.h>
+#include <voxgraph/frontend/submap_collection/voxgraph_submap.h>
 
 namespace panoptic_mapping {
+
+Transformation computeT_C_R(const double rotX, const double rotY,
+                            const double rotZ) {
+  Eigen::Matrix3f rotMat1, rotMat2, rotMat3;
+  kindr::minimal::AngleAxis rot1(rotX * M_PI / 180.0, Eigen::Vector3d::UnitX());
+  kindr::minimal::AngleAxis rot2(rotY * M_PI / 180.0, Eigen::Vector3d::UnitY());
+  kindr::minimal::AngleAxis rot3(rotZ * M_PI / 180.0, Eigen::Vector3d::UnitZ());
+  rotMat1 =
+      rot1.getRotationMatrix()
+          .cast<voxblox::FloatingPoint>();  // -90 around x-axis --> rotation
+                                            // around the side axis2
+  rotMat2 = rot2.getRotationMatrix().cast<voxblox::FloatingPoint>();
+  rotMat3 = rot3.getRotationMatrix().cast<voxblox::FloatingPoint>();
+  voxblox::Quaternion q123(rotMat1 * rotMat2 * rotMat3);
+  const Transformation T_S_O(Eigen::Vector3f(0, 0, 0), q123);
+  return T_S_O;
+}
 
 config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
     MapManager::registration_("submaps");
@@ -83,6 +100,7 @@ MapManager::MapManager(const Config& config)
         config_.change_detection_frequency,
         [this](SubmapCollection* submaps) { performChangeDetection(submaps); });
   }
+  T_C_R_ = computeT_C_R(90.0, 0.0, 90.0);
   if (config.send_deactivated_submaps_to_voxgraph) {
     background_submap_publisher_ =
         nh_.advertise<voxblox_msgs::Submap>(
@@ -251,6 +269,18 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
           << "Deactivating submap " << submap.getID();
       submap.finishActivePeriod();
     }
+  }
+  std::string save_voxgraph_trajectory_on_finish =
+      "/home/ioannis/datasets/voxgraph_traj.bag";
+  LOG_IF(INFO, config_.verbosity >= 3)
+      << "Saving Voxgraph trajectory to:" << save_voxgraph_trajectory_on_finish;
+  ros::ServiceClient sec = nh_.serviceClient<voxblox_msgs::FilePath>(
+      "/voxgraph_mapper/save_pose_history_to_file");
+  voxblox_msgs::FilePath msg;
+  msg.request.file_path = save_voxgraph_trajectory_on_finish;
+  if (!sec.call(msg)) {
+    LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
+               << sec.exists();
   }
   LOG_IF(INFO, config_.verbosity >= 3) << "Merging Submaps:";
 
@@ -426,13 +456,13 @@ void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
           Submap * submapToChange = submaps->getSubmapPtr(*id_it);
 
           const Transformation T_M_S_correction =
-            PoseManager::getGlobalInstance()->
-              getPoseCorrectionTF(mid_pose_id, T_M_S_optimal);
-          submapToChange->setT_M_S(
-            submapToChange->getT_M_S() * T_M_S_correction);
+              PoseManager::getGlobalInstance()->getPoseCorrectionTF(
+                  mid_pose_id, T_M_S_optimal, T_C_R_);
+          submapToChange->setT_M_S(submapToChange->getT_M_Sinit() *
+                                   T_M_S_correction);
 
-          PoseManager::getGlobalInstance()->
-              updateSinglePoseTransformation(mid_pose_id, T_M_S_optimal);
+          // PoseManager::getGlobalInstance()->
+          //     updateSinglePoseTransformation(mid_pose_id, T_M_S_optimal);
           LOG_IF(INFO, config_.verbosity >= 4)
               << "pose for submap id:" << *id_it << " was set" << std::endl;
         } else {
@@ -505,8 +535,9 @@ void MapManager::publishSubmapToVoxGraph(
       geometry_msgs::PoseStamped pose_msg;
       pose_msg.header.stamp = ros::Time(pose_info.time);
       pose_msg.header.frame_id = "world";
-      const Transformation & pose = PoseManager::getGlobalInstance()->
-                                getPoseTransformation(pose_id);
+      const Transformation& pose =
+          PoseManager::getGlobalInstance()->getPoseTransformation(pose_id) *
+          T_C_R_;
       tf::poseKindrToMsg(pose.cast<double>(),
                         &pose_msg.pose);
       submap_msg.trajectory.poses.emplace_back(pose_msg);

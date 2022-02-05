@@ -52,16 +52,19 @@ void OdometryDriftSimulator::tick(
     last_velocity_noise_sampling_time_ = current_timestamp;
 
     // Sample the linear velocity noise in body frame
+    double vnx = velocity_noise_.x();
+    double vny = velocity_noise_.y();
+    double vnz = velocity_noise_.z();
+    double vnyaw = velocity_noise_.yaw();
     const Transformation::Vector3 current_linear_velocity_noise_sample_B_ = {
-        velocity_noise_.x(), velocity_noise_.y(), velocity_noise_.z()};
+        vnx, vny, vnz};
     current_linear_velocity_noise_sample_W_ =
         ground_truth_pose.getRotation().rotate(
             current_linear_velocity_noise_sample_B_);
 
     // Sample the angular velocity noise directly in world frame,
     // since we only want to simulate drift on world frame yaw
-    current_angular_velocity_noise_sample_W_ = {0.0, 0.0,
-                                                velocity_noise_.yaw()};
+    current_angular_velocity_noise_sample_W_ = {0.0, 0.0, vnyaw};
   }
 
   // Integrate the drift
@@ -74,8 +77,14 @@ void OdometryDriftSimulator::tick(
 
   // Draw a random pose noise sample
   Transformation::Vector6 pose_noise_B_vec;
-  pose_noise_B_vec << pose_noise_.x(), pose_noise_.y(), pose_noise_.z(),
-      pose_noise_.roll(), pose_noise_.pitch(), pose_noise_.yaw();
+  double pnx = pose_noise_.x();
+  double pny = pose_noise_.y();
+  double pnz = pose_noise_.z();
+  double pnroll = pose_noise_.roll();
+  double pnpitch = pose_noise_.pitch();
+  double pnyaw = pose_noise_.yaw();
+
+  pose_noise_B_vec << pnx, pny, pnz, pnroll, pnpitch, pnyaw;
   current_pose_noise_ = Transformation::exp(pose_noise_B_vec);
 
   // Update the current simulated pose
@@ -174,15 +183,6 @@ void OdometryDriftSimulator::publishSimulatedPoseTf() const {
   transform_broadcaster_.sendTransform(getSimulatedPoseMsg());
 }
 
-void OdometryDriftSimulator::publishGroundTruthPoseTf() const {
-  // Publish the ground truth pose with a frame name that differs from the
-  // simulated pose to avoid conflicting TFs
-  geometry_msgs::TransformStamped ground_truth_pose_msg =
-      getGroundTruthPoseMsg();
-  ground_truth_pose_msg.child_frame_id += config_.ground_truth_frame_suffix;
-  transform_broadcaster_.sendTransform(ground_truth_pose_msg);
-}
-
 void OdometryDriftSimulator::publishTfs() const {
   if (!started_publishing_) {
     return;
@@ -190,11 +190,6 @@ void OdometryDriftSimulator::publishTfs() const {
 
   // Publish simulated pose TF
   publishSimulatedPoseTf();
-
-  // Publish true pose TF if requested
-  if (config_.publish_ground_truth_pose) {
-    publishGroundTruthPoseTf();
-  }
 }
 
 OdometryDriftSimulator::Config OdometryDriftSimulator::Config::fromRosParams(
@@ -210,8 +205,7 @@ OdometryDriftSimulator::Config OdometryDriftSimulator::Config::fromRosParams(
   nh.param("velocity_noise_frequency_hz", config.velocity_noise_frequency_hz,
            config.velocity_noise_frequency_hz);
 
-  nh.param("noise_seed", config.noise_config_seed,
-           config.noise_config_seed);
+  nh.param("noise_seed", config.noise_config_seed, config.noise_config_seed);
 
   for (auto& kv : config.velocity_noise) {
     kv.second = NormalDistribution::Config::fromRosParams(
