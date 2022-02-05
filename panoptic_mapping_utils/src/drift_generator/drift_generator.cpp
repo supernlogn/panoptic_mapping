@@ -44,10 +44,17 @@ void DriftGenerator::generate_noisy_pose_callback(
   ground_truth_msg.child_frame_id = config_.sensor_frame_name;
   ground_truth_msg.header = msg.header;
   ground_truth_msg.transform = msg.transform;
-  // store poses to two vectors to save them later to a bag
+
+  geometry_msgs::TransformStamped msg_absolute_noise =
+      odometry_drift_simulator_.getAbsoluteNoisePoseMsg();
+  msg_absolute_noise.child_frame_id = config_.sensor_frame_name;
+  msg_absolute_noise.header.frame_id = config_.global_frame_name;
+  msg_absolute_noise.header = msg.header;
+  // store poses to three vectors to save them later to a bag
   // file.
   ground_truth_poses_.push_back(ground_truth_msg);
   noisy_poses_.push_back(msg_noisy_pose);
+  absolute_drift_poses_.push_back(msg_absolute_noise);
 }
 
 void DriftGenerator::startupCallback(const ros::TimerEvent&) {
@@ -68,6 +75,11 @@ void DriftGenerator::onShutdown() {
   }
   for (const geometry_msgs::TransformStamped& tf_stamped : noisy_poses_) {
     bag.write(config_.noisy_pose_topic, tf_stamped.header.stamp, tf_stamped);
+  }
+  for (const geometry_msgs::TransformStamped& tf_stamped :
+       absolute_drift_poses_) {
+    bag.write(config_.absolute_drift_topic, tf_stamped.header.stamp,
+              tf_stamped);
   }
   // write to /tf
   for (const geometry_msgs::TransformStamped& tf_stamped : noisy_poses_) {

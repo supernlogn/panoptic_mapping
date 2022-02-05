@@ -20,6 +20,7 @@ class DriftGenerator {
     static Config fromRosParams(const ros::NodeHandle& nh);
     std::string save_file_path;
     std::string noisy_pose_topic;
+    std::string absolute_drift_topic = "absolute_drift";
     std::string ground_truth_pose_topic;
     std::string sensor_frame_name = "depth_camera";
     std::string global_frame_name = "world";
@@ -50,6 +51,7 @@ class DriftGenerator {
   ros::Subscriber pose_sub_;
   std::vector<geometry_msgs::TransformStamped> noisy_poses_;
   std::vector<geometry_msgs::TransformStamped> ground_truth_poses_;
+  std::vector<geometry_msgs::TransformStamped> absolute_drift_poses_;
   tf2_ros::TransformBroadcaster noisy_transform_broadcaster_;
   bool setupROS();
   bool readParamsFromRos();
