@@ -533,7 +533,11 @@ void MapManager::publishSubmapToVoxGraph(
       auto pose_info = PoseManager::getGlobalInstance()->
                                 getPoseInformation(pose_id);
       geometry_msgs::PoseStamped pose_msg;
-      pose_msg.header.stamp = ros::Time(pose_info.time);
+      if (pose_info.time < ros::TIME_MIN) {
+        pose_msg.header.stamp = ros::TIME_MIN;
+      } else {
+        pose_msg.header.stamp = pose_info.time;
+      }
       pose_msg.header.frame_id = "world";
       const Transformation& pose =
           PoseManager::getGlobalInstance()->getPoseTransformation(pose_id) *
