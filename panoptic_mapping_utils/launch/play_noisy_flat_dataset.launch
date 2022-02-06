@@ -13,6 +13,7 @@
   <arg name="use_noise" default="true"/>
   <arg name="drift_type" default="severe"/>
   <arg name="use_sim_time" default="false"/>
+  <arg name="generated_path_file_path" default="/home/ioannis/datasets/generated_path.txt"/>
 
 <!-- ============ Play Data ============ -->
   <param name="use_sim_time" value="$(arg use_sim_time)" />
@@ -32,13 +33,16 @@
     <remap from="~labels" to="$(arg namespace)/segmentation_labels" />
     <remap from="~pose" to="$(arg namespace)/pose_ground_truth" />
     <param name="use_noise" value="$(arg use_noise)" />
+    <param name="use_image_data" value="True"/>
+    <param name="use_point_cloud" value="True"/>
+    <rosparam command="load" file="$(find panoptic_mapping_ros)/config/mapper/camera.yaml"/>
   </node>
 
 <!-- add noise to the data -->
   <node pkg="panoptic_mapping_utils" type="drift_generator_node" name="drift_generator" output="screen" if="$(arg use_noise)">
     <param name="noisy_pose_topic" value="$(arg namespace)/pose" />
     <param name="ground_truth_pose_topic" value="$(arg namespace)/pose_ground_truth" />
-    <param name="save_noise_file_path" value="/home/ioannis/datasets/generated_path.txt" />
+    <param name="save_noise_file_path" value="$(arg generated_path_file_path)" />
     <param name="save_noise_to_file" value="true" />
     <param name="global_frame_name" value="$(arg global_frame_name)" />
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
