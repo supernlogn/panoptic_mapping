@@ -1,0 +1,10 @@
+camera:
+  verbosity: 1
+  width: 640  # Px
+  height: 480
+  vx: 320
+  vy: 240
+  fx: 320
+  fy: 320
+  max_range: 5  # m
+  min_range: 0.1
