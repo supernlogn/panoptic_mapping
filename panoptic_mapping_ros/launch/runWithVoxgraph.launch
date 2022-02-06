@@ -21,6 +21,8 @@
   <arg name="rio_play_rate" default="20"/>  <!-- Hz -->
 
   <!-- Mapper -->
+  <arg name="use_rosbag_for_pm" default="true"/>
+  <arg name="record_pm" default="false"/>
   <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
   <arg name="shutdown_when_finished" default="true"/> 
 
@@ -49,7 +51,7 @@
   
   <!-- Mapper -->
   <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" 
-   launch-prefix="$(arg launch_prefix)"><!--required="true"-->
+   launch-prefix="$(arg launch_prefix)" unless="$(arg use_rosbag_for_pm)"><!--required="true"-->
     <!-- Config -->
     <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
     <param name="shutdown_when_finished" value="$(arg shutdown_when_finished)" />
@@ -70,9 +72,15 @@
 
   <!-- Voxgraph -->
   <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
-    <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml"/>
+    <rosparam file="$(find panoptic_mapping_utils)/config/voxgraph/voxgraph_mapper.yaml"/>
     <param name="submap_topic" value="/panoptic_mapper/background_submap_out" />
   </node>
+
+
+  <node pkg="rosbag" type="record" name="rosbag_record_pm"
+       args="record -O /home/ioannis/datasets/pm_submap_out.bag /panoptic_mapper/background_submap_out" if="$(arg record_pm)"/>
+  <node pkg="rosbag" type="play" name="player" output="screen" if="$(arg use_rosbag_for_pm)"
+        args="-r 1.0 -q --clock /home/ioannis/datasets/pm_submap_out.bag" />
 
   <!-- RVIZ Visualization-->
   <group if="$(arg visualize)">
