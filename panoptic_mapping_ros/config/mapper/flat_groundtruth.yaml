@@ -85,7 +85,7 @@ map_management:
   verbosity: 4
   
   # Frequencies
-  prune_active_blocks_frequency: 0 
+  prune_active_blocks_frequency: 0
   activity_management_frequency: 1
   change_detection_frequency: 5
   update_poses_with_voxgraph_frequency: 3
@@ -103,7 +103,7 @@ map_management:
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
     deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
-    new_background_per_n_ticks: 15 # Update the background submaps per so much frames. Leave 0 to disable it
+    new_background_per_n_ticks: 6 # Update the background submaps per so much frames. Leave 0 to disable it
 
   tsdf_registrator:
     verbosity: 3
