@@ -34,7 +34,7 @@
     <remap from="~pose" to="$(arg namespace)/pose_ground_truth" />
     <param name="use_noise" value="$(arg use_noise)" />
     <param name="use_image_data" value="True"/>
-    <param name="use_point_cloud" value="True"/>
+    <param name="use_point_cloud" value="False"/>
     <rosparam command="load" file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
   </node>
 
