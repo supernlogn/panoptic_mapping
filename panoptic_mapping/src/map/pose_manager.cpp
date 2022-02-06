@@ -67,10 +67,9 @@ void PoseManager::updateSinglePoseTransformation(
   } else {
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     if (poses_history.find(pose_idx) == poses_history.end()) {
-      poses_history.insert(
-          std::make_pair(pose_idx, std::vector<Transformation>()));
+      poses_history.insert(std::make_pair(
+          pose_idx, std::vector<Transformation>{poses_info_[pose_idx].pose}));
     }
-    poses_history[pose_idx].push_back(poses_info_[pose_idx].pose);
     poses_info_[pose_idx].pose = new_pose;
   }
 }
@@ -185,7 +184,7 @@ Transformation PoseManager::getInitPoseTransformation(
   if (poses_history.find(pose_id) != poses_history.end()) {
     ret = poses_history.at(pose_id)[0];
   } else {
-    ret = getPoseTransformation(pose_id);
+    ret = poses_info_.at(pose_id).pose;
   }
   return ret;
 }
