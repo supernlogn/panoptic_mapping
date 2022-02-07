@@ -78,6 +78,14 @@ class PoseManager {
    * @brief clears data contained in private member containers
    */
   void clear();
+  /**
+   * @brief Saves all poses stored in this manager instance to a .bag file
+   *
+   * @param file_path the path of the file to store the poses
+   * @return true if poses were stored
+   * @return false if encountered an error and poses could not be stored
+   */
+  bool saveAllPosesToFile(const std::string& file_path) const;
 
   /**
    * @brief erases submap id from submaps_id_associated of

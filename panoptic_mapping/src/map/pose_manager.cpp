@@ -2,7 +2,12 @@
 
 #include <algorithm>
 #include <set>
+#include <string>
 #include <vector>
+
+#include <minkindr_conversions/kindr_msg.h>
+#include <minkindr_conversions/kindr_tf.h>
+#include <voxgraph/tools/io.h>
 
 #define INVALID_POSE_ID_NUM -1
 
@@ -132,6 +137,25 @@ void PoseManager::clear() {
   pose_id_to_submap_id_.clear();
   poses_info_.clear();
   next_pose_id_index_ = 0;  // reset next pose id index
+}
+
+bool PoseManager::saveAllPosesToFile(const std::string& file_path) const {
+  std::vector<geometry_msgs::PoseStamped> trajectoryPoses;
+  for (const auto& p_info_pair : poses_info_) {
+    const auto& p_info = p_info_pair.second;
+    geometry_msgs::PoseStamped pose_stamped_msg;
+    // avoid time 0
+    if (p_info.time < ros::TIME_MIN) {
+      pose_stamped_msg.header.stamp = ros::TIME_MIN;
+    } else {
+      pose_stamped_msg.header.stamp = p_info.time;
+    }
+    pose_stamped_msg.header.frame_id = "world";
+    tf::poseKindrToMsg(p_info.pose.cast<double>(), &pose_stamped_msg.pose);
+    trajectoryPoses.push_back(pose_stamped_msg);
+  }
+  bool res = voxgraph::io::savePoseHistoryToFile(file_path, trajectoryPoses);
+  return res;
 }
 
 Transformation PoseManager::getPoseCorrectionTF(
