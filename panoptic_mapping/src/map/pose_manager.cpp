@@ -71,9 +71,10 @@ void PoseManager::updateSinglePoseTransformation(
 PoseManager::poseIdType PoseManager::createPose(const Transformation& new_pose,
                                                 const ros::Time& pose_time) {
   const poseIdType new_p_id = createNewPoseId();
-  poses_info_.emplace(
-      new_p_id, (PoseInformation){
-                    .time = pose_time, .pose_idx = new_p_id, .pose = new_pose});
+  poses_info_.emplace(new_p_id, (PoseInformation){.time = pose_time,
+                                                  .pose_idx = new_p_id,
+                                                  .pose_init = new_pose,
+                                                  .pose = new_pose});
   return new_p_id;
 }
 
@@ -125,7 +126,8 @@ Transformation PoseManager::getPoseCorrectionTF(
     const poseIdType pose_id, const Transformation& T_voxgraph,
     const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose * T_C_R;
+  const Transformation& pose_at_pose_id =
+      poses_info_.at(pose_id).pose_init * T_C_R;
   Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
   // LOG(INFO) << "getPoseCorrectionTF for Panoptic mapping pose: " << std::endl
   //           << pose_at_pose_id << std::endl
@@ -140,7 +142,7 @@ Transformation PoseManager::getPoseCorrectionTF(
 Transformation PoseManager::getPoseCorrectionTFInv(
     const poseIdType pose_id, const Transformation& T_voxgraph) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose;
+  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose_init;
   Transformation result = T_voxgraph.inverse() * pose_at_pose_id;
 
   assert(result * T_voxgraph == pose_at_pose_id);
@@ -174,6 +176,14 @@ Transformation PoseManager::getPoseTransformation(
   assert(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& pose_transformation = poses_info_.at(pose_id).pose;
   return pose_transformation;
+}
+
+Transformation PoseManager::getInitPoseTransformation(
+    const poseIdType pose_id) const {
+  assert(poses_info_.find(pose_id) != poses_info_.end());
+  const Transformation& init_pose_transformation =
+      poses_info_.at(pose_id).pose_init;
+  return init_pose_transformation;
 }
 
 PoseManager::poseIdType PoseManager::getPoseIdAtTime(

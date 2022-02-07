@@ -27,6 +27,7 @@ class PoseManager {
   typedef struct {
     ros::Time time;
     poseIdxType pose_idx;
+    Transformation pose_init;
     Transformation pose;
   } PoseInformation;
 
@@ -113,6 +114,8 @@ class PoseManager {
   // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;
   Transformation getPoseTransformation(const poseIdType pose_id) const;
+  Transformation PoseManager::getInitPoseTransformation(
+      const poseIdType pose_id) const;
   poseIdType getPoseIdAtTime(const ros::Time time) const;
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
