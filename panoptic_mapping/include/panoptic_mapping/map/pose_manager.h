@@ -42,6 +42,8 @@ class PoseManager {
   // copying information
   void copy(PoseManager* other) const;
   // updating information
+  void correctPoseInfo(PoseManager::PoseInformation* pose_info,
+                       const Transformation& T_corr);
   void correctPoseRangeTransformation(
       const poseIdType start_pose_id, const poseIdType end_pose_id,
       const Transformation& corr_transformation);

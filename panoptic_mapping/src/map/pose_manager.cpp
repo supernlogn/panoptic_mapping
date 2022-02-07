@@ -22,6 +22,11 @@ void PoseManager::copy(PoseManager* other) const {
   other->next_pose_id_index_ = next_pose_id_index_;
 }
 
+void PoseManager::correctPoseInfo(PoseManager::PoseInformation* pose_info,
+                                  const Transformation& T_corr) {
+  pose_info->pose = pose_info->pose_init * T_corr;
+}
+
 void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
                                                  const poseIdType end_pose_id,
                                                  const Transformation& T_corr) {
@@ -29,11 +34,7 @@ void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
                      << " transformations with " << T_corr << std::endl;
   for (auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
-    const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
-    Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    const Transformation& init_pose_at_pose_idx =
-        poses_info_[pose_idx].pose_init;
-    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
+    correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
 
@@ -44,11 +45,7 @@ void PoseManager::correctPoseRangeTransformation(
                      << " transformations with " << T_corr << std::endl;
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
-    const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
-    Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    const Transformation& init_pose_at_pose_idx =
-        poses_info_[pose_idx].pose_init;
-    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
+    correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
 
@@ -59,11 +56,7 @@ void PoseManager::correctPoseRangeTransformation(
                      << " transformations with " << T_corr << std::endl;
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
-    const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
-    Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    const Transformation& init_pose_at_pose_idx =
-        poses_info_[pose_idx].pose_init;
-    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
+    correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
 
