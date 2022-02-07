@@ -115,6 +115,12 @@ OdometryDriftSimulator::convertDriftedToGroundTruthPose(
   return integrated_pose_drift_.inverse() * simulated_pose *
          current_pose_noise_.inverse();
 }
+geometry_msgs::TransformStamped OdometryDriftSimulator::getIntegratedDriftMsg()
+    const {
+  geometry_msgs::TransformStamped msg = last_ground_truth_pose_msg_;
+  tf::transformKindrToMsg(integrated_pose_drift_, &msg.transform);
+  return msg;
+}
 
 OdometryDriftSimulator::Transformation
 OdometryDriftSimulator::convertGroundTruthToDriftedPose(

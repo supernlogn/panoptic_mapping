@@ -45,16 +45,16 @@ void DriftGenerator::generate_noisy_pose_callback(
   ground_truth_msg.header = msg.header;
   ground_truth_msg.transform = msg.transform;
 
-  geometry_msgs::TransformStamped msg_absolute_noise =
-      odometry_drift_simulator_.getAbsoluteNoisePoseMsg();
-  msg_absolute_noise.child_frame_id = config_.sensor_frame_name;
-  msg_absolute_noise.header.frame_id = config_.global_frame_name;
-  msg_absolute_noise.header = msg.header;
+  geometry_msgs::TransformStamped msg_integrated_drift =
+      odometry_drift_simulator_.getIntegratedDriftMsg();
+  msg_integrated_drift.child_frame_id = config_.sensor_frame_name;
+  msg_integrated_drift.header.frame_id = config_.global_frame_name;
+  msg_integrated_drift.header = msg.header;
   // store poses to three vectors to save them later to a bag
   // file.
   ground_truth_poses_.push_back(ground_truth_msg);
   noisy_poses_.push_back(msg_noisy_pose);
-  absolute_drift_poses_.push_back(msg_absolute_noise);
+  absolute_drift_poses_.push_back(msg_integrated_drift);
 }
 
 void DriftGenerator::startupCallback(const ros::TimerEvent&) {

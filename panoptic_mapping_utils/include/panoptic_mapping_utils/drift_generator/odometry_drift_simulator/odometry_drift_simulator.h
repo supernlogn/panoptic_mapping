@@ -62,7 +62,7 @@ class OdometryDriftSimulator {
   geometry_msgs::TransformStamped getGroundTruthPoseMsg() const {
     return last_ground_truth_pose_msg_;
   }
-
+  geometry_msgs::TransformStamped getIntegratedDriftMsg() const;
   Transformation convertDriftedToGroundTruthPose(
       const Transformation& simulated_pose) const;
   Transformation convertGroundTruthToDriftedPose(
@@ -86,7 +86,6 @@ class OdometryDriftSimulator {
   Transformation integrated_pose_drift_;
   Transformation current_pose_noise_;
   Transformation current_simulated_pose_;
-  Transformation current_absolute_noise_pose_;
   geometry_msgs::TransformStamped last_ground_truth_pose_msg_;
 
   // Noise distributions
