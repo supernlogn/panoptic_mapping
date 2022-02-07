@@ -185,9 +185,6 @@ void MapManager::pruneActiveBlocks(SubmapCollection* submaps) {
   for (int id : submaps_to_remove) {
     for (int published_id : published_submap_ids_to_voxgraph_) {
       if (published_id == id) {
-        LOG(INFO) << "HAVE TO remove submap : " << id
-                  << "from published_submap_ids_to_voxgraph_"
-                  << " at " << __LINE__ << std::endl;
         break;
       }
     }
