@@ -115,13 +115,11 @@ class PoseManager {
   // for the graph
   PoseInformation getPoseInformation(const poseIdType pose_id) const;
   Transformation getPoseTransformation(const poseIdType pose_id) const;
-  Transformation PoseManager::getInitPoseTransformation(
-      const poseIdType pose_id) const;
+  Transformation getInitPoseTransformation(const poseIdType pose_id) const;
   poseIdType getPoseIdAtTime(const ros::Time time) const;
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
-  Transformation PoseManager::gravityAlignPose(
-      const Transformation& input_pose) const;
+  Transformation gravityAlignPose(const Transformation& input_pose) const;
   bool hasPose(const poseIdType pose_id) const;
 
  private:
