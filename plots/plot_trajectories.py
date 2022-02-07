@@ -37,6 +37,8 @@ picks = [[[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
                                                [0, -1, 0]],
          [[1, 0, 0], [0, 0, -1], [0, 1, 0]], [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]
 
+plt.rcParams['text.usetex'] = True
+
 
 # rotations around axis
 def createArrayAroundZ(angle):
@@ -256,6 +258,88 @@ def plotPerAxisPlusPolarAngles(gt_tr,
     return fig1, fig2
 
 
+def plotXYZErrorsPerAxis(gt_tr,
+                         wd_tr,
+                         op_tr,
+                         voxgraph_tr=np.array([]),
+                         N=None,
+                         times={},
+                         include_optimized=True):
+    if N is None and voxgraph_tr.size != 0:
+        print(wd_tr.shape, gt_tr.shape)
+        N = min(len(gt_tr[:, 1]), len(wd_tr[:, 1]), len(voxgraph_tr[:, 1]))
+    elif N is None:
+        N = min(len(gt_tr[:, 1]), len(wd_tr[:, 1]))
+    n1_ = np.arange(0, N)
+    n2_ = np.arange(0, N)
+    if len(times) > 0:
+        N = min(N, len(times['panoptic_times']), len(times['voxgraph_times']))
+        n1_ = times['panoptic_times'][:N]
+        n2_ = times['voxgraph_times'][:N]
+        pair_time_matches = []
+        t1_index = 0
+        t2_index = 0
+        # construct pairs of times of the two timeseries
+        while t1_index != N and t2_index != N:
+            if n1_[t1_index] < n2_[t2_index]:
+                t1_index += 1
+            elif n1_[t1_index] > n2_[t2_index]:
+                t2_index += 1
+            else:
+                pair_time_matches.append([t1_index, t2_index])
+                t1_index += 1
+                t2_index += 1
+        pair_time_matches = np.array(pair_time_matches, dtype=np.int)
+        N = len(pair_time_matches)
+        wd_tr = wd_tr[:N, :] - gt_tr[:N, :]
+        if include_optimized:
+            op_tr = op_tr[:N, :] - gt_tr[:N, :]
+        if voxgraph_tr.size > 0:
+            voxgraph_tr = voxgraph_tr[pair_time_matches[:, 1], :] - gt_tr[
+                pair_time_matches[:, 0], :]
+        n1_ = n1_[pair_time_matches[:, 0]]
+        n2_ = n2_[pair_time_matches[:, 1]]
+    else:
+        wd_tr = wd_tr[:N, :] - gt_tr[:N, :]
+        if include_optimized:
+            op_tr = op_tr[:N, :] - gt_tr[:N, :]
+        if voxgraph_tr.size > 0:
+            voxgraph_tr = voxgraph_tr[:N, :] - gt_tr[:N, :]
+    fig, axes = plt.subplots(3, 1, figsize=(4**2, 3**2), sharex=True)
+
+    def plotAxisWithIndex(ticks, axes, index, label):
+        axes[index % len(axes)].plot(ticks[:N],
+                                     wd_tr[:N, index],
+                                     'gray',
+                                     label='with drift',
+                                     linewidth=5)
+        if include_optimized:
+            axes[index % len(axes)].plot(ticks[:N],
+                                         op_tr[:N, index],
+                                         'red',
+                                         label='optimized')
+        if voxgraph_tr.size > 0:
+            axes[index % len(axes)].plot(n2_,
+                                         voxgraph_tr[:N, index],
+                                         'blue',
+                                         label='voxgraph')
+        axes[index % len(axes)].set_ylabel(label)
+
+    plotAxisWithIndex(n1_, axes, 0, r'$\Delta x$[m]')
+    plotAxisWithIndex(n1_, axes, 1, r'$\Delta y$[m]')
+    plotAxisWithIndex(n1_, axes, 2, r'$\Delta z$[m]')
+    fig.suptitle("Trajectory Errors per coordinate")
+    axes[0].legend(loc='upper right', bbox_to_anchor=(1, 0.5))
+    for i in range(len(axes)):
+        axes[i].grid(True)
+        if len(times) > 0:
+            axes[-1].set_xlabel('sec')
+        else:
+            axes[-1].set_xlabel('pose idx')
+    fig.tight_layout()
+    return fig
+
+
 def plotMultiFile(voxgraph_trs=[], times=[], N=None):
     if N is None != 0:
         N = np.min([len(tr[:, 0]) for tr in voxgraph_trs])
@@ -457,8 +541,20 @@ def plotPerAxisDirectory(base_dir,
             'voxgraph_times': voxgraph_times
         },
         include_optimized=include_optimized)
+    fig3 = plotXYZErrorsPerAxis(gt_tr,
+                                wd_tr,
+                                op_tr,
+                                voxgraph_tr2,
+                                N,
+                                times={
+                                    'panoptic_times': op_tr_times,
+                                    'voxgraph_times': voxgraph_times
+                                },
+                                include_optimized=include_optimized)
+
     fig1.savefig(os.path.join(base_dir, figName + "_xyz.png"))
     fig2.savefig(os.path.join(base_dir, figName + "_angles.png"))
+    fig3.savefig(os.path.join(base_dir, figName + "_errors.png"))
 
 
 def plotFullExperiment(yaml_file_path):
