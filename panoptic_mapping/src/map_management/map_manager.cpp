@@ -11,6 +11,8 @@
 #include <cblox_ros/submap_conversions.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
+#include <std_msgs/Empty.h>
+#include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/conversions.h>
 #include <voxgraph/frontend/submap_collection/voxgraph_submap.h>
@@ -281,19 +283,34 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     }
     LOG(INFO) << "Finished waiting the last voxgraph optimization";
     optimizePosesWithVoxgraphPoses(submaps);
+    // call voxgraph to finish mapping
+    ros::ServiceClient sec =
+        nh_.serviceClient<std_srvs::Empty>("/voxgraph_mapper/finish_map");
+    ++sent_counter_;
+    std_srvs::Empty empty_msg;
+    if (!sec.call(empty_msg)) {
+      LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
+                 << sec.exists();
+    }
+    while (sent_counter_ > received_counter_) {
+      sleep(1);
+    }
+    LOG(INFO) << "Finished waiting the last voxgraph optimization";
+    optimizePosesWithVoxgraphPoses(submaps);
+  }
+  if (config_.send_deactivated_submaps_to_voxgraph &&
+      !config_.save_voxgraph_trajectory_on_finish.empty()) {
     // call voxgraph's service to save trajectory provided
-    if (!config_.save_voxgraph_trajectory_on_finish.empty()) {
-      LOG_IF(INFO, config_.verbosity >= 3)
-          << "Saving Voxgraph trajectory to:"
-          << config_.save_voxgraph_trajectory_on_finish;
-      ros::ServiceClient sec = nh_.serviceClient<voxblox_msgs::FilePath>(
-          "/voxgraph_mapper/save_pose_history_to_file");
-      voxblox_msgs::FilePath msg;
-      msg.request.file_path = config_.save_voxgraph_trajectory_on_finish;
-      if (!sec.call(msg)) {
-        LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
-                   << sec.exists();
-      }
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Saving Voxgraph trajectory to:"
+        << config_.save_voxgraph_trajectory_on_finish;
+    ros::ServiceClient sec = nh_.serviceClient<voxblox_msgs::FilePath>(
+        "/voxgraph_mapper/save_pose_history_to_file");
+    voxblox_msgs::FilePath msg;
+    msg.request.file_path = config_.save_voxgraph_trajectory_on_finish;
+    if (!sec.call(msg)) {
+      LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
+                 << sec.exists();
     }
   }
 
@@ -322,9 +339,8 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     LOG_IF(INFO, config_.verbosity >= 3)
         << "Saving trajectory to " << config_.save_trajectory_on_finish;
     // write trajectory to a file
-    const auto trajectory =
-        PoseManager::getGlobalInstance()->saveAllPosesToFile(
-            config_.save_trajectory_on_finish);
+    PoseManager::getGlobalInstance()->saveAllPosesToFile(
+        config_.save_trajectory_on_finish);
   }
   // Finish submaps.
   if (config_.apply_class_layer_when_deactivating_submaps) {
@@ -340,9 +356,6 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     for (const int id : empty_submaps) {
       for (int published_id : published_submap_ids_to_voxgraph_) {
         if (published_id == id) {
-          LOG(INFO) << "HAVE TO remove submap : " << id
-                    << "from published_submap_ids_to_voxgraph_"
-                    << " at " << __LINE__ << std::endl;
           break;
         }
       }
@@ -569,7 +582,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
       }
       pose_msg.header.frame_id = "world";
       const Transformation& pose =
-          PoseManager::getGlobalInstance()->getPoseTransformation(pose_id) *
+          PoseManager::getGlobalInstance()->getInitPoseTransformation(pose_id) *
           T_C_R_;
       tf::poseKindrToMsg(pose.cast<double>(), &pose_msg.pose);
       submap_msg.trajectory.poses.emplace_back(pose_msg);
