@@ -25,7 +25,8 @@
   <arg name="record_pm" default="false"/>
   <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
   <arg name="shutdown_when_finished" default="true"/> 
-
+  <arg name="save_voxgraph_trajectory_on_finish" default="/home/ioannis/datasets/voxgraph_traj.bag"/>
+  <arg name="save_pm_trajectory_on_finish" default="/home/ioannis/datasets/trajectory.in"/>
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
@@ -56,6 +57,8 @@
     <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
     <param name="shutdown_when_finished" value="$(arg shutdown_when_finished)" />
     <param name="save_map_path_when_finished" value="$(arg save_map_path_when_finished)"/>
+    <param name="save_voxgraph_trajectory_on_finish" value="$(arg save_voxgraph_trajectory_on_finish)"/>
+    <param name="save_trajectory_on_finish" value="$(arg save_pm_trajectory_on_finish)"/>
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
