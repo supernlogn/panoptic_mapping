@@ -79,6 +79,8 @@ class MapManager : public MapManagerBase {
     // If not empty then voxgraph's trajectory is saved to
     // this file as a .bag file
     std::string save_voxgraph_trajectory_on_finish = "";
+    std::string input_odom_frame = "world";
+    std::string robot_name = "robot";
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;

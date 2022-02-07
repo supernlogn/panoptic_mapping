@@ -81,6 +81,8 @@ void MapManager::Config::setupParamsAndPrinting() {
   setupParam("voxgraph_finish_map_srv_name", &voxgraph_finish_map_srv_name);
   setupParam("update_whole_trajectory_with_voxgraph_tf",
              &update_whole_trajectory_with_voxgraph_tf);
+  setupParam("input_odom_frame", &input_odom_frame);
+  setupParam("robot_name", &robot_name);
 }
 
 MapManager::MapManager(const Config& config)
@@ -567,7 +569,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
   // create the submap message
   voxblox_msgs::Submap submap_msg;
   {
-    submap_msg.robot_name = "robot";
+    submap_msg.robot_name = config_.robot_name;
     voxblox::serializeLayerAsMsg<TsdfVoxel>(new_pseudo_submap.getTsdfLayer(),
                                             /* only_updated */ false,
                                             &submap_msg.layer);
@@ -580,7 +582,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
       } else {
         pose_msg.header.stamp = pose_info.time;
       }
-      pose_msg.header.frame_id = "world";
+      pose_msg.header.frame_id = config_.input_odom_frame;
       const Transformation& pose =
           PoseManager::getGlobalInstance()->getInitPoseTransformation(pose_id) *
           T_C_R_;
