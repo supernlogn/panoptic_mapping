@@ -103,7 +103,8 @@ class PoseManager {
    * getPoseCorrectionTF(pose_id, other_pose) * other_pose == pose@pose_id
    **/
   Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
-                                        const Transformation& other_pose) const;
+                                        const Transformation& other_pose,
+                                        const Transformation& T_C_R) const;
 
   /**
    * @brief Get all Submaps Connected to the submap with id submap_id
@@ -119,6 +120,8 @@ class PoseManager {
   poseIdType getPoseIdAtTime(const ros::Time time) const;
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
+  Transformation PoseManager::gravityAlignPose(
+      const Transformation& input_pose) const;
   bool hasPose(const poseIdType pose_id) const;
 
  private:

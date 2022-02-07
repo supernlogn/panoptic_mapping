@@ -127,16 +127,18 @@ Transformation PoseManager::getPoseCorrectionTF(
     const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& pose_at_pose_id =
-      poses_info_.at(pose_id).pose_init * T_C_R;
+      gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
   Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
   assert(pose_at_pose_id * result == T_voxgraph);
   return result;
 }
 
 Transformation PoseManager::getPoseCorrectionTFInv(
-    const poseIdType pose_id, const Transformation& T_voxgraph) const {
+    const poseIdType pose_id, const Transformation& T_voxgraph,
+    const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id = poses_info_.at(pose_id).pose_init;
+  const Transformation& pose_at_pose_id =
+      gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
   Transformation result = T_voxgraph.inverse() * pose_at_pose_id;
 
   assert(result * T_voxgraph == pose_at_pose_id);
@@ -225,6 +227,22 @@ Transformation PoseManager::getPoseTransformationAtTime(
     const ros::Time time) const {
   const PoseManager::PoseInformation* p_info = getPoseInformationAtTime(time);
   return p_info->pose;
+}
+
+Transformation PoseManager::gravityAlignPose(
+    const Transformation& input_pose) const {
+  // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
+  Transformation::Vector6 T_vec = input_pose.log();
+
+  // Print a warning if the original pitch & roll components were large
+  constexpr float angle_threshold_rad = 30.f /* deg */ / 180.f * M_PI;
+  // Set the roll and pitch to zero
+  T_vec[3] = 0;
+  T_vec[4] = 0;
+
+  // Return the gravity aligned pose as a translation + quaternion,
+  // using the exponential map
+  return Transformation::exp(T_vec);
 }
 
 bool PoseManager::hasPose(const poseIdType pose_id) const {
