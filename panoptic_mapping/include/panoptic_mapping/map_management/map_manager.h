@@ -102,13 +102,20 @@ class MapManager : public MapManagerBase {
   void pruneActiveBlocks(SubmapCollection* submaps);
   void manageSubmapActivity(SubmapCollection* submaps);
   void performChangeDetection(SubmapCollection* submaps);
-  void optimize_poses_from_voxgraph(SubmapCollection* submaps);
+  /**
+   * @brief Updates the background submaps when new ones are received
+   * from Voxgraph. It should run in each cycle to have as much updated
+   * submaps as possible.
+   *
+   * @param submaps
+   */
+  void optimizePosesWithVoxgraphPoses(SubmapCollection* submaps);
 
   // Tools.
   bool mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
                              int* merged_id = nullptr);
   /**
-   * @brief   Receives an optimized middle pose from Voxgraph
+   * @brief Receives an optimized middle pose from Voxgraph
    *  for a previously published deactivated background submap.
    *  It computes the transformation that can transform the
    *  middle pose of this background submap in panoptic mapping
@@ -117,13 +124,13 @@ class MapManager : public MapManagerBase {
    * @param msg The message comming from voxgraph with
    *            the optimized pose for the last background submap
    */
-  void optimized_voxgraph_submaps_callback(
-      const cblox_msgs::MapPoseUpdates& msg);
+  void optimizedVoxgraphPosesCallback(const cblox_msgs::MapPoseUpdates& msg);
 
  protected:
   /**
-   * @brief Publish the background submaps when new ones are deactivated.
-   * It should run in each cycle to be as much updated as possible.
+   * @brief Filters all newly deactivated background submaps and sents each
+   * unpublished one to publishSubmapToVoxGraph. It should run in each cycle to
+   * have as much updated submaps as possible.
    *
    * @param submaps
    */

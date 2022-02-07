@@ -116,10 +116,10 @@ MapManager::MapManager(const Config& config)
         config_.background_submap_topic_name, 100);
     optimized_background_poses_sub_ =
         nh_.subscribe(config_.optimized_background_poses_topic_name, 10,
-                      &MapManager::optimized_voxgraph_submaps_callback, this);
+                      &MapManager::optimizedVoxgraphPosesCallback, this);
     tickers_.emplace_back(config_.update_poses_with_voxgraph_frequency,
                           [this](SubmapCollection* submaps) {
-                            optimize_poses_from_voxgraph(submaps);
+                            optimizePosesWithVoxgraphPoses(submaps);
                           });
     tickers_.emplace_back(
         config_.publish_poses_to_voxgraph_frequency,
@@ -405,10 +405,10 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
   return false;
 }
 
-void MapManager::optimized_voxgraph_submaps_callback(
+void MapManager::optimizedVoxgraphPosesCallback(
     const cblox_msgs::MapPoseUpdates& msg) {
   LOG_IF(INFO, config_.verbosity >= 4)
-      << "MapManager::optimized_voxgraph_submaps_callback"
+      << "MapManager::optimizedVoxgraphPosesCallback"
       << "received for time " << msg.header.stamp.toSec() << "with"
       << msg.map_headers.size() << " map_headers."
       << "Current number of submap ids stored is: "
@@ -420,9 +420,9 @@ void MapManager::optimized_voxgraph_submaps_callback(
   }
 }
 
-void MapManager::optimize_poses_from_voxgraph(SubmapCollection* submaps) {
+void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
   // The elements of the voxgraph_correction_tfs_ queue are updated in
-  // optimized_voxgraph_submaps_callback when a message with optimized poses
+  // optimizedVoxgraphPosesCallback when a message with optimized poses
   // is received from Voxgraph. The front elements of the queue are used
   // here to update the background submap sent to voxgraph and which the
   // optimized pose regards to. To find this submap, the
