@@ -212,6 +212,8 @@ OdometryDriftSimulator::Config OdometryDriftSimulator::Config::fromRosParams(
            config.velocity_noise_frequency_hz);
 
   nh.param("noise_seed", config.noise_config_seed, config.noise_config_seed);
+  // sets seed of Normal distribution
+  NormalDistribution::set_seed(config.noise_config_seed);
 
   for (auto& kv : config.velocity_noise) {
     kv.second = NormalDistribution::Config::fromRosParams(
