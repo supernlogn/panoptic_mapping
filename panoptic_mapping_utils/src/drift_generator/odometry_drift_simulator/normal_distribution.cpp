@@ -5,6 +5,7 @@
 namespace unreal_airsim {
 
 int NormalDistribution::seed_num = 2;
+std::mt19937 NormalDistribution::noise_generator_;
 
 NormalDistribution::Config NormalDistribution::Config::fromRosParams(
     const ros::NodeHandle& nh) {
