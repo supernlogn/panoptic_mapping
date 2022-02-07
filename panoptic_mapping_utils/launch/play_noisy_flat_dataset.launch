@@ -46,7 +46,7 @@
     <param name="save_noise_to_file" value="true" />
     <param name="global_frame_name" value="$(arg global_frame_name)" />
     <param name="sensor_frame_name" value="$(arg sensor_frame_name)" />
-    <param name="noise_seed" value="3"/>
+    <param name="noise_seed" value="4581"/>
     <rosparam command="load" file="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/drift_$(arg drift_type).yaml" />
   </node>
 
