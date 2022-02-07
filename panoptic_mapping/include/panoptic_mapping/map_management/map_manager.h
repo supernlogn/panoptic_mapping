@@ -2,22 +2,21 @@
 #define PANOPTIC_MAPPING_MAP_MANAGEMENT_MAP_MANAGER_H_
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
-#include <queue>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/common/common.h"
-#include "panoptic_mapping/map/submap.h"
-#include "panoptic_mapping/map/pseudo_submap.h"
-#include "panoptic_mapping/map/submap_collection.h"
 #include "panoptic_mapping/map/pose_manager.h"
+#include "panoptic_mapping/map/pseudo_submap.h"
+#include "panoptic_mapping/map/submap.h"
+#include "panoptic_mapping/map/submap_collection.h"
 #include "panoptic_mapping/map_management/activity_manager.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
-
 
 #include "cblox_msgs/MapHeader.h"
 #include "cblox_msgs/MapPoseUpdates.h"
@@ -65,9 +64,21 @@ class MapManager : public MapManagerBase {
     bool update_whole_trajectory_with_voxgraph_tf = true;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
-      "/panoptic_mapper/background_submap_out";
+        "/panoptic_mapper/background_submap_out";
     std::string optimized_background_poses_topic_name =
-      "/voxgraph_mapper/submap_poses";
+        "/voxgraph_mapper/submap_poses";
+    // Voxgraph's service to launch finish mapping
+    // when panoptic mapping is about to exit
+    std::string voxgraph_finish_map_srv_name = "/voxgraph_mapper/finish_map";
+    // Voxgraph's service to save its stored trajectory
+    std::string voxgraph_trajectory_srv_name =
+        "/voxgraph_mapper/save_pose_history_to_file";
+    // If not empty the trajectory stored in panoptic mapping is saved
+    // to this file in a custom format
+    std::string save_trajectory_on_finish = "";
+    // If not empty then voxgraph's trajectory is saved to
+    // this file as a .bag file
+    std::string save_voxgraph_trajectory_on_finish = "";
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
@@ -97,12 +108,12 @@ class MapManager : public MapManagerBase {
   bool mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
                              int* merged_id = nullptr);
   /**
-   * @brief   Receives an optimized middle pose from Voxgraph 
+   * @brief   Receives an optimized middle pose from Voxgraph
    *  for a previously published deactivated background submap.
-   *  It computes the transformation that can transform the 
-   *  middle pose of this background submap in panoptic mapping 
+   *  It computes the transformation that can transform the
+   *  middle pose of this background submap in panoptic mapping
    *  to the optimized one received from Voxgraph.
-   * 
+   *
    * @param msg The message comming from voxgraph with
    *            the optimized pose for the last background submap
    */
@@ -111,30 +122,32 @@ class MapManager : public MapManagerBase {
 
  protected:
   /**
-   * @brief Publish the background submaps when new ones are deactivated. 
+   * @brief Publish the background submaps when new ones are deactivated.
    * It should run in each cycle to be as much updated as possible.
-   * 
-   * @param submaps 
+   *
+   * @param submaps
    */
   void updatePublishedSubmaps(SubmapCollection* submaps);
 
   /**
    * @brief Publishes a given submap to voxgraph's submap topic.
-   * @param submapToPublish the most recent deactivated background submap to be published to voxgraph
-   * The publishing is done in the topic defined by optimized_background_poses_topic_name in config.
+   * @param submapToPublish the most recent deactivated background submap to be
+   * published to voxgraph The publishing is done in the topic defined by
+   * optimized_background_poses_topic_name in config.
    */
-  void publishSubmapToVoxGraph(SubmapCollection * submaps,
-                               const Submap & submapToPublish);
+  void publishSubmapToVoxGraph(SubmapCollection* submaps,
+                               const Submap& submapToPublish);
   /**
    * @brief Merges a pseudo submap fo A into a pseudo submap B.
-   * 
-   * @param submapA a PseudoSubmap to merge with PseudoSubmap B. 
-   *                This will be invalid after the merge. 
+   *
+   * @param submapA a PseudoSubmap to merge with PseudoSubmap B.
+   *                This will be invalid after the merge.
    * @param submapB This is a PseudoSubmap which will take place
-   *                into merging but also the merging result will be stored here.
+   *                into merging but also the merging result will be stored
+   * here.
    */
-  void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap & submapA,
-                                  PseudoSubmap * submapB);
+  void mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap& submapA,
+                                         PseudoSubmap* submapB);
 
   std::string pruneBlocks(Submap* submap) const;
   std::vector<PseudoSubmap> pseudo_submaps_sent_;

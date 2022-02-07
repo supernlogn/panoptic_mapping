@@ -70,6 +70,14 @@ void MapManager::Config::setupParamsAndPrinting() {
              "tsdf_registrator");
   setupParam("layer_manipulator_config", &layer_manipulator_config,
              "layer_manipulator");
+  setupParam("background_submap_topic_name", &background_submap_topic_name);
+  setupParam("optimized_background_poses_topic_name",
+             &optimized_background_poses_topic_name);
+  setupParam("save_trajectory_on_finish", &save_trajectory_on_finish);
+  setupParam("save_voxgraph_trajectory_on_finish",
+             &save_voxgraph_trajectory_on_finish);
+  setupParam("voxgraph_trajectory_srv_name", &voxgraph_trajectory_srv_name);
+  setupParam("voxgraph_finish_map_srv_name", &voxgraph_finish_map_srv_name);
   setupParam("update_whole_trajectory_with_voxgraph_tf",
              &update_whole_trajectory_with_voxgraph_tf);
 }
