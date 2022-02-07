@@ -26,7 +26,9 @@ void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    pose_at_pose_idx = pose_at_pose_idx * T_corr;
+    const Transformation& init_pose_at_pose_idx =
+        poses_info_[pose_idx].pose_init;
+    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
   }
 }
 
@@ -39,7 +41,9 @@ void PoseManager::correctPoseRangeTransformation(
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    pose_at_pose_idx = pose_at_pose_idx * T_corr;
+    const Transformation& init_pose_at_pose_idx =
+        poses_info_[pose_idx].pose_init;
+    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
   }
 }
 
@@ -52,7 +56,9 @@ void PoseManager::correctPoseRangeTransformation(
     assert(poses_info_.find(pose_id) != poses_info_.end());
     const poseIdxType pose_idx = poses_info_[pose_id].pose_idx;
     Transformation& pose_at_pose_idx = poses_info_[pose_idx].pose;
-    pose_at_pose_idx = pose_at_pose_idx * T_corr;
+    const Transformation& init_pose_at_pose_idx =
+        poses_info_[pose_idx].pose_init;
+    pose_at_pose_idx = init_pose_at_pose_idx * T_corr;
   }
 }
 
