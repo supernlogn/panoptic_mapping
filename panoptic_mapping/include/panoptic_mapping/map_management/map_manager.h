@@ -57,6 +57,12 @@ class MapManager : public MapManagerBase {
     // discraded afterwards when submaps are deactivated. This saves memory at
     // the loss of classification information.
     bool apply_class_layer_when_deactivating_submaps = false;
+    // If true the submaps contained by a background submap
+    // will also be updated using a weighted update
+    bool update_contained_submaps_with_correction = false;
+    // If true then the whole trajectory is updated when optimized
+    // transformations are received from voxgraph
+    bool update_whole_trajectory_with_voxgraph_tf = true;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
       "/panoptic_mapper/background_submap_out";

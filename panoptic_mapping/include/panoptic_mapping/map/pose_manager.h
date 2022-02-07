@@ -53,7 +53,8 @@ class PoseManager {
   void correctPoseRangeTransformation(
       const std::vector<poseIdType>& pose_ids,
       const Transformation& corr_transformation);
-
+  void correctSubmapPoses(const PoseManager::submapIdType submap_id,
+                          const Transformation& T_corr);
   void updateSinglePoseTransformation(const poseIdType pose_id,
                                       const Transformation& new_pose);
 
