@@ -32,6 +32,7 @@ class NormalDistribution {
   explicit NormalDistribution(double mean = 0.0, double stddev = 0.0)
       : mean_(mean), stddev_(stddev) {
     CHECK_GE(stddev_, 0.0) << "Standard deviation must be non-negative";
+    noise_generator_.seed(seed_num);
   }
   explicit NormalDistribution(const Config& config)
       : NormalDistribution(config.mean, config.stddev) {}
@@ -49,7 +50,6 @@ class NormalDistribution {
     //       sequence. If the generator is instance specific, there's a risk
     //       that multiple instances use generators with the same seed and
     //       output the same sequence.
-    static std::mt19937 noise_generator_;
 
     // Draw a sample from the standard normal N(0,1) and
     // scale it using the change of variables formula
@@ -63,11 +63,16 @@ class NormalDistribution {
     return os;
   }
 
+  static void set_seed(const int new_seed_num) {
+    seed_num = new_seed_num;
+    noise_generator_.seed(new_seed_num);
+  }
+
   static int seed_num;
 
  private:
   const double mean_, stddev_;
-
+  static std::mt19937 noise_generator_;
   // Standard normal distribution
   std::normal_distribution<double> normal_distribution_;
 };
