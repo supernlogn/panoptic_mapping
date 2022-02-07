@@ -21,7 +21,7 @@
   <arg name="rio_play_rate" default="20"/>  <!-- Hz -->
 
   <!-- Mapper -->
-  <arg name="use_rosbag_for_pm" default="true"/>
+  <arg name="use_rosbag_for_pm" default="false"/>
   <arg name="record_pm" default="false"/>
   <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
   <arg name="shutdown_when_finished" default="true"/> 
