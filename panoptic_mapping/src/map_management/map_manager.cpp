@@ -498,7 +498,7 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
 
           const Transformation T_M_S_correction =
               PoseManager::getGlobalInstance()->getPoseCorrectionTF(
-                  mid_pose_id, T_M_S_optimal, T_C_R_);
+                mid_pose_id, T_M_S_optimal, T_C_R_);
           submapToChange->setT_M_S(submapToChange->getT_M_Sinit() *
                                    T_M_S_correction);
           if (config_.update_whole_trajectory_with_voxgraph_tf) {

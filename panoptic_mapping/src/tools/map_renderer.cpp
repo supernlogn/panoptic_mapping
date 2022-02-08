@@ -106,7 +106,7 @@ int MapRenderer::paintClass(const Submap& submap) {
 
 cv::Mat MapRenderer::renderActiveSubmapIDs(const SubmapCollection& submaps,
                                            const Transformation& T_M_C) {
-  return render(submaps, T_M_C, true, paintSubmapID);
+  return render(submaps, T_M_C, false, paintSubmapID);
 }
 
 cv::Mat MapRenderer::renderActiveSubmapClasses(const SubmapCollection& submaps,
