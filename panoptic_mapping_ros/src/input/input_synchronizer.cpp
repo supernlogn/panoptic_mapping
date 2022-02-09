@@ -236,7 +236,9 @@ std::shared_ptr<InputData> InputSynchronizer::getInputData() {
       // Get the result and erase from the queue.
       result = data_queue_[i]->data;
       data_queue_.erase(data_queue_.begin() + i);
-      oldest_time_ = data_queue_.front()->timestamp;
+      if (data_queue_.size() > 0) {
+        oldest_time_ = data_queue_.front()->timestamp;
+      }
       break;
     }
   }
