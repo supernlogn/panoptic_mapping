@@ -406,16 +406,10 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
           other.applyClassLayer(*layer_manipulator_);
         }
         layer_manipulator_->mergeSubmapAintoB(*submap, &other);
-        LOG_IF(INFO, config_.verbosity >= 4)
-            << "Merged Submap " << submap->getID() << " into " << other.getID()
-            << ".";
         other.setChangeState(ChangeState::kPersistent);
         for (auto it = published_submap_ids_to_voxgraph_.begin();
              it != published_submap_ids_to_voxgraph_.end(); ++it) {
           if (*it == submap_id) {
-            LOG(INFO) << "HAVE TO remove submap : " << submap_id
-                      << "from published_submap_ids_to_voxgraph_"
-                      << " at " << __LINE__ << std::endl;
             *it = other.getID();
             if (merged_id) {
               *merged_id = other.getID();
@@ -505,8 +499,6 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
             PoseManager::getGlobalInstance()->correctSubmapPoses(
                 *id_it, T_M_S_correction);
           }
-          LOG_IF(INFO, config_.verbosity >= 4)
-              << "pose for submap id:" << *id_it << " was set" << std::endl;
         } else {
           ROS_ERROR("TRYING TO CHANGE SUBMAP ID %d THAT DOES NOT EXIST",
                     *id_it);
@@ -588,7 +580,7 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
   }
   LOG_IF(INFO, config_.verbosity >= 4)
       << "Publishing submap to Voxgraph with "
-      << new_pseudo_submap.getPoseHistory().size() << " poses" << std::endl;
+      << new_pseudo_submap.getPoseHistory().size() << " poses";
   background_submap_publisher_.publish(submap_msg);
   ++sent_counter_;
 }
