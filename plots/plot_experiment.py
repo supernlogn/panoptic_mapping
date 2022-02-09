@@ -25,6 +25,17 @@ trajectory_plots = {
                                                    include_optimized=False,
                                                    T_C_R=T_C_R,
                                                    post_mult=True),
+    "pm+voxgraph_input":
+    lambda: plot_trajectories.plotFiles(
+        {
+            'ground_truth_tr': os.path.join(base_dir, "generated_path.txt"),
+            'optimized_tr': os.path.join(base_dir, "trajectory.in"),
+            "voxgraph_tr": os.path.join(base_dir, "vox_input.bag")
+        },
+        base_dir,
+        "temp",
+        T_C_R=T_C_R,
+        post_mult=True),
     "experiments_w_wo_alignment":
     lambda: plot_trajectories.plotFullExperiment(
         os.path.join(config_dir,
