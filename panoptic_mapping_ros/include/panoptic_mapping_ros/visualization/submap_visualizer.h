@@ -132,8 +132,8 @@ class SubmapVisualizer {
 
  protected:
   // Settings.
-  VisualizationMode visualization_mode_;
-  ColorMode color_mode_;
+  VisualizationMode visualization_mode_ = VisualizationMode::kAll;
+  ColorMode color_mode_ = ColorMode::kColor;
   std::string global_frame_name_ = "mission";
 
   // Members.
