@@ -544,8 +544,10 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
   }
   // create a new merged submap by merging
   // all <published_submap_ids_to_voxgraph_> poses
-  PseudoSubmap new_pseudo_submap(submapToPublish);
-  int count = 1;  // starting from one, we already have one pseudo submap
+  PseudoSubmap new_pseudo_submap(
+      submapToPublish.getFrameName(),
+      submapToPublish.getConfig().truncation_distance);
+  int count = 0;  // starting from one, we already have one pseudo submap
   // for the <num_submaps_to_merge_for_voxgraph> most
   // recent deactivated background submaps
   for (auto it = published_submap_ids_to_voxgraph_.rbegin();
@@ -558,9 +560,6 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
     const Submap& prev_published_submap = submaps->getSubmap(prev_id);
     PseudoSubmap prev_pseudo_map(prev_published_submap);
     mergePseudoSubmapAToPseudoSubmapB(prev_pseudo_map, &new_pseudo_submap);
-    LOG_IF(INFO, config_.verbosity >= 4)
-        << "merging submaps" << submapToPublish.getID() << "and" << prev_id
-        << " for publishing";
   }
   pseudo_submaps_sent_.emplace_back(new_pseudo_submap);
   // create the submap message

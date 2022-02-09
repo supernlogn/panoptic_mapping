@@ -1,12 +1,13 @@
 #include "panoptic_mapping/map/pseudo_submap.h"
 
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include <cblox/QuatTransformation.pb.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <voxblox/io/layer_io.h>
-
-#include <memory>
-#include <sstream>
-#include <vector>
 
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 
@@ -21,6 +22,17 @@ PseudoSubmap::PseudoSubmap(const Submap& submap) {
   // by calling deep copy ctor
   tsdf_layer_ = std::make_shared<TsdfLayer>(submap.getTsdfLayer());
   pose_id_history_ = submap.getPoseHistory();
+}
+
+PseudoSubmap::PseudoSubmap(const std::string frame_name,
+                           const float truncation_distance) {
+  frame_name_ = frame_name;
+  T_M_S_.setIdentity();
+  T_M_S_inv_.setIdentity();
+  truncation_distance_ = truncation_distance;
+  // deep copies
+  // by calling deep copy ctor
+  tsdf_layer_ = nullptr;
 }
 
 void PseudoSubmap::clone(PseudoSubmap * other) const {

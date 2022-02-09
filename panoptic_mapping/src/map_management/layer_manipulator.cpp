@@ -1,9 +1,10 @@
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 
+#include <algorithm>
+#include <memory>
+
 #include <voxblox/integrator/esdf_integrator.h>
 #include <voxblox/integrator/merge_integration.h>
-
-#include <algorithm>
 
 namespace panoptic_mapping {
 
@@ -143,8 +144,12 @@ void LayerManipulator::mergeSubmapAintoB(const Submap& A, Submap* B) const {
 void LayerManipulator::mergePseudoSubmapAintoB(
                         const PseudoSubmap& A, PseudoSubmap* B) const {
   const Transformation T_B_A = B->getT_S_M() * A.getT_M_S();
-  voxblox::mergeLayerAintoLayerB(A.getTsdfLayer(),
-                                 T_B_A, B->getTsdfLayerPtr().get());
+  if (B->getTsdfLayerPtr() == nullptr) {
+    B->getTsdfLayerPtr() = std::make_shared<TsdfLayer>(A.getTsdfLayer());
+  } else {
+    voxblox::mergeLayerAintoLayerB(A.getTsdfLayer(), T_B_A,
+                                   B->getTsdfLayerPtr().get());
+  }
 }
 
 void LayerManipulator::unprojectTsdfLayer(TsdfLayer* tsdf_layer) const {

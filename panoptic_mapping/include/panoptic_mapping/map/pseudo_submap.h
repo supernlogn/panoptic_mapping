@@ -16,7 +16,8 @@ class PseudoSubmap {
   // Construction.
   PseudoSubmap() {}
   explicit PseudoSubmap(const Submap & submap);
-
+  explicit PseudoSubmap(const std::string frame_name,
+                        const float truncation_distance);
   virtual ~PseudoSubmap() = default;
   // copy constructor
   void clone(PseudoSubmap * other) const;
