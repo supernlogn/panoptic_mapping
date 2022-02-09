@@ -42,14 +42,14 @@ void DriftGenerator::generate_noisy_pose_callback(
   }
   geometry_msgs::TransformStamped ground_truth_msg;
   ground_truth_msg.child_frame_id = config_.sensor_frame_name;
-  ground_truth_msg.header = msg.header;
+  ground_truth_msg.header = msg_noisy_pose.header;
   ground_truth_msg.transform = msg.transform;
 
   geometry_msgs::TransformStamped msg_integrated_drift =
       odometry_drift_simulator_.getIntegratedDriftMsg();
   msg_integrated_drift.child_frame_id = config_.sensor_frame_name;
   msg_integrated_drift.header.frame_id = config_.global_frame_name;
-  msg_integrated_drift.header = msg.header;
+  msg_integrated_drift.header = msg_noisy_pose.header;
   // store poses to three vectors to save them later to a bag
   // file.
   ground_truth_poses_.push_back(ground_truth_msg);
