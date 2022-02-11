@@ -176,13 +176,6 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
       input_to_output[input_id] = -1;
     }
     alloc_timer.Pause();
-    for (auto it = submaps->begin(); it != submaps->end(); it++) {
-      if (it->isActive()) {
-        PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id,
-                                                            it->getID());
-        it->addPoseID(pose_id);
-      }
-    }
     // Logging.
     if (config_.verbosity >= 3) {
       if (matched) {
@@ -203,17 +196,11 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     }
   }
   detail_timer.Stop();
-  int count_active_backgrounds = 0;
-  for (auto it_submap = submaps->begin(); it_submap != submaps->end();
-       it_submap++) {
-    if (it_submap->getLabel() == PanopticLabel::kBackground &&
-        it_submap->isActive()) {
-      ++count_active_backgrounds;
+  for (auto it = submaps->begin(); it != submaps->end(); it++) {
+    if (it->isActive()) {
+      PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id, it->getID());
+      it->addPoseID(pose_id);
     }
-  }
-  if (count_active_backgrounds > 1) {
-    ROS_ERROR("in project_id_tracker active backgrounds: %d",
-              count_active_backgrounds);
   }
   // Translate the id image.
   for (auto it = input->idImagePtr()->begin<int>();
@@ -288,11 +275,10 @@ TrackingInfoAggregator ProjectiveIDTracker::computeTrackingData(
   // Render each active submap in parallel to collect overlap statistics.
   SubmapIndexGetter index_getter(
       globals_->camera()->findVisibleSubmapIDs(*submaps, input->T_M_C()));
-  std::vector<std::future<std::vector<TrackingInfo>>> threads(
-      config_.rendering_threads);
+  std::vector<std::future<std::vector<TrackingInfo>>> threads;
   TrackingInfoAggregator tracking_data;
   for (int i = 0; i < config_.rendering_threads; ++i) {
-    threads[i] = (std::async(
+    threads.emplace_back(std::async(
         std::launch::async,
         [this, i, &tracking_data, &index_getter, submaps,
          input]() -> std::vector<TrackingInfo> {
