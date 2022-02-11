@@ -93,12 +93,13 @@ map_management:
   
   # voxgraph publishing
   num_submaps_to_merge_for_voxgraph: 3
-  avoid_merging_deactivated_background_submaps: false
+  avoid_merging_deactivated_background_submaps: true
   
   # Behavior
   send_deactivated_submaps_to_voxgraph: true
   merge_deactivated_submaps_if_possible: true
   apply_class_layer_when_deactivating_submaps: true
+  update_whole_trajectory_with_voxgraph_tf: true
 
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
