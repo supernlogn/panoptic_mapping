@@ -36,6 +36,13 @@ trajectory_plots = {
         "temp",
         T_C_R=T_C_R,
         post_mult=True),
+    "pm+voxgraph_debug_mid_poses":
+    lambda: plot_trajectories.plotPerAxisDirectory(
+        base_dir,
+        "temp.png",
+        T_C_R=T_C_R,
+        post_mult=True,
+        mid_poses_file='/home/ioannis/datasets/mid_poses.bag'),
     "experiments_w_wo_alignment":
     lambda: plot_trajectories.plotFullExperiment(
         os.path.join(config_dir,
@@ -50,7 +57,7 @@ trajectory_plots = {
 
 
 def main():
-    trajectory_plots["pm+voxgraph"]()
+    trajectory_plots["pm+voxgraph_debug_mid_poses"]()
 
 
 if __name__ == "__main__":

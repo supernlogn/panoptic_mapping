@@ -170,6 +170,7 @@ def plotPerAxisPlusPolarAngles(gt_tr,
                                wd_tr,
                                op_tr,
                                voxgraph_tr=np.array([]),
+                               mid_poses=np.array([]),
                                N=None,
                                times={},
                                include_optimized=True):
@@ -180,10 +181,14 @@ def plotPerAxisPlusPolarAngles(gt_tr,
         N = min(len(gt_tr[:, 1]), len(wd_tr[:, 1]))
     n1_ = np.arange(0, N)
     n2_ = np.arange(0, N)
+    use_mid_poses = True
     if len(times) > 0:
         N = min(N, len(times['panoptic_times']), len(times['voxgraph_times']))
         n1_ = times['panoptic_times'][:N]
         n2_ = times['voxgraph_times'][:N]
+        use_mid_poses = mid_poses.size > 0
+    else:
+        use_mid_poses = False
     fig1, axes1 = plt.subplots(3, 1, figsize=(4**2, 3**2), sharex=True)
 
     def plotAxisWithIndex(ticks, axes, index, label):
@@ -206,6 +211,13 @@ def plotPerAxisPlusPolarAngles(gt_tr,
                                          voxgraph_tr[:N, index],
                                          'blue',
                                          label='voxgraph')
+        if use_mid_poses:
+            axes[index % len(axes)].scatter(times['mid_poses_times'],
+                                            mid_poses[:, index],
+                                            s=200.0,
+                                            color='orange',
+                                            marker='+',
+                                            label='midposes')
         axes[index % len(axes)].set_ylabel(label)
 
     def plotPolarAxisWithIndex(ticks, axes, index, label):
@@ -247,6 +259,7 @@ def plotPerAxisPlusPolarAngles(gt_tr,
     axes1[0].legend(loc='upper right', bbox_to_anchor=(1, 0.5))
     axes2[0].legend(loc='upper right', bbox_to_anchor=(1, 0.5))
     for i in range(len(axes2)):
+        axes1[i].grid(True)
         axes2[i].grid(True)
     if len(times) > 0:
         axes1[-1].set_xlabel('sec')
@@ -407,7 +420,11 @@ def getTrajectories(files):
     if 'voxgraph_tr' in files.keys():
         voxgraph_tr, voxgraph_times = getTrajectoryFromBagFile(
             files['voxgraph_tr'])
-    return gt_tr, wd_tr, gt_times, op_tr, op_tr_times, voxgraph_tr, voxgraph_times
+    mid_poses, mid_poses_times = np.array([]), np.array([])
+    if 'mid_poses' in files.keys():
+        mid_poses, mid_poses_times = getTrajectoryFromBagFile(
+            files['mid_poses'])
+    return gt_tr, wd_tr, gt_times, op_tr, op_tr_times, voxgraph_tr, voxgraph_times, mid_poses, mid_poses_times
 
 
 def getMultiFileTrajectory(base_path):
@@ -501,18 +518,16 @@ def pickLogPoseGivenTransformPost(p, Tr):
     return np.hstack((position, angles))
 
 
-def plotPerAxisDirectory(base_dir,
-                         figName,
-                         T_C_R=None,
-                         post_mult=False,
-                         include_optimized=True):
-    files = getTrajectoryFiles(base_dir)
-    gt_tr, wd_tr, _, op_tr, op_tr_times, voxgraph_tr, voxgraph_times = getTrajectories(
+def plotFiles(files,
+              output_dir,
+              figName,
+              T_C_R=None,
+              post_mult=False,
+              include_optimized=True):
+    gt_tr, wd_tr, _, op_tr, op_tr_times, voxgraph_tr, voxgraph_times, mid_poses, mid_poses_times = getTrajectories(
         files)
     if not (T_C_R is None):
         pick = T_C_R[0:3, 0:3]
-        pick = np.where(abs(pick) < 1e-10, np.zeros_like(pick), pick)
-        pick = np.array(pick, np.int)
         print(pick)
         if post_mult:
             voxgraph_tr2 = np.array([
@@ -535,10 +550,12 @@ def plotPerAxisDirectory(base_dir,
         wd_tr,
         op_tr,
         voxgraph_tr2,
+        mid_poses,
         N,
         times={
             'panoptic_times': op_tr_times,
-            'voxgraph_times': voxgraph_times
+            'voxgraph_times': voxgraph_times,
+            'mid_poses_times': mid_poses_times
         },
         include_optimized=include_optimized)
     fig3 = plotXYZErrorsPerAxis(gt_tr,
@@ -552,9 +569,25 @@ def plotPerAxisDirectory(base_dir,
                                 },
                                 include_optimized=include_optimized)
 
-    fig1.savefig(os.path.join(base_dir, figName + "_xyz.png"))
-    fig2.savefig(os.path.join(base_dir, figName + "_angles.png"))
-    fig3.savefig(os.path.join(base_dir, figName + "_errors.png"))
+    fig1.savefig(os.path.join(output_dir, figName + "_xyz.png"))
+    fig2.savefig(os.path.join(output_dir, figName + "_angles.png"))
+    fig3.savefig(os.path.join(output_dir, figName + "_errors.png"))
+
+
+def plotPerAxisDirectory(base_dir,
+                         figName,
+                         T_C_R=None,
+                         post_mult=False,
+                         include_optimized=True,
+                         mid_poses_file=None):
+    files = getTrajectoryFiles(base_dir)
+    files['mid_poses'] = mid_poses_file
+    plotFiles(files,
+              base_dir,
+              figName,
+              T_C_R=None,
+              post_mult=False,
+              include_optimized=True)
 
 
 def plotFullExperiment(yaml_file_path):
