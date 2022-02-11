@@ -89,6 +89,10 @@ class PoseManager {
    */
   bool saveAllPosesToFile(const std::string& file_path) const;
 
+  bool savePoseIdsToFile(const std::string& file_path,
+                         const std::vector<int>& pose_ids) const;
+
+  geometry_msgs::PoseStamped getPoseMessage(const int pose_id) const;
   /**
    * @brief erases submap id from submaps_id_associated of
    * each pose information
@@ -104,7 +108,7 @@ class PoseManager {
    * getPoseCorrectionTF(pose_id, other_pose) * pose@pose_id == other_pose
    **/
   Transformation getPoseCorrectionTF(const poseIdType pose_id,
-                                     const Transformation& other_pose,
+                                     const Transformation& T_M_R_voxgraph,
                                      const Transformation& T_C_R) const;
 
   /**
@@ -114,7 +118,7 @@ class PoseManager {
    * getPoseCorrectionTF(pose_id, other_pose) * other_pose == pose@pose_id
    **/
   Transformation getPoseCorrectionTFInv(const poseIdType pose_id,
-                                        const Transformation& other_pose,
+                                        const Transformation& T_M_R_voxgraph,
                                         const Transformation& T_C_R) const;
 
   /**
@@ -134,6 +138,8 @@ class PoseManager {
   bool hasPose(const poseIdType pose_id) const;
 
  private:
+  geometry_msgs::PoseStamped getPoseMessage(
+      const PoseInformation& p_info) const;
   // pose-id - submap-id graph and the pose information
   std::map<poseIdType, PoseInformation> poses_info_;
   std::map<submapIdType, std::set<poseIdType>> submap_id_to_pose_id_;

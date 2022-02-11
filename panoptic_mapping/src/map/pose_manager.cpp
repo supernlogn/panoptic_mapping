@@ -30,8 +30,6 @@ void PoseManager::correctPoseInfo(PoseManager::PoseInformation* pose_info,
 void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
                                                  const poseIdType end_pose_id,
                                                  const Transformation& T_corr) {
-  LOG_IF(INFO, true) << "correcting " << (end_pose_id - start_pose_id + 1)
-                     << " transformations with " << T_corr << std::endl;
   for (auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
@@ -41,8 +39,6 @@ void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
 void PoseManager::correctPoseRangeTransformation(
     const std::set<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
-  LOG_IF(INFO, true) << "correcting " << pose_ids.size()
-                     << " transformations with " << T_corr << std::endl;
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
@@ -52,8 +48,6 @@ void PoseManager::correctPoseRangeTransformation(
 void PoseManager::correctPoseRangeTransformation(
     const std::vector<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
-  LOG_IF(INFO, true) << "correcting " << pose_ids.size()
-                     << " transformations with " << T_corr << std::endl;
   for (const auto pose_id : pose_ids) {
     assert(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
@@ -136,41 +130,64 @@ bool PoseManager::saveAllPosesToFile(const std::string& file_path) const {
   std::vector<geometry_msgs::PoseStamped> trajectoryPoses;
   for (const auto& p_info_pair : poses_info_) {
     const auto& p_info = p_info_pair.second;
-    geometry_msgs::PoseStamped pose_stamped_msg;
-    // avoid time 0
-    if (p_info.time < ros::TIME_MIN) {
-      pose_stamped_msg.header.stamp = ros::TIME_MIN;
-    } else {
-      pose_stamped_msg.header.stamp = p_info.time;
-    }
-    pose_stamped_msg.header.frame_id = "world";
-    tf::poseKindrToMsg(p_info.pose.cast<double>(), &pose_stamped_msg.pose);
+    const geometry_msgs::PoseStamped pose_stamped_msg = getPoseMessage(p_info);
     trajectoryPoses.push_back(pose_stamped_msg);
   }
   bool res = voxgraph::io::savePoseHistoryToFile(file_path, trajectoryPoses);
   return res;
 }
 
+bool PoseManager::savePoseIdsToFile(const std::string& file_path,
+                                    const std::vector<int>& pose_ids) const {
+  std::vector<geometry_msgs::PoseStamped> trajectoryPoses;
+  for (const int id : pose_ids) {
+    trajectoryPoses.push_back(getPoseMessage(id));
+  }
+  bool res = voxgraph::io::savePoseHistoryToFile(file_path, trajectoryPoses);
+  return res;
+}
+
+geometry_msgs::PoseStamped PoseManager::getPoseMessage(
+    const int pose_id) const {
+  const auto p_info = getPoseInformation(pose_id);
+  return getPoseMessage(p_info);
+}
+
+geometry_msgs::PoseStamped PoseManager::getPoseMessage(
+    const PoseManager::PoseInformation& p_info) const {
+  geometry_msgs::PoseStamped pose_stamped_msg;
+  // avoid time 0
+  if (p_info.time < ros::TIME_MIN) {
+    pose_stamped_msg.header.stamp = ros::TIME_MIN;
+  } else {
+    pose_stamped_msg.header.stamp = p_info.time;
+  }
+  pose_stamped_msg.header.frame_id = "world";
+  tf::poseKindrToMsg(p_info.pose.cast<double>(), &pose_stamped_msg.pose);
+  return pose_stamped_msg;
+}
+
 Transformation PoseManager::getPoseCorrectionTF(
-    const poseIdType pose_id, const Transformation& T_voxgraph,
+    const poseIdType pose_id, const Transformation& T_M_R_voxgraph,
     const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id =
+  const Transformation& T_M_R_voxgraph_init =
       gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
-  Transformation result = pose_at_pose_id.inverse() * T_voxgraph;
-  assert(pose_at_pose_id * result == T_voxgraph);
+  Transformation result =
+      T_C_R * T_M_R_voxgraph_init.inverse() * T_M_R_voxgraph * T_C_R.inverse();
+  // assert(T_M_R_voxgraph_init * result == T_M_R_voxgraph);
   return result;
 }
 
 Transformation PoseManager::getPoseCorrectionTFInv(
-    const poseIdType pose_id, const Transformation& T_voxgraph,
+    const poseIdType pose_id, const Transformation& T_M_R_voxgraph,
     const Transformation& T_C_R) const {
   assert(poses_info_.find(pose_id) != poses_info_.end());
-  const Transformation& pose_at_pose_id =
+  const Transformation& T_M_R_voxgraph_init =
       gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
-  Transformation result = T_voxgraph.inverse() * pose_at_pose_id;
+  Transformation result = T_M_R_voxgraph.inverse() * T_M_R_voxgraph_init;
 
-  assert(result * T_voxgraph == pose_at_pose_id);
+  assert(result * T_M_R_voxgraph == T_M_R_voxgraph_init);
   return result;
 }
 
@@ -262,9 +279,6 @@ Transformation PoseManager::gravityAlignPose(
     const Transformation& input_pose) const {
   // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
   Transformation::Vector6 T_vec = input_pose.log();
-
-  // Print a warning if the original pitch & roll components were large
-  constexpr float angle_threshold_rad = 30.f /* deg */ / 180.f * M_PI;
   // Set the roll and pitch to zero
   T_vec[3] = 0;
   T_vec[4] = 0;
