@@ -32,8 +32,8 @@ void ActivityManager::processSubmaps(SubmapCollection* submaps) {
       continue;
     }
 
-    if (config_.new_background_per_n_ticks > 0 &&
-        submap.getLabel() == PanopticLabel::kBackground) {
+    if (0 < config_.new_background_per_n_ticks &&
+        PanopticLabel::kBackground == submap.getLabel()) {
       handleBackground(submaps, &submap);
       // Check for re-detections of new submaps.
     } else if (!checkRequiredRedetection(&submap)) {
