@@ -170,10 +170,13 @@ class MapManager : public MapManagerBase {
   std::shared_ptr<ActivityManager> activity_manager_;
   std::shared_ptr<TsdfRegistrator> tsdf_registrator_;
   std::shared_ptr<LayerManipulator> layer_manipulator_;
+  PoseManager* pose_manager_;
   // For publishing background to voxgraph
   ros::NodeHandle nh_;
   ros::Publisher background_submap_publisher_;
   std::vector<int> published_submap_ids_to_voxgraph_;
+  std::vector<int> published_mid_pose_ids_to_voxgraph_;
+  std::vector<int> actualy_used_mid_pose_ids_;
   size_t sent_counter_;
   Transformation T_C_R_;
   // For receiving optimized poses from voxgraph
