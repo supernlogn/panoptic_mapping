@@ -18,7 +18,7 @@
 <!-- ============ Play Data ============ -->
   <param name="use_sim_time" value="$(arg use_sim_time)" />
   
-  <node pkg="panoptic_mapping_utils" type="flat_data_player.py" name="flat_data_player" output="screen">
+  <node pkg="panoptic_mapping_utils" type="flat_pointcloud_player.py" name="flat_data_player" output="screen">
     <param name="data_path" value="$(arg base_path)" />
     <param name="play_rate" value="$(arg play_rate)" />
     <param name="use_detectron" value="$(arg use_detectron)" />
