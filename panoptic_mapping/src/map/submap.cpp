@@ -33,6 +33,7 @@ void Submap::Config::setupParamsAndPrinting() {
   setupParam("voxels_per_side", &voxels_per_side);
   setupParam("use_class_layer", &use_class_layer);
   setupParam("mesh_config", &mesh_config);
+  setupParam("visualizer_prefix", &visualizer_prefix);
 }
 
 Submap::Submap(const Config& config, SubmapIDManager* submap_id_manager,
@@ -56,7 +57,7 @@ Submap::Submap(const Config& config, SubmapIDManager* submap_id_manager,
 void Submap::initialize() {
   // Default values.
   std::stringstream ss;
-  ss << "submap_" << static_cast<int>(id_);
+  ss << config_.visualizer_prefix << "submap_" << static_cast<int>(id_);
   frame_name_ = ss.str();
 
   // Initialize with identity transformation.

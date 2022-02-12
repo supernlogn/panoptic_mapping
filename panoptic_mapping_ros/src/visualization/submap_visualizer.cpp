@@ -36,6 +36,7 @@ void SubmapVisualizer::Config::setupParamsAndPrinting() {
   setupParam("use_different_colors_for_background",
              &use_different_colors_for_background);
   setupParam("initial_background_color", &initial_background_color);
+  setupParam("visualizer_prefix", &visualizer_prefix);
 }
 
 void SubmapVisualizer::Config::printFields() const {
@@ -159,7 +160,8 @@ std::vector<voxblox_msgs::MultiMesh> SubmapVisualizer::generateMeshMsgs(
       msg.header.stamp = ros::Time::now();
 
       std::stringstream ss;
-      ss << "submap_" << static_cast<int>(it->second.id);
+      ss << config_.visualizer_prefix << "submap_"
+         << static_cast<int>(it->second.id);
       std::string submap_frame_name = ss.str();
 
       msg.header.frame_id = submap_frame_name;
@@ -203,7 +205,7 @@ std::vector<voxblox_msgs::MultiMesh> SubmapVisualizer::generateMeshMsgs(
         submap.getMeshLayerPtr()->getMeshPtrByIndex(block_index)->updated =
             true;
       }
-      info.republish_everything = false;
+      info.republish_everything = true;
     }
 
     // Set the voxblox internal color mode. Gray will be used for overwriting.

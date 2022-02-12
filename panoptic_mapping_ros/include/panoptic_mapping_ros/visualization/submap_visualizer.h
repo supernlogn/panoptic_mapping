@@ -35,6 +35,7 @@ class SubmapVisualizer {
     bool use_different_colors_for_background = true;
     int initial_background_color = 15;
     std::string ros_namespace;
+    std::string visualizer_prefix = "pm_";
 
     Config() { setConfigName("SubmapVisualizer"); }
 
@@ -113,7 +114,7 @@ class SubmapVisualizer {
     std::string name_space;
 
     // Visualization data.
-    bool republish_everything = false;
+    bool republish_everything = true;
     bool was_deleted = false;
     bool change_color = true;
     Color color = kUnknownColor_;

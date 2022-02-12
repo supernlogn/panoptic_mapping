@@ -38,6 +38,7 @@ class Submap {
     float truncation_distance = 0.2;  // m, negative values = #vs
     int voxels_per_side = 16;         // Needs to be a multiple of 2.
     bool use_class_layer = false;
+    std::string visualizer_prefix = "pm_";
 
     MeshIntegrator::Config mesh_config;
 
