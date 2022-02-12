@@ -135,6 +135,8 @@ class PoseManager {
   const PoseInformation* getPoseInformationAtTime(const ros::Time time) const;
   Transformation getPoseTransformationAtTime(const ros::Time time) const;
   Transformation gravityAlignPose(const Transformation& input_pose) const;
+  ros::Time getSubmapStartTime(const submapIdType submap_id) const;
+  ros::Time getSubmapEndTime(const submapIdType submap_id) const;
   bool hasPose(const poseIdType pose_id) const;
 
  private:

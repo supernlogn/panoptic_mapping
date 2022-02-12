@@ -288,6 +288,20 @@ Transformation PoseManager::gravityAlignPose(
   return Transformation::exp(T_vec);
 }
 
+ros::Time PoseManager::getSubmapStartTime(const submapIdType submap_id) const {
+  const auto& submap_poses = submap_id_to_pose_id_.at(submap_id);
+  int start_pose_id = *submap_poses.begin();
+  const PoseInformation& p_info_start = poses_info_.at(start_pose_id);
+  return p_info_start.time;
+}
+
+ros::Time PoseManager::getSubmapEndTime(const submapIdType submap_id) const {
+  const auto& submap_poses = submap_id_to_pose_id_.at(submap_id);
+  int end_pose_id = *submap_poses.rbegin();
+  const PoseInformation& p_info_end = poses_info_.at(end_pose_id);
+  return p_info_end.time;
+}
+
 bool PoseManager::hasPose(const poseIdType pose_id) const {
   auto it = poses_info_.find(pose_id);
   bool has_pose = (it != poses_info_.end());
