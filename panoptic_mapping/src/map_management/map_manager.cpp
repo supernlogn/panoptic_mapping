@@ -474,11 +474,6 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
       voxgraph_correction_tfs_.pop();
     }
     actualy_used_mid_pose_ids_.clear();
-    // if n submaps were merged into 1 pseudosubmap and sent
-    // then the submaps ids are enumbered as  0,1,...,n-1
-    // and we should correct the (n/2+1)-th --> 0 + n//2
-    // auto id_it = published_submap_ids_to_voxgraph_.begin() +
-    //              (config_.num_submaps_to_merge_for_voxgraph / 2);
     // for all the map headers in the message
     std::vector<Transformation> T_C_C_corrections;
     std::vector<int> submap_ids;
@@ -494,11 +489,7 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
                    << " THAT DOES NOT EXIST";
         break;
       }
-      Submap* submapToChange = submaps->getSubmapPtr(*id_it);
-      double startTime =
-          pose_manager_
-              ->getPoseInformation(*submapToChange->getPoseHistory().begin())
-              .time.toSec();
+      double startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
       if (startTime == 0) {
         startTime = ros::TIME_MIN.toSec();
       }
@@ -515,22 +506,21 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
           break;
         }
         ++loop_index;
-        submapToChange = submaps->getSubmapPtr(*id_it);
-        startTime =
-            pose_manager_
-                ->getPoseInformation(*submapToChange->getPoseHistory().begin())
-                .time.toSec();
+        startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
       }
       if (should_exit_loop) {
         break;
       }
+      // if n submaps were merged into 1 pseudosubmap and sent
+      // then the submaps ids are enumbered as  0,1,...,n-1
+      // and we should correct the (n/2+1)-th --> 0 + n//2
       id_it += config_.num_submaps_to_merge_for_voxgraph / 2;
       if (id_it == published_submap_ids_to_voxgraph_.end()) {
         ROS_ERROR("There are less ids than map_headers");
         break;
       }
       assert(loop_index < pseudo_submaps_sent_.size());
-      submapToChange = submaps->getSubmapPtr(*id_it);
+      Submap* submapToChange = submaps->getSubmapPtr(*id_it);
       // get middle pose from pose history
       const Submap::PoseIdHistory& poseHistory =
           pseudo_submaps_sent_[loop_index].getPoseHistory();
@@ -547,30 +537,6 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
                                                T_C_R_);
         T_C_C_corrections.push_back(T_C_C_correction);
         submap_ids.push_back(*id_it);
-        const Transformation T_M_M =
-            T_M_C_init * T_C_C_correction * T_M_C_init.inverse();
-        submapToChange->setT_M_S(T_M_M.inverse());
-        // submapToChange->setT_M_S(T_M_M *submapToChange->getT_M_Sinit());
-        submapToChange->updateEverything(/* only_updated_blocks= */ false);
-        // pose_manager_->gravityAlignPose(T_M_C_init * T_C_R_).inverse() *
-        // T_M_R_optimal;
-        // pose_manager_->updateSinglePoseTransformation(mid_pose_id, T_M_C *
-        // T_C_C_correction); double tsec1 =
-        //     pose_manager->getPoseInformation(mid_pose_id).time.toSec();
-        // assert(tsec1 > map_header.start_time.toSec() &&
-        //        tsec1 < map_header.end_time.toSec());
-        // double startTime = pose_manager
-        //                        ->getPoseInformation(
-        //                            *submapToChange->getPoseHistory().begin())
-        //                        .time.toSec();
-        // double endTime = pose_manager
-        //                      ->getPoseInformation(
-        //                          *submapToChange->getPoseHistory().rbegin())
-        //                      .time.toSec();
-        // LOG(INFO) << "FIXED pose at time " << tsec1 << " from submap("
-        //           << map_header.start_time.toSec() << '_'
-        //           << map_header.end_time.toSec() << ')' << " of " << '('
-        //           << startTime << "_" << endTime << ')';
       } else {
         LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
                    << " THAT DOES NOT EXIST";
@@ -582,22 +548,18 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
     const size_t s = actualy_used_mid_pose_ids_.size();
     for (size_t i = 0; i < s; ++i) {
       const int mid_pose_id = actualy_used_mid_pose_ids_[i];
+      Transformation T_M_C_init =
+          pose_manager_->getInitPoseTransformation(mid_pose_id);
       const Transformation& T_C_C_correction = T_C_C_corrections[i];
       const int submap_id = submap_ids[i];
       if (config_.update_whole_trajectory_with_voxgraph_tf) {
         pose_manager_->correctSubmapTrajectory(submap_id, T_C_C_correction);
       }
       Submap* submapToChange = submaps->getSubmapPtr(submap_id);
-      // const Transformation T_S_B_init =
-      //     pose_manager_->getInitPoseTransformation(*submapToChange->getPoseHistory().begin());
-      // const Transformation T_B_C_init = T_S_B_init.inverse() * T_M_C_init;
-      // const Transformation submapCorrection =
-      //     T_S_B_init * T_B_C_init * T_C_C_correction *
-      //     (T_S_B_init * T_B_C_init).inverse();
-
-      // submapToChange->setT_M_S(T_M_C * T_C_C_correction *
-      // T_M_C.inverse());
-      // submapToChange->updateEverything();
+      const Transformation T_M_M =
+          T_M_C_init * T_C_C_correction * T_M_C_init.inverse();
+      submapToChange->setT_M_S(T_M_M.inverse());
+      submapToChange->updateEverything(/* only_updated_blocks= */ false);
     }
   }
 }
@@ -605,8 +567,6 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
 void MapManager::mergePseudoSubmapAToPseudoSubmapB(const PseudoSubmap& submapA,
                                                    PseudoSubmap* submapB) {
   // actual merging per voxel
-  assert(submapA.getT_M_S() == Transformation());
-  assert(submapB->getT_M_S() == Transformation());
   layer_manipulator_->mergePseudoSubmapAintoB(submapA, submapB);
   LOG_IF(INFO, config_.verbosity >= 4) << "Merged PseudoSubmaps .";
   // merging of pose history
@@ -660,47 +620,6 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
     const Submap& prev_published_submap = submaps->getSubmap(prev_id);
     PseudoSubmap prev_pseudo_map(prev_published_submap);
     mergePseudoSubmapAToPseudoSubmapB(prev_pseudo_map, &new_pseudo_submap);
-  }
-  {
-    PoseManager* pose_manager = PoseManager::getGlobalInstance();
-    double startTime =
-        pose_manager
-            ->getPoseInformation(*new_pseudo_submap.getPoseHistory().begin())
-            .time.toSec();
-    double endTime =
-        pose_manager
-            ->getPoseInformation(*new_pseudo_submap.getPoseHistory().rbegin())
-            .time.toSec();
-    double startTimeMin =
-        pose_manager
-            ->getPoseInformation(
-                *submaps
-                     ->getSubmap(*(published_submap_ids_to_voxgraph_.rbegin() +
-                                   config_.num_submaps_to_merge_for_voxgraph -
-                                   1))
-                     .getPoseHistory()
-                     .begin())
-            .time.toSec();
-    double endTimeMax =
-        pose_manager
-            ->getPoseInformation(
-                *submaps->getSubmap(*published_submap_ids_to_voxgraph_.rbegin())
-                     .getPoseHistory()
-                     .rbegin())
-            .time.toSec();
-    double startTimeOrig2 =
-        pose_manager
-            ->getPoseInformation(*submapToPublish.getPoseHistory().begin())
-            .time.toSec();
-    double endTimeOrig2 =
-        pose_manager
-            ->getPoseInformation(*submapToPublish.getPoseHistory().rbegin())
-            .time.toSec();
-
-    LOG(INFO) << "pseudo_submap: (" << startTime << '_' << endTime << ") VS ("
-              << startTimeOrig << '_' << endTimeOrig << ")-->("
-              << startTimeOrig2 << '_' << endTimeOrig2
-              << ") || min:" << startTimeMin << " max: " << endTimeMax;
   }
   pseudo_submaps_sent_.emplace_back(new_pseudo_submap);
   // store mid pose id to be published
