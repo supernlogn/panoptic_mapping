@@ -54,8 +54,8 @@ void PoseManager::correctPoseRangeTransformation(
   }
 }
 
-void PoseManager::correctSubmapPoses(const PoseManager::submapIdType submap_id,
-                                     const Transformation& T_corr) {
+void PoseManager::correctSubmapTrajectory(
+    const PoseManager::submapIdType submap_id, const Transformation& T_corr) {
   const auto& submap_pose_ids = submap_id_to_pose_id_.at(submap_id);
   correctPoseRangeTransformation(submap_pose_ids, T_corr);
 }
