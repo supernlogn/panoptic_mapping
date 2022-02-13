@@ -120,6 +120,20 @@ class Submap {
     return -1;  // invalid background
   }
 
+  int getBackgroundIDOnReactivation() const {
+    return background_id_on_reactivation_;
+  }
+
+  int getBackgroundIDOnDeactivation() const {
+    return background_id_on_deactivation_;
+  }
+
+  int getMidPoseID() const {
+    auto it = pose_id_history_.begin();
+    std::advance(it, pose_id_history_.size() / 2);
+    return *it;
+  }
+
   void addPoseID(const PoseManager::poseIdType pose_id);
   // Processing.
   /**
