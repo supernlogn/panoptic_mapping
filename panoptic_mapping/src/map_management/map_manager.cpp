@@ -280,7 +280,6 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     while (sent_counter_ > received_counter_) {
       sleep(1);
     }
-    LOG(INFO) << "Finished waiting the last voxgraph optimization";
     optimizePosesWithVoxgraphPoses(submaps);
     // call voxgraph to finish mapping
     ros::ServiceClient sec =
@@ -295,6 +294,8 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
       sleep(1);
     }
     LOG(INFO) << "Finished waiting the last voxgraph optimization";
+    optimizePosesWithVoxgraphPoses(submaps);
+    sleep(3);
     optimizePosesWithVoxgraphPoses(submaps);
   }
   if (config_.send_deactivated_submaps_to_voxgraph &&
@@ -473,7 +474,9 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
     // always fetch the latest message
     // skipping all before that
     while (!voxgraph_correction_tfs_.empty()) {
-      msg = voxgraph_correction_tfs_.back();
+      if (voxgraph_correction_tfs_.size() == 1) {
+        msg = voxgraph_correction_tfs_.back();
+      }
       voxgraph_correction_tfs_.pop();
     }
   }
