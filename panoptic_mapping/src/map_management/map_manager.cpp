@@ -290,13 +290,6 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
       LOG(ERROR) << "sec.call(msg) cannot be called. sec.exists()="
                  << sec.exists();
     }
-    while (sent_counter_ > received_counter_) {
-      sleep(1);
-    }
-    LOG(INFO) << "Finished waiting the last voxgraph optimization";
-    optimizePosesWithVoxgraphPoses(submaps);
-    sleep(3);
-    optimizePosesWithVoxgraphPoses(submaps);
   }
   if (config_.send_deactivated_submaps_to_voxgraph &&
       !config_.save_voxgraph_trajectory_on_finish.empty()) {
@@ -323,6 +316,16 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     }
   }
 
+  if (config_.send_deactivated_submaps_to_voxgraph) {
+    while (sent_counter_ > received_counter_) {
+      sleep(1);
+    }
+    LOG(INFO) << "Finished waiting the last voxgraph optimization";
+    optimizePosesWithVoxgraphPoses(submaps);
+    sleep(3);
+    optimizePosesWithVoxgraphPoses(submaps);
+  }
+
   LOG_IF(INFO, config_.verbosity >= 3) << "Merging Submaps:";
 
   // Merge what is possible.
@@ -345,29 +348,29 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
   pose_manager_->savePoseIdsToFile("/home/ioannis/datasets/mid_poses.bag",
                                    actualy_used_mid_pose_ids_);
   // Finish submaps.
-  if (config_.apply_class_layer_when_deactivating_submaps) {
-    LOG_IF(INFO, config_.verbosity >= 3) << "Applying class layers:";
-    std::vector<int> empty_submaps;
-    for (Submap& submap : *submaps) {
-      if (submap.hasClassLayer()) {
-        if (!submap.applyClassLayer(*layer_manipulator_)) {
-          empty_submaps.emplace_back(submap.getID());
-        }
-      }
-    }
-    for (const int id : empty_submaps) {
-      for (int published_id : published_submap_ids_to_voxgraph_) {
-        if (published_id == id) {
-          break;
-        }
-      }
+  // if (config_.apply_class_layer_when_deactivating_submaps) {
+  //   LOG_IF(INFO, config_.verbosity >= 3) << "Applying class layers:";
+  //   std::vector<int> empty_submaps;
+  //   for (Submap& submap : *submaps) {
+  //     if (submap.hasClassLayer()) {
+  //       if (!submap.applyClassLayer(*layer_manipulator_)) {
+  //         empty_submaps.emplace_back(submap.getID());
+  //       }
+  //     }
+  //   }
+  //   for (const int id : empty_submaps) {
+  //     for (int published_id : published_submap_ids_to_voxgraph_) {
+  //       if (published_id == id) {
+  //         break;
+  //       }
+  //     }
 
-      submaps->removeSubmap(id);
+  //     submaps->removeSubmap(id);
 
-      LOG_IF(INFO, config_.verbosity >= 3)
-          << "Removed submap " << id << " which was empty.";
-    }
-  }
+  //     LOG_IF(INFO, config_.verbosity >= 3)
+  //         << "Removed submap " << id << " which was empty.";
+  //   }
+  // }
 }
 
 bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
