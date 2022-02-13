@@ -520,7 +520,6 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
         break;
       }
       assert(loop_index < pseudo_submaps_sent_.size());
-      Submap* submapToChange = submaps->getSubmapPtr(*id_it);
       // get middle pose from pose history
       const Submap::PoseIdHistory& poseHistory =
           pseudo_submaps_sent_[loop_index].getPoseHistory();
@@ -548,9 +547,9 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
     const size_t s = actualy_used_mid_pose_ids_.size();
     for (size_t i = 0; i < s; ++i) {
       const int mid_pose_id = actualy_used_mid_pose_ids_[i];
-      Transformation T_M_C_init =
-          pose_manager_->getInitPoseTransformation(mid_pose_id);
       const Transformation& T_C_C_correction = T_C_C_corrections[i];
+      const Transformation& T_M_C_init =
+          pose_manager_->getInitPoseTransformation(mid_pose_id);
       const int submap_id = submap_ids[i];
       if (config_.update_whole_trajectory_with_voxgraph_tf) {
         pose_manager_->correctSubmapTrajectory(submap_id, T_C_C_correction);
