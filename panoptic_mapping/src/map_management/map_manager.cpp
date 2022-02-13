@@ -461,9 +461,12 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
   // published_submap_ids_to_voxgraph_ is used.
 
   // Do all pending corrections
-  if (!published_submap_ids_to_voxgraph_.empty()) {
+  if (published_submap_ids_to_voxgraph_.empty()) {
+    return;
+  }
+  cblox_msgs::MapPoseUpdates msg;
+  {
     std::lock_guard<std::mutex> guard(callback_mutex_);
-    cblox_msgs::MapPoseUpdates msg;
     if (voxgraph_correction_tfs_.empty()) {
       return;
     }
@@ -473,92 +476,132 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
       msg = voxgraph_correction_tfs_.back();
       voxgraph_correction_tfs_.pop();
     }
-    actualy_used_mid_pose_ids_.clear();
-    // for all the map headers in the message
-    std::vector<Transformation> T_C_C_corrections;
-    std::vector<int> submap_ids;
-    for (const auto map_header : msg.map_headers) {
-      // get the actual transformation coming from Voxgraph
-      kindr::minimal::QuatTransformationTemplate<double> tf_received;
-      tf::poseMsgToKindr(map_header.pose_estimate.map_pose, &tf_received);
-      const Transformation T_M_R_optimal(tf_received.cast<FloatingPoint>());
-      auto id_it = published_submap_ids_to_voxgraph_.begin();
-      int loop_index = 0;
-      if (!submaps->submapIdExists(*id_it)) {
-        LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
-                   << " THAT DOES NOT EXIST";
-        break;
-      }
-      double startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
-      if (startTime == 0) {
-        startTime = ros::TIME_MIN.toSec();
-      }
-      bool should_exit_loop = false;
-      while (startTime < map_header.start_time.toSec() &&
-             id_it != published_submap_ids_to_voxgraph_.end()) {
-        ++id_it;
-        if (!submaps->submapIdExists(*id_it) ||
-            id_it == published_submap_ids_to_voxgraph_.end()) {
-          LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
-                     << " THAT DOES NOT EXIST for time "
-                     << map_header.start_time.toSec();
-          should_exit_loop = true;
-          break;
-        }
-        ++loop_index;
-        startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
-      }
-      if (should_exit_loop) {
-        break;
-      }
-      // if n submaps were merged into 1 pseudosubmap and sent
-      // then the submaps ids are enumbered as  0,1,...,n-1
-      // and we should correct the (n/2+1)-th --> 0 + n//2
-      id_it += config_.num_submaps_to_merge_for_voxgraph / 2;
-      if (id_it == published_submap_ids_to_voxgraph_.end()) {
-        ROS_ERROR("There are less ids than map_headers");
-        break;
-      }
-      assert(loop_index < pseudo_submaps_sent_.size());
-      // get middle pose from pose history
-      const Submap::PoseIdHistory& poseHistory =
-          pseudo_submaps_sent_[loop_index].getPoseHistory();
-      auto poseHistory_iterator = poseHistory.begin();
-      std::advance(poseHistory_iterator, poseHistory.size() / 2);
-      const int mid_pose_id = *poseHistory_iterator;
-      actualy_used_mid_pose_ids_.push_back(mid_pose_id);
-      //  get the submap and change its pose
-      if (submaps->submapIdExists(*id_it)) {
-        Transformation T_M_C_init =
-            pose_manager_->getInitPoseTransformation(mid_pose_id);
-        const Transformation T_C_C_correction =
-            pose_manager_->getPoseCorrectionTF(mid_pose_id, T_M_R_optimal,
-                                               T_C_R_);
-        T_C_C_corrections.push_back(T_C_C_correction);
-        submap_ids.push_back(*id_it);
-      } else {
-        LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
-                   << " THAT DOES NOT EXIST";
-        return;
-      }
-      ++id_it;
-      ++loop_index;
+  }
+  actualy_used_mid_pose_ids_.clear();
+  // for all the map headers in the message
+  std::vector<Transformation> T_C_C_corrections;
+  std::vector<int> submap_ids;
+  for (const auto map_header : msg.map_headers) {
+    // get the actual transformation coming from Voxgraph
+    kindr::minimal::QuatTransformationTemplate<double> tf_received;
+    tf::poseMsgToKindr(map_header.pose_estimate.map_pose, &tf_received);
+    const Transformation T_M_R_optimal(tf_received.cast<FloatingPoint>());
+    auto id_it = published_submap_ids_to_voxgraph_.begin();
+    int loop_index = 0;
+    if (!submaps->submapIdExists(*id_it)) {
+      LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
+                 << " THAT DOES NOT EXIST";
+      break;
     }
-    const size_t s = actualy_used_mid_pose_ids_.size();
-    for (size_t i = 0; i < s; ++i) {
-      const int mid_pose_id = actualy_used_mid_pose_ids_[i];
-      const Transformation& T_C_C_correction = T_C_C_corrections[i];
-      const Transformation& T_M_C_init =
-          pose_manager_->getInitPoseTransformation(mid_pose_id);
-      const int submap_id = submap_ids[i];
-      if (config_.update_whole_trajectory_with_voxgraph_tf) {
-        pose_manager_->correctSubmapTrajectory(submap_id, T_C_C_correction);
+    double startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
+    if (startTime == 0) {
+      startTime = ros::TIME_MIN.toSec();
+    }
+    bool should_exit_loop = false;
+    while (startTime < map_header.start_time.toSec() &&
+           id_it != published_submap_ids_to_voxgraph_.end()) {
+      ++id_it;
+      if (!submaps->submapIdExists(*id_it) ||
+          id_it == published_submap_ids_to_voxgraph_.end()) {
+        LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
+                   << " THAT DOES NOT EXIST for time "
+                   << map_header.start_time.toSec();
+        should_exit_loop = true;
+        break;
       }
-      Submap* submapToChange = submaps->getSubmapPtr(submap_id);
-      const Transformation T_M_M =
-          T_M_C_init * T_C_C_correction * T_M_C_init.inverse();
-      submapToChange->setT_M_S(T_M_M.inverse());
-      submapToChange->updateEverything(/* only_updated_blocks= */ false);
+      ++loop_index;
+      startTime = pose_manager_->getSubmapStartTime(*id_it).toSec();
+    }
+    if (should_exit_loop) {
+      break;
+    }
+    // if n submaps were merged into 1 pseudosubmap and sent
+    // then the submaps ids are enumbered as  0,1,...,n-1
+    // and we should correct the (n/2+1)-th --> 0 + n//2
+    id_it += config_.num_submaps_to_merge_for_voxgraph / 2;
+    if (id_it == published_submap_ids_to_voxgraph_.end()) {
+      ROS_ERROR("There are less ids than map_headers");
+      break;
+    }
+    assert(loop_index < pseudo_submaps_sent_.size());
+    // get middle pose from pose history
+    const Submap::PoseIdHistory& poseHistory =
+        pseudo_submaps_sent_[loop_index].getPoseHistory();
+    auto poseHistory_iterator = poseHistory.begin();
+    std::advance(poseHistory_iterator, poseHistory.size() / 2);
+    const int mid_pose_id = *poseHistory_iterator;
+    actualy_used_mid_pose_ids_.push_back(mid_pose_id);
+    //  get the submap and change its pose
+    if (submaps->submapIdExists(*id_it)) {
+      Transformation T_M_C_init =
+          pose_manager_->getInitPoseTransformation(mid_pose_id);
+      const Transformation T_C_C_correction =
+          pose_manager_->getPoseCorrectionTF(mid_pose_id, T_M_R_optimal,
+                                             T_C_R_);
+      T_C_C_corrections.push_back(T_C_C_correction);
+      submap_ids.push_back(*id_it);
+    } else {
+      LOG(ERROR) << "TRYING TO CHANGE SUBMAP ID " << *id_it
+                 << " THAT DOES NOT EXIST";
+      return;
+    }
+    ++id_it;
+    ++loop_index;
+  }
+  const size_t s = actualy_used_mid_pose_ids_.size();
+  // correct background submaps
+  for (size_t i = 0; i < s; ++i) {
+    const int mid_pose_id = actualy_used_mid_pose_ids_[i];
+    const Transformation& T_C_C_correction = T_C_C_corrections[i];
+    const Transformation& T_M_C_init =
+        pose_manager_->getInitPoseTransformation(mid_pose_id);
+    const int submap_id = submap_ids[i];
+    if (config_.update_whole_trajectory_with_voxgraph_tf) {
+      pose_manager_->correctSubmapTrajectory(submap_id, T_C_C_correction);
+    }
+    Submap* submapToChange = submaps->getSubmapPtr(submap_id);
+    const Transformation T_M_M =
+        T_M_C_init * T_C_C_correction * T_M_C_init.inverse();
+    submapToChange->setT_M_S(T_M_M.inverse());
+    submapToChange->updateEverything(/* only_updated_blocks= */ false);
+  }
+  if (config_.update_contained_submaps_with_correction) {
+    // correct non-background submaps
+    for (Submap& submapToChange : *submaps) {
+      // if not active or background
+      if (submapToChange.isActive() ||
+          PanopticLabel::kBackground == submapToChange.getLabel()) {
+        continue;
+      }
+      int respBackground = submapToChange.getResponsibleBackground();
+      if (respBackground != -1) {
+        submapToChange.setT_M_S(submaps->getSubmap(respBackground).getT_M_S());
+      } else {
+        int activation_bck_id = submapToChange.getBackgroundIDOnReactivation();
+        int deactivation_bck_id =
+            submapToChange.getBackgroundIDOnDeactivation();
+        if (0 > activation_bck_id || 0 > deactivation_bck_id) {
+          continue;
+        }
+        Submap* activ_background = submaps->getSubmapPtr(activation_bck_id);
+        Submap* deactiv_background = submaps->getSubmapPtr(deactivation_bck_id);
+        double activ_background_time =
+            pose_manager_->getPoseInformation(activ_background->getMidPoseID())
+                .time.toSec();
+        double deactiv_background_time =
+            pose_manager_
+                ->getPoseInformation(deactiv_background->getMidPoseID())
+                .time.toSec();
+        double submap_time =
+            pose_manager_->getPoseInformation(submapToChange.getMidPoseID())
+                .time.toSec();
+        double lambda = (submap_time - activ_background_time) /
+                        (deactiv_background_time - activ_background_time);
+        Transformation submapT_M_S = kindr::minimal::interpolateComponentwise(
+            activ_background->getT_M_S(), deactiv_background->getT_M_S(),
+            lambda);
+        submapToChange.setT_M_S(submapT_M_S);
+      }
     }
   }
 }
