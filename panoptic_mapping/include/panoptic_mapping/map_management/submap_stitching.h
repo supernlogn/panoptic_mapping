@@ -30,14 +30,21 @@ class SubmapStitching {
   };
   struct PlaneType {
     typedef int PlaneID;
+    PlaneID plane_id;
+    int class_id;
     Transformation plane_orientation;
     Eigen::Hyperplane<float, 3> plane;
-    int class_id;
     size_t num_points;
-    PlaneID plane_id;
     Eigen::Vector3f getPlaneNormal();
     double dist(const PlaneType&);
     Transformation::Vector6 operator-(const PlaneType&);
+    /**
+     * @brief Plane orientation is based on the world frame so a transformation
+     * of the plane written in the mid pose's frame should respect that.
+     *
+     * @param Tnew_old
+     */
+    void transformPlane(const Transformation& Tnew_old, bool mission = false);
   };
   explicit SubmapStitching(const Config& config) : config_(config) {}
   virtual ~SubmapStitching() = default;
