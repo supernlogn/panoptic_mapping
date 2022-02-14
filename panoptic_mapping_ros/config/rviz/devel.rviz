@@ -103,6 +103,7 @@ Visualization Manager:
             8_SM_Table_a: true
             9_SM_Wall_Clock_a: true
             Value: true
+            single_tsdf: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -237,7 +238,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 13.093103408813477
+      Distance: 12.111974716186523
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -245,15 +246,15 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -1.741017460823059
-        Y: -0.913213312625885
-        Z: -1.5133700370788574
+        X: -0.6287777423858643
+        Y: -1.2022790908813477
+        Z: -0.9994813203811646
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.054796814918518
+      Pitch: 1.0253980159759521
       Target Frame: <Fixed Frame>
       Yaw: 4.707221984863281
     Saved: ~
@@ -262,7 +263,7 @@ Window Geometry:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 1025
+  Height: 1385
   Hide Left Dock: false
   Hide Right Dock: false
   Input:

@@ -32,11 +32,11 @@ submap_allocator:
   # submaps
   voxels_per_side: &voxels_per_side 16
   truncation_distance: -2 # negative = #vs
-  use_class_layer: true
-  
-  # Meshing
-  clear_foreign_voxels: false
-  required_belonging_corners: 1
+  mesh:
+    clear_foreign_voxels: false
+    required_belonging_corners: 1
+  classification:
+    type: moving_binary_count
   
   # Semantic
   small_instance_voxel_size: 0.02

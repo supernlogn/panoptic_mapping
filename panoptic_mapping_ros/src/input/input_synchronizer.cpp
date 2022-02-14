@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -20,7 +21,8 @@ const std::unordered_map<InputData::InputType, std::string>
         {InputData::InputType::kDepthImage, "depth_image_in"},
         {InputData::InputType::kColorImage, "color_image_in"},
         {InputData::InputType::kSegmentationImage, "segmentation_image_in"},
-        {InputData::InputType::kDetectronLabels, "labels_in"}};
+        {InputData::InputType::kDetectronLabels, "labels_in"},
+        {InputData::InputType::kUncertaintyImage, "uncertainty_image_in"}};
 
 void InputSynchronizer::Config::checkParams() const {
   checkParamGT(max_input_queue_length, 0, "max_input_queue_length");
@@ -35,6 +37,7 @@ void InputSynchronizer::Config::setupParamsAndPrinting() {
   setupParam("global_frame_name", &global_frame_name);
   setupParam("sensor_frame_name", &sensor_frame_name);
   setupParam("transform_lookup_time", &transform_lookup_time);
+  setupParam("max_delay", &max_delay);
 }
 
 InputSynchronizer::InputSynchronizer(const Config& config,
@@ -120,6 +123,20 @@ void InputSynchronizer::advertiseInputTopics() {
         subscribed_inputs_.insert(InputData::InputType::kDetectronLabels);
         break;
       }
+      case InputData::InputType::kUncertaintyImage: {
+        using MsgT = sensor_msgs::ImageConstPtr;
+        addQueue<MsgT>(
+            type, [this](const MsgT& msg, InputSynchronizerData* data) {
+              const cv_bridge::CvImageConstPtr uncertainty =
+                  cv_bridge::toCvCopy(msg, "32FC1");
+              data->data->uncertainty_image_ = uncertainty->image;
+              const std::lock_guard<std::mutex> lock(data->write_mutex_);
+              data->data->contained_inputs_.insert(
+                  InputData::InputType::kUncertaintyImage);
+            });
+        subscribed_inputs_.insert(InputData::InputType::kUncertaintyImage);
+        break;
+      }
     }
   }
 }
@@ -134,9 +151,12 @@ bool InputSynchronizer::getDataInQueue(const ros::Time& timestamp,
   if (timestamp < oldest_time_) {
     return false;
   }
-  auto it = find_if(
-      data_queue_.begin(), data_queue_.end(),
-      [&timestamp](const auto& arg) { return arg->timestamp == timestamp; });
+  double max_delay = config_.max_delay;
+  auto it = find_if(data_queue_.begin(), data_queue_.end(),
+                    [&timestamp, &max_delay](const auto& arg) {
+                      return abs(arg->timestamp.toSec() - timestamp.toSec()) <=
+                             max_delay;
+                    });
   if (it != data_queue_.end()) {
     // There already exists a data point.
     if (!it->get()->valid) {
@@ -163,6 +183,27 @@ bool InputSynchronizer::allocateDataInQueue(const ros::Time& timestamp) {
               [](const auto& lhs, const auto& rhs) -> bool {
                 return lhs->timestamp < rhs->timestamp;
               });
+    // Print missing topics if required.
+    std::stringstream info;
+    if (config_.verbosity >= 3 && *data_queue_.begin() &&
+        data_queue_.begin()->get()->data) {
+      const InputData data = *data_queue_.begin()->get()->data;
+      std::vector<std::string> missing_data;
+      for (const auto& type : subscribed_inputs_) {
+        if (!data.has(type)) {
+          missing_data.push_back(InputData::inputTypeToString(type));
+        }
+      }
+      if (!missing_data.empty()) {
+        info << " (Missing inputs: " << missing_data[0];
+        for (size_t i = 1; i < missing_data.size(); ++i) {
+          info << ", " << missing_data[i];
+        }
+        info << ")";
+      }
+    }
+
+    // Erase first element and update queue.
     data_queue_.erase(data_queue_.begin());
     data_is_ready_ = false;
     for (size_t i = 0; i < data_queue_.size(); ++i) {
@@ -172,7 +213,8 @@ bool InputSynchronizer::allocateDataInQueue(const ros::Time& timestamp) {
       }
     }
     LOG_IF(WARNING, config_.verbosity >= 2)
-        << "Input queue is getting too long, dropping oldest data.";
+        << "Input queue is getting too long, dropping oldest data" << info.str()
+        << ".";
     oldest_time_ = data_queue_.front()->timestamp;
   }
 

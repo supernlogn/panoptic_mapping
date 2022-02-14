@@ -168,17 +168,14 @@ bool TsdfRegistrator::submapsConflict(const Submap& reference,
         }
       } else {
         // Check for class belonging.
+
         if (other.hasClassLayer()) {
-          const panoptic_mapping::ClassLayer &cL = other.getClassLayer();
-          const ClassVoxel * cV = cL.getVoxelPtrByCoordinates(
-                      point.position);
-          if (cV == nullptr) {
-            LOG_IF(INFO, config_.verbosity >= 5)
-              <<"Class Voxel with null ptr for submap with id: "
-              << other.getID();
-          } else if (!classVoxelBelongsToSubmap(
-                  *cV)) {
-            distance = other.getConfig().truncation_distance;
+          const ClassVoxel* class_voxel =
+              other.getClassLayer().getVoxelPtrByCoordinates(point.position);
+          if (class_voxel) {
+            if (!class_voxel->belongsToSubmap()) {
+              distance = other.getConfig().truncation_distance;
+            }
           }
         }
         if (distance <= -rejection_distance) {

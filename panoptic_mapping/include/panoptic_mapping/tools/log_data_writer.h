@@ -31,7 +31,7 @@ class LogDataWriter : public DataWriterBase {
     // Which fields to evaluate Fields.
     bool evaluate_number_of_submaps = true;
     bool evaluate_number_of_active_submaps = true;
-    bool evaluate_numer_of_objects = true;
+    bool evaluate_number_of_objects = true;
 
     Config() { setConfigName("LogDataWriter"); }
 
@@ -53,12 +53,14 @@ class LogDataWriter : public DataWriterBase {
 
  protected:
   // Data.
+  bool is_setup_ = false;
   std::string output_path_;
   std::string outfile_name_;
   std::ofstream outfile_;
   std::vector<std::function<void(const SubmapCollection&)>> evaluations_;
 
   // Methods.
+  virtual void setup();
   virtual void setupLogFile();
   virtual void setupEvaluations();
   void writeEntry(const std::string& value);

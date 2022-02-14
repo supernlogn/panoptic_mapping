@@ -19,6 +19,9 @@
 #include "panoptic_mapping/Submap.pb.h"
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/integration/mesh_integrator.h"
+#include "panoptic_mapping/map/classification/class_block.h"
+#include "panoptic_mapping/map/classification/class_layer.h"
+#include "panoptic_mapping/map/classification/class_voxel.h"
 #include "panoptic_mapping/map/instance_id.h"
 #include "panoptic_mapping/map/pose_manager.h"
 #include "panoptic_mapping/map/submap_bounding_volume.h"
@@ -40,9 +43,26 @@ class Submap {
     bool use_class_layer = false;
     std::string visualizer_prefix = "pm_";
 
-    MeshIntegrator::Config mesh_config;
+
+    // Size of the truncation band for TSDF in meters. Negative values indicate
+    // multiples of the voxel size.
+    float truncation_distance = -2;
+
+    // Numbers of voxels per side of a voxel block. Needs to be a power of 2.
+    int voxels_per_side = 16;
+
+    // Config of the classification voxels to be used. Leave the config
+    // uninitialized (not setting the 'type' param) can be used to not use any
+    // classification.
+    config_utilities::VariableConfig<ClassLayer> classification;
+
+    // Config of the mesh integrator.
+    MeshIntegrator::Config mesh;
 
     Config() { setConfigName("Submap"); }
+
+    // Utility tool that checks whether a classification layer was specified.
+    bool useClassLayer() const;
 
    protected:
     void setupParamsAndPrinting() override;

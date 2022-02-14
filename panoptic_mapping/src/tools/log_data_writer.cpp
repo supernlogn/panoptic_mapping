@@ -19,32 +19,21 @@ void LogDataWriter::Config::setupParamsAndPrinting() {
   setupParam("output_directory", &output_directory);
   setupParam("file_name", &file_name);
   setupParam("evaluate_number_of_submaps", &evaluate_number_of_submaps);
-  setupParam("evaluate_numer_of_objects", &evaluate_numer_of_objects);
+  setupParam("evaluate_number_of_objects", &evaluate_number_of_objects);
 }
 
 void LogDataWriter::Config::checkParams() const {
   // Check the specified path exists.
   struct stat buffer;
-  checkParamCond(stat(output_directory.c_str(), &buffer) == 0,
-                 "Output directory '" + output_directory + "' does not exist.");
+  checkParamCond(
+      stat(output_directory.c_str(), &buffer) == 0,
+      "'output_directory' '" + output_directory + "' does not exist.");
 }
 
 LogDataWriter::LogDataWriter(const Config& config, bool print_config)
     : config_(config.checkValid()) {
   LOG_IF(INFO, config_.verbosity >= 1 && print_config) << "\n"
                                                        << config_.toString();
-
-  // Setup the output file.
-  setupLogFile();
-
-  // Setup evaluations.
-  outfile_ << "Timestamp [s]";
-  setupEvaluations();
-  outfile_ << std::endl;
-
-  // Finish.
-  LOG_IF(INFO, config_.verbosity >= 1)
-      << "Started writing to data file '" << outfile_name_ << "'.";
 }
 
 LogDataWriter::~LogDataWriter() {
@@ -56,11 +45,31 @@ LogDataWriter::~LogDataWriter() {
   }
 }
 
+void LogDataWriter::setup() {
+  if (is_setup_) {
+    return;
+  }
+  // Setup the output file.
+  setupLogFile();
+
+  // Setup what to evaluate and log headers.
+  outfile_ << "Timestamp [s]";
+  setupEvaluations();
+  outfile_ << std::endl;
+
+  // Finish.
+  LOG_IF(INFO, config_.verbosity >= 1)
+      << "Started writing to data file '" << outfile_name_ << "'.";
+  is_setup_ = true;
+}
+
 void LogDataWriter::setupLogFile() {
   auto t = std::time(nullptr);
   auto tm = *std::localtime(&t);
   std::stringstream timestamp;
   timestamp << std::put_time(&tm, "%Y_%m_%d-%H_%M_%S");
+
+  output_path_ = config_.output_directory;
 
   // Setup the logfile with the timestamp.
   outfile_name_ = config_.file_name;
@@ -78,8 +87,6 @@ void LogDataWriter::setupLogFile() {
 }
 
 void LogDataWriter::setupEvaluations() {
-  outfile_ << "Timestamp [s]";
-
   // Setup all data headers [with units] and evaluation functions to be used.
   if (config_.evaluate_number_of_submaps) {
     writeEntry("NoSubmaps [1]");
@@ -93,7 +100,7 @@ void LogDataWriter::setupEvaluations() {
       this->evaluateNumberOfActiveSubmaps(submaps);
     });
   }
-  if (config_.evaluate_numer_of_objects) {
+  if (config_.evaluate_number_of_objects) {
     writeEntry("NoObjects [1]");
     evaluations_.emplace_back([this](const SubmapCollection& submaps) {
       this->evaluateNumberOfObjects(submaps);
@@ -108,6 +115,11 @@ void LogDataWriter::writeEntry(const std::string& value) {
 
 void LogDataWriter::writeData(double time_stamp,
                               const SubmapCollection& submaps) {
+  // Lazy initialization of the log files.
+  if (!is_setup_) {
+    setup();
+  }
+
   // Log the timestamp.
   outfile_ << std::to_string(time_stamp);
 

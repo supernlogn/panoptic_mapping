@@ -60,6 +60,8 @@ class SubmapVisualizer {
     kClasses,
     kChange,
     kClassification,
+    kUncertainty,
+    kEntropy,
     kPersistent
   };
   enum class VisualizationMode {
