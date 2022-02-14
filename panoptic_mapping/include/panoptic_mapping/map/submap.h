@@ -37,16 +37,14 @@ class Submap {
   typedef std::set<PoseManager::poseIdType> PoseIdHistory;
   // Config.
   struct Config : public config_utilities::Config<Config> {
-    float voxel_size = 0.1;           // m
-    float truncation_distance = 0.2;  // m, negative values = #vs
-    int voxels_per_side = 16;         // Needs to be a multiple of 2.
+    float voxel_size = 0.1;  // m
     bool use_class_layer = false;
     std::string visualizer_prefix = "pm_";
 
 
     // Size of the truncation band for TSDF in meters. Negative values indicate
     // multiples of the voxel size.
-    float truncation_distance = -2;
+    float truncation_distance = -2;  // m, negative values = #vs
 
     // Numbers of voxels per side of a voxel block. Needs to be a power of 2.
     int voxels_per_side = 16;
