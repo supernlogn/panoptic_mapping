@@ -53,9 +53,9 @@ class PlaneType {
   }
   double dist(const PlaneType& other) const {
     double d1 = (other.plane.normal() - plane.normal()).squaredNorm();
-    double d2_ = (other.plane.offset() - plane.offset());
-    double d2 = d2_ * d2_;
-    return d1 + 0.5 * d2_;
+    double d2 =
+        (other.point_ - point_).dot(other.plane.normal() + plane.normal());
+    return d1 + 0.5 * d2;
   }
   void buildPlaneOrientation() {
     Eigen::Matrix3f matRotation;
