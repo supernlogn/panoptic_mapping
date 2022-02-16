@@ -60,6 +60,7 @@ cs_add_library(${PROJECT_NAME}
         src/map_management/activity_manager.cpp
         src/map_management/tsdf_registrator.cpp
         src/map_management/layer_manipulator.cpp
+        src/map_management/submap_stitching.cpp
         src/tools/planning_interface.cpp
         src/tools/map_renderer.cpp
         src/tools/null_data_writer.cpp
