@@ -47,6 +47,8 @@ class BoundingBoxExtended : public voxgraph::BoundingBox {
     }
     return interVolume / total_union;
   }
+
+ protected:
   float computeVolume(const Point& max, const Point& min) const {
     return (max - min).prod();
   }
