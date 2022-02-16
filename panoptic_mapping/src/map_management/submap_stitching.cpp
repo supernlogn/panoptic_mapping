@@ -1,15 +1,19 @@
 #include "panoptic_mapping/map_management/submap_stitching.h"
 
+#include <map>
+#include <utility>
+#include <vector>
+
 #include "panoptic_mapping/common/index_getter.h"
 
 namespace panoptic_mapping {
 
 void SubmapStitching::Config::checkParams() const {
-  checkParamGT(z_threshold, 0.f, "z_threshold");
-  checkParamGT(xy_threshold, 0.f, "xy_threshold");
-  checkParamGT(max_walls, 0.f, "max_walls");
-  checkParamGT(max_floors, 0.f, "max_floors");
-  checkParamGT(max_ceilings, 0.f, "max_ceilings");
+  checkParamGT(z_threshold, 0.0, "z_threshold");
+  checkParamGT(xy_threshold, 0.0, "xy_threshold");
+  checkParamGT(max_walls, 0, "max_walls");
+  checkParamGT(max_floors, 0, "max_floors");
+  checkParamGT(max_ceilings, 0, "max_ceilings");
 }
 
 void SubmapStitching::Config::setupParamsAndPrinting() {
@@ -23,8 +27,58 @@ void SubmapStitching::Config::setupParamsAndPrinting() {
 
 SubmapStitching::SubmapStitching(const Config& config)
     : config_(config.checkValid()) {
-  LOG_IF(INFO, config_.verbosity >= 1 && print_config) << "\n"
-                                                       << config_.toString();
+  LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
+}
+
+void SubmapStitching::processSubmap(const Submap& s) { findSubmapPlanes(s); }
+
+void SubmapStitching::findSubmapPlanes(const Submap& s) {}
+
+bool SubmapStitching::stitch(const Submap& SubmapA, Submap* submapB) {}
+
+int SubmapStitching::findNeighboors(const Submap& s,
+                                    std::vector<int>* neighboor_ids) {}
+
+bool SubmapStitching::planeRansac(
+    std::map<ClassID, std::vector<Eigen::Hyperplane<float, 3> > >*
+        merged_result,
+    const int num_iterations) {}
+
+std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
+    const std::vector<PointIndexType>& p_indices, const ClassID class_id) {}
+
+std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >
+SubmapStitching::applyClassPreFilter() {}
+
+Eigen::Hyperplane<float, 3> SubmapStitching::createPlaneFrom3Points(
+    const Point& p1, const Point& p2, const Point& p3) const {}
+
+std::pair<int, BoundingBoxType> SubmapStitching::ransac_check(
+    const std::vector<Eigen::Hyperplane<float, 3> >& hyperplanes,
+    const std::vector<PointIndexType>& p_indices) {}
+
+// for stitching submap
+void SubmapStitching::matchNeighboorPlanes(
+    const Submap& SubmapA, const Submap& SubmapB,
+    const std::vector<int>& neighboor_ids) {}
+
+int SubmapStitching::getMaxNumPlanesPerType(ClassID class_id) const {
+  // TODO(supernlogn): define them arbitary
+  const ClassID ceiling_id = 0;
+  const ClassID floor_id = 1;
+  const ClassID wall_id = 2;
+  switch (class_id) {
+    case ceiling_id:
+      return config_.max_ceilings;
+    case floor_id:
+      return config_.max_floors;
+    case wall_id:
+      return config_.max_walls;
+    default:
+      LOG(ERROR) << "No background class with ID: " << class_id;
+      return 0;
+  }
+  return 0;
 }
 
 float getMeshNormals(Submap* submap) {
@@ -39,13 +93,13 @@ float getMeshNormals(Submap* submap) {
   // const int class_id = submap->getClassID();
   const auto& classLayer = submap->getClassLayer();
   for (const voxblox::BlockIndex& block_index : mesh_indices) {
-    voxblox::Mesh::Ptr mesh = mesh_layer->getMeshPtrByIndex(block_index);
-    const panoptic_mapping::ClassBlock& class_block =
-        classLayer.getBlockByIndex(block_index);
+    voxblox::Mesh::ConstPtr mesh = mesh_layer->getMeshPtrByIndex(block_index);
+    panoptic_mapping::ClassBlock::ConstPtr class_block =
+        classLayer.getBlockConstPtrByIndex(block_index);
     // TODO(supernlogn) clustering can be done with label also
     for (size_t i = 0u; i < mesh->vertices.size(); ++i) {
       const auto pn = mesh->normals[i];
-      const auto& class_voxel = class_block.getVoxelByLinearIndex(i);
+      const auto& class_voxel = class_block->getVoxelByLinearIndex(i);
       std::cout << pn << ";";
       float dot_prod = pn.dot(up);
       if (dot_prod > up_threshold) {
