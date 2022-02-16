@@ -2,13 +2,17 @@
 #define PANOPTIC_MAPPING_COMMON_BOUNDING_BOX_EXTENDED_H_
 
 #include <algorithm>
+#include <utility>
 
+#include <eigen_conversions/eigen_msg.h>
+#include <panoptic_mapping_msgs/BoundingBox.h>
 #include <voxgraph/frontend/submap_collection/bounding_box.h>
 
 #include "panoptic_mapping/common/common.h"
 
 namespace panoptic_mapping {
 
+typedef panoptic_mapping_msgs::BoundingBox BoundingBoxMsg;
 class BoundingBoxExtended : public voxgraph::BoundingBox {
  public:
   BoundingBoxExtended() = default;
@@ -46,6 +50,12 @@ class BoundingBoxExtended : public voxgraph::BoundingBox {
       return 0.0;
     }
     return interVolume / total_union;
+  }
+  BoundingBoxMsg toBoundingBoxMsg() const {
+    BoundingBoxMsg ret;
+    tf::pointEigenToMsg(Eigen::Vector3d(max), ret.max);
+    tf::pointEigenToMsg(Eigen::Vector3d(min), ret.min);
+    return std::move(ret);
   }
 
  protected:
