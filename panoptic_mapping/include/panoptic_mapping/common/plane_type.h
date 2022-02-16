@@ -13,9 +13,9 @@ using BoundingBoxType = BoundingBoxExtended;
 class PlaneType {
  public:
   typedef size_t PlaneID;
-  explicit PlaneType(const Eigen::Vector3f& normal,
-                     const Eigen::Vector3f& point, int class_id)
-      : plane(normal, normal * point),
+  explicit PlaneType(const Eigen::Vector3f& normal, const Point& point,
+                     int class_id)
+      : plane(normal, normal.dot(point)),
         point_(point),
         class_id_(class_id),
         plane_id_(getNextPlaneID()) {
@@ -26,8 +26,8 @@ class PlaneType {
     num_points_ = 0;
   }
   // getters
-  Eigen::Vector3f getPlaneNormal() const { return plane.normal(); }
-  Eigen::Vector3f getPointInit() const { return point_; }
+  Eigen::Vector3f getPlaneNormal() const { return plane.normal().normalized(); }
+  Point getPointInit() const { return point_; }
   Transformation getPlaneTransformation() const { return T_M_P_; }
   PlaneID getPlaneID() const { return plane_id_; }
   const voxgraph::BoundingBox* getBoundingBox() const {
@@ -59,7 +59,7 @@ class PlaneType {
   }
   void buildPlaneOrientation() {
     Eigen::Matrix3f matRotation;
-    Eigen::Vector3f n = plane.normal();
+    const auto n = plane.normal().normalized();
     const float& x = n.x();
     const float& y = n.y();
     const float& z = n.z();
@@ -74,7 +74,7 @@ class PlaneType {
     for (const Point& p : points) {
       if (plane.absDistance(p) > threshold_belongs) {
         planeSegmentAaBb_.updateBoundingBoxLimits(p);
-        ++num_points_
+        ++num_points_;
       }
     }
   }
@@ -88,7 +88,7 @@ class PlaneType {
   int class_id_;
   Transformation T_M_P_;
   Transformation T_M_P_init_;
-  Transformation::Vector3 point_;
+  Point point_;
   Eigen::Hyperplane<float, 3> plane;
   size_t num_points_;
   BoundingBoxType planeSegmentAaBb_;
