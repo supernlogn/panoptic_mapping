@@ -44,7 +44,8 @@ submap_allocator:
   large_instance_voxel_size: 0.04
   background_voxel_size: 0.05
   unknown_voxel_size: 0.05
-  
+  use_class_layer: true
+
 freespace_allocator:
   type: monolithic  # monolithic
   verbosity: 1  
