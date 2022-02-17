@@ -6,6 +6,7 @@
 
 #include <eigen_conversions/eigen_msg.h>
 #include <panoptic_mapping_msgs/BoundingBox.h>
+#include <visualization_msgs/Marker.h>
 #include <voxgraph/frontend/submap_collection/bounding_box.h>
 
 #include "panoptic_mapping/common/common.h"
@@ -67,6 +68,23 @@ class BoundingBoxExtended : public voxgraph::BoundingBox {
     be.max = max_d.cast<float>();
     be.min = min_d.cast<float>();
     return be;
+  }
+
+  visualization_msgs::Marker getVisualizationMsg() {
+    visualization_msgs::Marker ret;
+    // visualize only 8 edges
+    for (int i = 0; i < 8; ++i) {
+      Point p_f;
+      p_f.x() = (!(i & 0b1)) ? min.x() : max.x();
+      p_f.y() = (!(i & 0b10)) ? min.y() : max.y();
+      p_f.z() = (!(i & 0b100)) ? min.z() : max.z();
+      geometry_msgs::Point p_m;
+      tf::pointEigenToMsg(p_f.cast<double>(), p_m);
+      ret.points.push_back(p_m);
+    }
+    ret.header.frame_id = "world";
+    ret.header.stamp = ros::Time::now();
+    return ret;
   }
 
  protected:
