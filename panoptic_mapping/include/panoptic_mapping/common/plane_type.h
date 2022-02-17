@@ -1,6 +1,7 @@
 #ifndef PANOPTIC_MAPPING_COMMON_PLANE_TYPE_H_
 #define PANOPTIC_MAPPING_COMMON_PLANE_TYPE_H_
 
+#include <map>
 #include <vector>
 
 #include <minkindr_conversions/kindr_msg.h>
@@ -168,6 +169,8 @@ class PlaneType {
   size_t num_points_;
   BoundingBoxType planeSegmentAaBb_;
 };
+
+typedef std::map<int, std::vector<PlaneType> > classToPlanesType;
 
 }  // namespace panoptic_mapping
 
