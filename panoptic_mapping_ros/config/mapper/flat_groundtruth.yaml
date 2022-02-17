@@ -121,7 +121,13 @@ map_management:
   layer_manipulator:
       verbosity: 3
       use_instance_classification: *use_instance_classification
-
+  submap_stitching:
+      verbosity: 4
+      max_walls: 3
+      max_floors: 1
+      max_ceilings: 1
+      max_outlier_percentage: 0.70
+      satisfying_outlier_percent: 0.70
 visualization:
   submaps:
     type: submaps  # submaps, single_tsdf
