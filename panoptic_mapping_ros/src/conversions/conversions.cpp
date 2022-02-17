@@ -1,7 +1,5 @@
 #include "panoptic_mapping_ros/conversions/conversions.h"
 
-#include "eigen_conversions/eigen_msg.h"
-
 namespace panoptic_mapping {
 
 DetectronLabel detectronLabelFromMsg(
@@ -26,13 +24,11 @@ DetectronLabels detectronLabelsFromMsg(
 
 BoundingBoxExtended boundingBoxExtendedFromMsg(
     const panoptic_mapping_msgs::BoundingBox& msg) {
-  BoundingBoxExtended be;
-  Eigen::Vector3d max_d, min_d;
-  tf::pointMsgToEigen(msg.max, max_d);
-  tf::pointMsgToEigen(msg.min, min_d);
-  be.max = Eigen::Vector3f(max_d);
-  be.min = Eigen::Vector3f(min_d);
-  return be;
+  return BoundingBoxExtended::fromMsg(msg);
+}
+
+PlaneType planeTypeFromMsg(const panoptic_mapping_msgs::PlaneType& msg) {
+  return PlaneType::fromMsg(msg);
 }
 
 }  // namespace panoptic_mapping
