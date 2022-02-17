@@ -51,11 +51,22 @@ class BoundingBoxExtended : public voxgraph::BoundingBox {
     }
     return interVolume / total_union;
   }
+
   BoundingBoxMsg toBoundingBoxMsg() const {
     BoundingBoxMsg ret;
-    tf::pointEigenToMsg(Eigen::Vector3d(max), ret.max);
-    tf::pointEigenToMsg(Eigen::Vector3d(min), ret.min);
+    tf::pointEigenToMsg(max.cast<double>(), ret.max);
+    tf::pointEigenToMsg(min.cast<double>(), ret.min);
     return std::move(ret);
+  }
+
+  static BoundingBoxExtended fromMsg(const BoundingBoxMsg& msg) {
+    BoundingBoxExtended be;
+    Eigen::Vector3d max_d, min_d;
+    tf::pointMsgToEigen(msg.max, max_d);
+    tf::pointMsgToEigen(msg.min, min_d);
+    be.max = max_d.cast<float>();
+    be.min = min_d.cast<float>();
+    return be;
   }
 
  protected:
