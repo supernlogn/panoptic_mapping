@@ -1,23 +1,22 @@
 #ifndef PANOPTIC_MAPPING_MAP_SUBMAP_H_
 #define PANOPTIC_MAPPING_MAP_SUBMAP_H_
 
-#include <ros/ros.h>
-#include <voxblox/core/layer.h>
-#include <voxblox/mesh/mesh_layer.h>
-
 #include <fstream>
 #include <memory>
-#include <string>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-
+#include <ros/ros.h>
+#include <voxblox/core/layer.h>
+#include <voxblox/mesh/mesh_layer.h>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/Submap.pb.h"
 #include "panoptic_mapping/common/common.h"
+#include "panoptic_mapping/common/plane_type.h"
 #include "panoptic_mapping/integration/mesh_integrator.h"
 #include "panoptic_mapping/map/classification/class_block.h"
 #include "panoptic_mapping/map/classification/class_layer.h"
@@ -121,7 +120,9 @@ class Submap {
   void setChangeState(ChangeState state) { change_state_ = state; }
   void setIsActive(bool is_active) { is_active_ = is_active; }
   void setWasTracked(bool was_tracked) { was_tracked_ = was_tracked; }
-
+  void setClassIDToPlanes(const classToPlanesType& class_id_to_planes) {
+    class_id_to_planes_ = class_id_to_planes;
+  }
   void setBackground_id_on_reactivation(const int v) {
     background_id_on_reactivation_ = v;
   }
@@ -245,6 +246,7 @@ class Submap {
    */
   void getProto(SubmapProto* proto) const;
 
+  const classToPlanesType& getClassToPlanes() const;
   /**
    * @brief Save the submap to file.
    *
@@ -297,6 +299,7 @@ class Submap {
   std::shared_ptr<ClassLayer> class_layer_;
   std::shared_ptr<voxblox::MeshLayer> mesh_layer_;
   std::vector<IsoSurfacePoint> iso_surface_points_;
+  classToPlanesType class_id_to_planes_;
   SubmapBoundingVolume bounding_volume_;
 
   // Processing.
