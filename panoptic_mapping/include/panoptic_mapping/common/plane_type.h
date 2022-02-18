@@ -92,8 +92,18 @@ class PlaneType {
     const float& y = n.y();
     const float& z = n.z();
     float sqrt_nx_ny = sqrt(x * x + y * y);
-    matRotation << y / sqrt_nx_ny, -x / sqrt_nx_ny, 0.0, x * z / sqrt_nx_ny,
-        y * z / sqrt_nx_ny, -sqrt_nx_ny, x, y, z;
+    if (sqrt_nx_ny > 1e-14) {
+      matRotation << y / sqrt_nx_ny, -x / sqrt_nx_ny, 0.0, x * z / sqrt_nx_ny,
+          y * z / sqrt_nx_ny, -sqrt_nx_ny, x, y, z;
+      if (matRotation.determinant() < 0) {
+        matRotation.row(3)[0] *= -1;
+        matRotation.row(3)[1] *= -1;
+        matRotation.row(3)[2] *= -1;
+      }
+    } else {
+      matRotation << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    }
+
     T_M_P_ = Transformation(point_, Transformation::Rotation(matRotation));
   }
   void createPlaneSegmentAaBb(const std::vector<Point>& points,
