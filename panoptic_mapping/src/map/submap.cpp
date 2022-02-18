@@ -129,9 +129,9 @@ void Submap::getProto(SubmapProto* proto) const {
   proto->set_frame_name(frame_name_);
 }
 
-const classToPlanesType& Submap::getClassToPlanes() const {
-  return class_id_to_planes_;
-}
+// const classToPlanesType& Submap::getClassToPlanes() const {
+//   return class_id_to_planes_;
+// }
 
 bool Submap::saveToStream(std::fstream* outfile_ptr) const {
   CHECK_NOTNULL(outfile_ptr);

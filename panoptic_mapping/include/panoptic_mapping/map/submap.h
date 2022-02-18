@@ -120,9 +120,9 @@ class Submap {
   void setChangeState(ChangeState state) { change_state_ = state; }
   void setIsActive(bool is_active) { is_active_ = is_active; }
   void setWasTracked(bool was_tracked) { was_tracked_ = was_tracked; }
-  void setClassIDToPlanes(const classToPlanesType& class_id_to_planes) {
-    class_id_to_planes_ = class_id_to_planes;
-  }
+  // void setClassIDToPlanes(const classToPlanesType& class_id_to_planes) {
+  //   class_id_to_planes_ = class_id_to_planes;
+  // }
   void setBackground_id_on_reactivation(const int v) {
     background_id_on_reactivation_ = v;
   }
@@ -246,7 +246,7 @@ class Submap {
    */
   void getProto(SubmapProto* proto) const;
 
-  const classToPlanesType& getClassToPlanes() const;
+  // const classToPlanesType& getClassToPlanes() const;
   /**
    * @brief Save the submap to file.
    *
@@ -299,7 +299,7 @@ class Submap {
   std::shared_ptr<ClassLayer> class_layer_;
   std::shared_ptr<voxblox::MeshLayer> mesh_layer_;
   std::vector<IsoSurfacePoint> iso_surface_points_;
-  classToPlanesType class_id_to_planes_;
+  // std::shared_ptr<classToPlanesType> class_id_to_planes_;
   SubmapBoundingVolume bounding_volume_;
 
   // Processing.
