@@ -8,6 +8,7 @@
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <voxblox/io/layer_io.h>
 
+#include "panoptic_mapping/common/plane_type.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/tools/serialization.h"
 
@@ -126,6 +127,10 @@ void Submap::getProto(SubmapProto* proto) const {
   cblox::conversions::transformKindrToProto(T_M_S_, transformation_proto_ptr);
   proto->set_allocated_transform(transformation_proto_ptr);
   proto->set_frame_name(frame_name_);
+}
+
+const classToPlanesType& Submap::getClassToPlanes() const {
+  return class_id_to_planes_;
 }
 
 bool Submap::saveToStream(std::fstream* outfile_ptr) const {
