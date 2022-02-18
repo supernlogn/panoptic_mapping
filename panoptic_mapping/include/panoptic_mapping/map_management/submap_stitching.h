@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <random>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -40,6 +41,7 @@ class SubmapStitching {
     float satisfying_outlier_percent = 0.70;
     int ransac_num_iterations = 1000;
     uint_fast32_t random_generator_seed = 100;
+    std::string publish_bboxes_topic = "";
     Config() { setConfigName("SubmapStitching"); }
 
    protected:
@@ -53,6 +55,10 @@ class SubmapStitching {
 
   bool stitch(const Submap& SubmapA, Submap* submapB);
   int findNeighboors(const Submap& s, std::vector<int>* neighboor_ids);
+  void publish_new_bboxes(const classToPlanesType& class_to_planes);
+  void publish_new_bboxes(
+      const ClassID class_id,
+      const std::vector<panoptic_mapping::PlaneType>& planes);
   /**
    * @brief Get the Max Num Planes Per class id
    *
@@ -96,8 +102,9 @@ class SubmapStitching {
   };
   // for individual submap
   void findSubmapPlanes(
-      classToPlanesType* result, const voxblox::MeshLayer& meshLayer,
-      const std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >&
+      classToPlanesType* result, const voxblox::MeshLayer& mesh_layer,
+      const std::vector<IsoSurfacePoint>& iso_surface_points,
+      const std::map<SubmapStitching::ClassID, std::vector<size_t>>&
           filtered_class_indices);
   bool planeRansac(std::vector<PlaneType>* merged_result,
                    const voxblox::MeshLayer& mesh_layer,
@@ -105,11 +112,11 @@ class SubmapStitching {
                    const int num_iterations, const int max_num_planes,
                    const ClassID class_id);
   bool planeRansacSimple(std::vector<PlaneType>* merged_result,
-                         const voxblox::MeshLayer& mesh_layer,
-                         const std::vector<PointIndexType>& p_indices,
+                         const std::vector<IsoSurfacePoint>& iso_surface_points,
+                         const std::vector<size_t>& p_indices,
                          const int num_iterations, const int max_num_planes,
                          const ClassID class_id);
-  std::vector<Eigen::Hyperplane<float, 3> > ransacSample(
+  std::vector<Eigen::Hyperplane<float, 3>> ransacSample(
       const std::vector<const Point*>& mesh_points,
       const std::vector<const Point*>& mesh_normals, const int max_num_planes,
       const ClassID class_id) const;
@@ -117,14 +124,14 @@ class SubmapStitching {
       const std::vector<const Point*>& mesh_points, const int max_num_planes,
       const ClassID class_id) const;
   void applyClassPreFilter(
-      std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >* ret,
+      std::map<SubmapStitching::ClassID, std::vector<size_t>>* ret,
       const voxblox::MeshLayer& meshLayer, const ClassLayer& class_layer);
   Eigen::Hyperplane<float, 3> createPlaneFrom3Points(
       const Point& p1, const Point& p2, const Point& p3,
       const Eigen::Vector3f& class_dir) const;
   // return the number of outlier points given a set of planes and the whole
   // point set.
-  int ransacCheck(const std::vector<Eigen::Hyperplane<float, 3> >& hyperplanes,
+  int ransacCheck(const std::vector<Eigen::Hyperplane<float, 3>>& hyperplanes,
                   const std::vector<const Point*>& mesh_points);
   int ransacCheckSingle(const Eigen::Hyperplane<float, 3>& hyperplane,
                         const std::vector<const Point*>& mesh_points) const;
@@ -138,7 +145,7 @@ class SubmapStitching {
   // for stitching submap
   void matchNeighboorPlanes(const Submap& SubmapA, const Submap& SubmapB,
                             const std::vector<int>& neighboor_ids);
-  void mini_clustering(std::vector<Eigen::Hyperplane<float, 3> >* major_planes,
+  void mini_clustering(std::vector<Eigen::Hyperplane<float, 3>>* major_planes,
                        const std::vector<Point>& point_set,
                        const std::vector<Point>& normals_set,
                        const int num_clustered_planes,
@@ -148,10 +155,12 @@ class SubmapStitching {
   const Config config_;
   std::map<int, int> submap_neighboors;
   // random number generator and its seed used for ransac
-  std::shared_ptr<std::map<int, classToPlanesType> >
+  std::shared_ptr<std::map<int, classToPlanesType>>
       submap_id_to_class_to_planes_;
   static int seed_num_;
   static std::mt19937 random_number_generator_;
+  ros::Publisher bboxes_publisher_;
+  ros::NodeHandle nh_;
 };
 
 }  // namespace panoptic_mapping
