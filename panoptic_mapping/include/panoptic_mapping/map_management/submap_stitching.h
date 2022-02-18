@@ -2,6 +2,7 @@
 #define PANOPTIC_MAPPING_MAP_MANAGEMENT_SUBMAP_STITCHING_H_
 
 #include <map>
+#include <memory>
 #include <random>
 #include <utility>
 #include <vector>
@@ -147,6 +148,8 @@ class SubmapStitching {
   const Config config_;
   std::map<int, int> submap_neighboors;
   // random number generator and its seed used for ransac
+  std::shared_ptr<std::map<int, classToPlanesType> >
+      submap_id_to_class_to_planes_;
   static int seed_num_;
   static std::mt19937 random_number_generator_;
 };

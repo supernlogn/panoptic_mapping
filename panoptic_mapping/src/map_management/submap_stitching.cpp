@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <string>
@@ -41,10 +42,13 @@ SubmapStitching::SubmapStitching(const Config& config)
     : config_(config.checkValid()) {
   LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
   set_seed(config_.random_generator_seed);
+  submap_id_to_class_to_planes_ =
+      std::make_shared<std::map<int, classToPlanesType>>(
+          std::map<int, classToPlanesType>());
 }
 
 void SubmapStitching::processSubmap(Submap* s) {
-  std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >
+  std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>
       filtered_class_indices;
   assert(s->hasClassLayer());
   applyClassPreFilter(&filtered_class_indices, s->getMeshLayer(),
@@ -61,12 +65,13 @@ void SubmapStitching::processSubmap(Submap* s) {
        << p.second.size();
   }
   LOG(INFO) << "\n" << ss.str();
+  submap_id_to_class_to_planes_->insert({s->getID(), class_id_to_planes});
   // s->setClassIDToPlanes(class_id_to_planes);
 }
 
 void SubmapStitching::findSubmapPlanes(
     classToPlanesType* result, const voxblox::MeshLayer& mesh_layer,
-    const std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >&
+    const std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>&
         filtered_class_indices) {
   LOG_IF(INFO, config_.verbosity >= 3) << "Entered findSubmapPlanes";
   for (const auto& p_indices_pair : filtered_class_indices) {
@@ -91,8 +96,8 @@ bool SubmapStitching::planeRansac(std::vector<PlaneType>* merged_result,
                                   const int num_iterations,
                                   const int max_num_planes,
                                   const ClassID class_id) {
-  std::vector<Eigen::Hyperplane<float, 3> > best_result;
-  std::vector<std::pair<ClassID, BoundingBoxType> > best_bounding_boxes = {};
+  std::vector<Eigen::Hyperplane<float, 3>> best_result;
+  std::vector<std::pair<ClassID, BoundingBoxType>> best_bounding_boxes = {};
   size_t num_points = p_indices.size();
   size_t num_outliers = num_points;
   bool is_satisfying_result = false;
@@ -161,7 +166,7 @@ bool SubmapStitching::planeRansacSimple(
     const std::vector<PointIndexType>& p_indices, const int num_iterations,
     const int max_num_planes, const ClassID class_id) {
   Eigen::Hyperplane<float, 3> best_result;
-  std::vector<std::pair<ClassID, BoundingBoxType> > best_bounding_boxes = {};
+  std::vector<std::pair<ClassID, BoundingBoxType>> best_bounding_boxes = {};
   size_t num_points = p_indices.size();
   size_t num_outliers = num_points;
   LOG_IF(INFO, config_.verbosity >= 1)
@@ -219,7 +224,7 @@ bool SubmapStitching::planeRansacSimple(
   return is_ok;
 }
 
-std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
+std::vector<Eigen::Hyperplane<float, 3>> SubmapStitching::ransacSample(
     const std::vector<const Point*>& mesh_points,
     const std::vector<const Point*>& mesh_normals, const int max_num_planes,
     const ClassID class_id) const {
@@ -237,7 +242,7 @@ std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
   // const Point class_dir = getDirectionOfClassID(class_id);
   // cluster major plane
   const float threshold = config_.position_cluster_threshold;
-  std::vector<Eigen::Hyperplane<float, 3> > ret;
+  std::vector<Eigen::Hyperplane<float, 3>> ret;
   // mini_clustering(&ret, point_subset, normals_subset, max_num_planes,
   //                 threshold);
   Eigen::Vector3f class_dir;
@@ -335,7 +340,7 @@ Eigen::Hyperplane<float, 3> SubmapStitching::ransacSampleSingle(
 // }
 
 void SubmapStitching::mini_clustering(
-    std::vector<Eigen::Hyperplane<float, 3> >* major_planes,
+    std::vector<Eigen::Hyperplane<float, 3>>* major_planes,
     const std::vector<Point>& point_set, const std::vector<Point>& normals_set,
     const int num_clustered_planes, const float threshold) const {
   /* naive distance matrix computation */
@@ -387,7 +392,7 @@ void SubmapStitching::mini_clustering(
 }
 
 int SubmapStitching::ransacCheck(
-    const std::vector<Eigen::Hyperplane<float, 3> >& hyperplanes,
+    const std::vector<Eigen::Hyperplane<float, 3>>& hyperplanes,
     const std::vector<const Point*>& mesh_points) {
   LOG_IF(INFO, config_.verbosity >= 5)
       << "Calling ransacCheck for " << hyperplanes.size() << " hyperplanes and"
@@ -439,7 +444,7 @@ Eigen::Hyperplane<float, 3> SubmapStitching::createPlaneFrom3Points(
 }
 
 void SubmapStitching::applyClassPreFilter(
-    std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >* ret,
+    std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>* ret,
     const voxblox::MeshLayer& mesh_layer, const ClassLayer& class_layer) {
   LOG_IF(INFO, config_.verbosity >= 3)
       << "applying class pre-filter for mesh layer with "

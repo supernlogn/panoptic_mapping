@@ -299,7 +299,6 @@ class Submap {
   std::shared_ptr<ClassLayer> class_layer_;
   std::shared_ptr<voxblox::MeshLayer> mesh_layer_;
   std::vector<IsoSurfacePoint> iso_surface_points_;
-  // std::shared_ptr<classToPlanesType> class_id_to_planes_;
   SubmapBoundingVolume bounding_volume_;
 
   // Processing.
