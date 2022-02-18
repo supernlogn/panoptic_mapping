@@ -16,6 +16,7 @@
 #include "panoptic_mapping/map_management/activity_manager.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
+#include "panoptic_mapping/map_management/submap_stitching.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
 
 #include "cblox_msgs/MapHeader.h"
@@ -85,7 +86,7 @@ class MapManager : public MapManagerBase {
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
     LayerManipulator::Config layer_manipulator_config;
-
+    SubmapStitching::Config submap_stitching_config;
     Config() { setConfigName("MapManager"); }
 
    protected:
@@ -170,6 +171,7 @@ class MapManager : public MapManagerBase {
   std::shared_ptr<ActivityManager> activity_manager_;
   std::shared_ptr<TsdfRegistrator> tsdf_registrator_;
   std::shared_ptr<LayerManipulator> layer_manipulator_;
+  std::shared_ptr<SubmapStitching> submap_stitching_handler_;
   PoseManager* pose_manager_;
   // For publishing background to voxgraph
   ros::NodeHandle nh_;

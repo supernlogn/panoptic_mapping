@@ -44,6 +44,7 @@ void MapManager::Config::checkParams() const {
   checkParamConfig(activity_manager_config);
   checkParamConfig(tsdf_registrator_config);
   checkParamConfig(layer_manipulator_config);
+  checkParamConfig(submap_stitching_config);
   checkParamEq(num_submaps_to_merge_for_voxgraph % 2, 1,
                "num_submaps_to_merge_for_voxgraph should always be odd");
 }
@@ -71,6 +72,8 @@ void MapManager::Config::setupParamsAndPrinting() {
              "tsdf_registrator");
   setupParam("layer_manipulator_config", &layer_manipulator_config,
              "layer_manipulator");
+  setupParam("submap_stitching_config", &submap_stitching_config,
+             "submap_stitching");
   setupParam("background_submap_topic_name", &background_submap_topic_name);
   setupParam("optimized_background_poses_topic_name",
              &optimized_background_poses_topic_name);
@@ -96,7 +99,11 @@ MapManager::MapManager(const Config& config)
       std::make_shared<TsdfRegistrator>(config_.tsdf_registrator_config);
   layer_manipulator_ =
       std::make_shared<LayerManipulator>(config_.layer_manipulator_config);
+  submap_stitching_handler_ =
+      std::make_shared<SubmapStitching>(config_.submap_stitching_config);
   pose_manager_ = PoseManager::getGlobalInstance();
+  LOG_IF(INFO, config_.verbosity >= 4)
+      << "created all handlers/managers/manipulators/registrators";
   // Add all requested tasks.
   if (config_.prune_active_blocks_frequency > 0) {
     tickers_.emplace_back(
@@ -151,9 +158,11 @@ void MapManager::updatePublishedSubmaps(SubmapCollection* submaps) {
   for (int id : deactivated_submaps) {
     Submap* submap = submaps->getSubmapPtr(id);
     if (submap->getLabel() == PanopticLabel::kBackground) {
-      if (std::find(published_submap_ids_to_voxgraph_.begin(),
+      const bool is_new =
+          std::find(published_submap_ids_to_voxgraph_.begin(),
                     published_submap_ids_to_voxgraph_.end(),
-                    id) == published_submap_ids_to_voxgraph_.end()) {
+                    id) == published_submap_ids_to_voxgraph_.end();
+      if (is_new) {
         publishSubmapToVoxGraph(submaps, *submap);
       }
     }
@@ -231,6 +240,9 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
     if (config_.apply_class_layer_when_deactivating_submaps) {
       for (int id : deactivated_submaps) {
         Submap* submap = submaps->getSubmapPtr(id);
+        if (submap->getLabel() == PanopticLabel::kBackground) {
+          submap_stitching_handler_->processSubmap(submap);
+        }
         submap->applyClassLayer(*layer_manipulator_);
       }
     }
@@ -429,7 +441,8 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
         PoseManager::getGlobalInstance()->removeSubmapIdFromPoses(
             submap_id, submap->getPoseHistory());
         submaps->removeSubmap(submap_id);
-        ROS_INFO("removed submap %d", submap_id);
+        LOG_IF(INFO, config_.verbosity >= 2)
+            << "removed submap with id:" << submap_id;
         if (merged_id) {
           *merged_id = other.getID();
         }
