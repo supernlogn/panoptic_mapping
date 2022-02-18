@@ -103,9 +103,17 @@ class SubmapStitching {
                    const std::vector<PointIndexType>& p_indices,
                    const int num_iterations, const int max_num_planes,
                    const ClassID class_id);
+  bool planeRansacSimple(std::vector<PlaneType>* merged_result,
+                         const voxblox::MeshLayer& mesh_layer,
+                         const std::vector<PointIndexType>& p_indices,
+                         const int num_iterations, const int max_num_planes,
+                         const ClassID class_id);
   std::vector<Eigen::Hyperplane<float, 3> > ransacSample(
       const std::vector<const Point*>& mesh_points,
       const std::vector<const Point*>& mesh_normals, const int max_num_planes,
+      const ClassID class_id) const;
+  Eigen::Hyperplane<float, 3> ransacSampleSingle(
+      const std::vector<const Point*>& mesh_points, const int max_num_planes,
       const ClassID class_id) const;
   void applyClassPreFilter(
       std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >* ret,
@@ -117,6 +125,8 @@ class SubmapStitching {
   // point set.
   int ransacCheck(const std::vector<Eigen::Hyperplane<float, 3> >& hyperplanes,
                   const std::vector<const Point*>& mesh_points);
+  int ransacCheckSingle(const Eigen::Hyperplane<float, 3>& hyperplane,
+                        const std::vector<const Point*>& mesh_points) const;
   std::pair<const Point*, const Point*> getPointAndNormalFromPointIndex(
       const PointIndexType& p_idx, const voxblox::MeshLayer& mesh_layer) const;
   const Point& getNormalFromPointIndex(

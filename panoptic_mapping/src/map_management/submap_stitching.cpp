@@ -76,8 +76,9 @@ void SubmapStitching::findSubmapPlanes(
     LOG_IF(INFO, config_.verbosity >= 3)
         << "Calling planeRansac for class" << class_id;
     if (p_indices_pair.second.size() > 0) {
-      planeRansac(&result->at(class_id), mesh_layer, p_indices_pair.second,
-                  config_.ransac_num_iterations, max_num_planes, class_id);
+      planeRansacSimple(&result->at(class_id), mesh_layer,
+                        p_indices_pair.second, config_.ransac_num_iterations,
+                        max_num_planes, class_id);
     } else {
       LOG_IF(INFO, config_.verbosity >= 4) << "skipping class with no indices";
     }
@@ -155,6 +156,69 @@ bool SubmapStitching::planeRansac(std::vector<PlaneType>* merged_result,
   return is_ok;
 }
 
+bool SubmapStitching::planeRansacSimple(
+    std::vector<PlaneType>* merged_result, const voxblox::MeshLayer& mesh_layer,
+    const std::vector<PointIndexType>& p_indices, const int num_iterations,
+    const int max_num_planes, const ClassID class_id) {
+  Eigen::Hyperplane<float, 3> best_result;
+  std::vector<std::pair<ClassID, BoundingBoxType> > best_bounding_boxes = {};
+  size_t num_points = p_indices.size();
+  size_t num_outliers = num_points;
+  LOG_IF(INFO, config_.verbosity >= 1)
+      << "start planeRansac for " << num_points << " points";
+  // create vector with all points
+  // TODO(supernlogn): This is a completely indepedent
+  // procedure. Maybe put it somewhere else
+  std::vector<const Point*> mesh_points(num_points);
+  {
+    int i = 0;
+    for (const auto& p_idx : p_indices) {
+      const auto& p_n = getPointAndNormalFromPointIndex(p_idx, mesh_layer);
+      mesh_points[i] = p_n.first;
+      ++i;
+    }
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Planeransac: Initialized mesh_points pointers";
+  }
+
+  for (int k = 0; k < max_num_planes; ++k) {
+    // run ransac's main iteration
+    num_outliers = mesh_points.size();
+    for (int i = 0; i < num_iterations; ++i) {
+      const auto& hyperplane =
+          ransacSampleSingle(mesh_points, max_num_planes, class_id);
+      int temp_num_outliers = ransacCheckSingle(hyperplane, mesh_points);
+      if (temp_num_outliers < num_outliers) {
+        best_result = hyperplane;
+        num_outliers = temp_num_outliers;
+      }
+    }
+    // eliminate points for the next plane
+    for (int i = mesh_points.size() - 1; i >= 0; --i) {
+      if (best_result.absDistance(*mesh_points[i]) <
+          config_.position_cluster_threshold) {
+        mesh_points.erase(mesh_points.begin() + i);
+      }
+    }
+    // create result
+    // and bounding boxes around planes
+    merged_result->emplace_back(best_result, class_id);
+    PlaneType& full_plane = merged_result->back();
+    full_plane.createPlaneSegmentAaBb(mesh_points,
+                                      config_.position_cluster_threshold);
+    // if enough points iterate
+    if (mesh_points.size() < 10) {
+      break;
+    }
+  }
+
+  LOG_IF(INFO, config_.verbosity >= 2)
+      << "num_outliers/num_points=" << mesh_points.size() << "/" << num_points;
+  bool is_ok = num_outliers < config_.max_outlier_percentage * num_points;
+  LOG_IF(INFO, config_.verbosity >= 3) << "PlaneransacSimple: is_ok =" << is_ok;
+  return is_ok;
+}
+
 std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
     const std::vector<const Point*>& mesh_points,
     const std::vector<const Point*>& mesh_normals, const int max_num_planes,
@@ -192,6 +256,37 @@ std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
     ret.push_back(hplane);
   }
   return ret;
+}
+
+Eigen::Hyperplane<float, 3> SubmapStitching::ransacSampleSingle(
+    const std::vector<const Point*>& mesh_points, const int max_num_planes,
+    const ClassID class_id) const {
+  const int sample_maximum = mesh_points.size();
+  const auto s1 = getSample(0, sample_maximum);
+  auto s2 = getSample(0, sample_maximum);
+  int i = 0;
+  while (s2 == s1 && i < 10) {
+    s2 = getSample(0, sample_maximum);
+    ++i;
+  }
+  auto s3 = getSample(0, sample_maximum);
+  i = 0;
+  while ((s3 == s1 || s3 == s2) && i < 10) {
+    s3 = getSample(0, sample_maximum);
+    ++i;
+  }
+  const Point* p1 = mesh_points[s1];
+  const Point* p2 = mesh_points[s2];
+  const Point* p3 = mesh_points[s3];
+  Eigen::Vector3f class_dir;
+  if (class_id == 0) {
+    class_dir = Point(0.0, 0.0, -1.0);
+  } else if (class_id == 1) {
+    class_dir = Point(0.0, 0.0, 1.0);
+  } else {
+    class_dir = Point(0.5, 0.5, 0.5);
+  }
+  return createPlaneFrom3Points(*p1, *p2, *p3, class_dir);
 }
 
 // void rejectAlgo(std::vector<Eigen::Hyperplane<float, 3> > * major_planes,
@@ -309,6 +404,20 @@ int SubmapStitching::ransacCheck(
       }
     }
     if (is_outlier) {
+      ++num_outliers;
+    }
+  }
+  return num_outliers;
+}
+
+int SubmapStitching::ransacCheckSingle(
+    const Eigen::Hyperplane<float, 3>& hyperplane,
+    const std::vector<const Point*>& mesh_points) const {
+  int num_outliers = 0;
+  for (const auto p : mesh_points) {
+    // check if it is outlier
+    // TODO(supernlogn): see that thresholds are different for each class
+    if (hyperplane.absDistance(*p) > config_.position_cluster_threshold) {
       ++num_outliers;
     }
   }
