@@ -1,8 +1,11 @@
 #include "panoptic_mapping/map_management/submap_stitching.h"
 
+#include <algorithm>
+#include <iostream>
 #include <map>
 #include <random>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -40,28 +43,44 @@ SubmapStitching::SubmapStitching(const Config& config)
   set_seed(config_.random_generator_seed);
 }
 
-void SubmapStitching::processSubmap(const Submap& s) {
+void SubmapStitching::processSubmap(Submap* s) {
   std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >
       filtered_class_indices;
-  applyClassPreFilter(&filtered_class_indices, s.getMeshLayer(),
-                      s.getClassLayer());
-  s.getIsoSurfacePoints();
-  findSubmapPlanes(s.getMeshLayer(), filtered_class_indices);
+  assert(s->hasClassLayer());
+  applyClassPreFilter(&filtered_class_indices, s->getMeshLayer(),
+                      s->getClassLayer());
+  // s->getIsoSurfacePoints();
+  classToPlanesType class_id_to_planes;
+  findSubmapPlanes(&class_id_to_planes, s->getMeshLayer(),
+                   filtered_class_indices);
+  std::stringstream ss;
+  ss << "class -- num_points -- num_planes";
+  for (const auto& p : class_id_to_planes) {
+    ss << "\n"
+       << p.first << "--" << filtered_class_indices.at(p.first).size() << "--"
+       << p.second.size();
+  }
+  LOG(INFO) << "\n" << ss.str();
+  // s->setClassIDToPlanes(class_id_to_planes);
 }
 
 void SubmapStitching::findSubmapPlanes(
-    const voxblox::MeshLayer& mesh_layer,
+    classToPlanesType* result, const voxblox::MeshLayer& mesh_layer,
     const std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >&
         filtered_class_indices) {
-  const auto& background_class_ids = getBackgroundClassIDS();
-  std::map<ClassID, std::vector<PlaneType> > class_id_to_planes;
+  LOG_IF(INFO, config_.verbosity >= 3) << "Entered findSubmapPlanes";
   for (const auto& p_indices_pair : filtered_class_indices) {
     ClassID class_id = p_indices_pair.first;
-    class_id_to_planes[class_id] = std::vector<PlaneType>();
+    result->insert({class_id, std::vector<PlaneType>()});
     const int max_num_planes = getMaxNumPlanesPerType(class_id);
-    planeRansac(&class_id_to_planes[class_id], mesh_layer,
-                p_indices_pair.second, config_.ransac_num_iterations,
-                max_num_planes, class_id);
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Calling planeRansac for class" << class_id;
+    if (p_indices_pair.second.size() > 0) {
+      planeRansac(&result->at(class_id), mesh_layer, p_indices_pair.second,
+                  config_.ransac_num_iterations, max_num_planes, class_id);
+    } else {
+      LOG_IF(INFO, config_.verbosity >= 4) << "skipping class with no indices";
+    }
   }
 }
 
@@ -78,7 +97,8 @@ bool SubmapStitching::planeRansac(std::vector<PlaneType>* merged_result,
   bool is_satisfying_result = false;
   const size_t satisfying_num_outliers =
       config_.satisfying_outlier_percent * num_points;
-
+  LOG_IF(INFO, config_.verbosity >= 1)
+      << "start planeRansac for " << num_points << " points";
   // create vector with all points
   // TODO(supernlogn): This is a completely indepedent
   // procedure. Maybe put it somewhere else
@@ -92,7 +112,10 @@ bool SubmapStitching::planeRansac(std::vector<PlaneType>* merged_result,
       mesh_normals[i] = p_n.second;
       ++i;
     }
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Planeransac: Initialized mesh_points and mesh_normals pointers";
   }
+  // run ransac's main iteration
   for (int i = 0; i < num_iterations; ++i) {
     const auto& hyperplanes =
         ransacSample(mesh_points, mesh_normals, max_num_planes, class_id);
@@ -100,22 +123,27 @@ bool SubmapStitching::planeRansac(std::vector<PlaneType>* merged_result,
     if (temp_num_outliers < num_outliers) {
       best_result = hyperplanes;
       num_outliers = temp_num_outliers;
-    }
-    if (temp_num_outliers < satisfying_num_outliers) {
-      is_satisfying_result = true;
-      break;
+      if (temp_num_outliers < satisfying_num_outliers) {
+        is_satisfying_result = true;
+        break;
+      }
     }
   }
+
   if (is_satisfying_result) {
     LOG_IF(INFO, config_.verbosity >= 3) << "Num outliers result is satisfying";
   } else {
-    LOG_IF(INFO, config_.verbosity >= 3)
+    LOG_IF(WARNING, config_.verbosity >= 3)
         << "Num outliers result is not satisfying. Exhausted num of iterations";
   }
-  LOG_IF(INFO, config_.verbosity >= 2) << "num_outliers=" << num_outliers;
+  LOG_IF(INFO, config_.verbosity >= 2)
+      << "num_outliers/satisfying_num_outliers/num_points=" << num_outliers
+      << "/" << satisfying_num_outliers << "/" << num_points;
   bool is_ok = num_outliers < config_.max_outlier_percentage * num_points;
   if (is_ok) {
     // create plane_type from eigen::Hyperplane
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Planeransac: Create plane from eigen::Hyperplane";
     for (const auto& plane : best_result) {
       merged_result->emplace_back(plane, class_id);
       PlaneType& full_plane = merged_result->back();
@@ -133,6 +161,8 @@ std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
     const ClassID class_id) const {
   // get 3 random points
   int sample_maximum = mesh_points.size();
+  LOG_IF(INFO, config_.verbosity >= 5)
+      << "ransacSample for " << sample_maximum << " points";
   std::vector<Point> point_subset(max_num_planes * 3);
   std::vector<Point> normals_subset(max_num_planes * 3);
   for (int i = 0; i < 3 * max_num_planes; ++i) {
@@ -144,8 +174,23 @@ std::vector<Eigen::Hyperplane<float, 3> > SubmapStitching::ransacSample(
   // cluster major plane
   const float threshold = config_.position_cluster_threshold;
   std::vector<Eigen::Hyperplane<float, 3> > ret;
-  mini_clustering(&ret, point_subset, normals_subset, max_num_planes,
-                  threshold);
+  // mini_clustering(&ret, point_subset, normals_subset, max_num_planes,
+  //                 threshold);
+  Eigen::Vector3f class_dir;
+  if (class_id == 0) {
+    class_dir = Point(0.0, 0.0, -1.0);
+  } else if (class_id == 1) {
+    class_dir = Point(0.0, 0.0, 1.0);
+  } else {
+    class_dir = Point(0.5, 0.5, 0.5);
+  }
+  for (int i = 0; i < max_num_planes; ++i) {
+    const int b_i = 3 * i;
+    const auto& hplane =
+        createPlaneFrom3Points(point_subset[b_i], point_subset[b_i + 1],
+                               point_subset[b_i + 2], class_dir);
+    ret.push_back(hplane);
+  }
   return ret;
 }
 
@@ -203,30 +248,32 @@ void SubmapStitching::mini_clustering(
   const Point* n_data = normals_set.data();
   const size_t N = point_set.size();
   /* get row with the smallest sum */
-  int classes[N];
+  int mst_classes[N];
   for (int i = 0; i < N; ++i) {
-    classes[i] = i;
+    mst_classes[i] = i;
   }
   for (int i = 0; i < N; ++i) {
     for (int j = i + 1; j < N; ++j) {
       const float dist =
           PlaneType::distFunc2(p_data[i], n_data[i], p_data[j], n_data[j]);
       if (dist < threshold) {
-        classes[j] = classes[i];
+        mst_classes[j] = mst_classes[i];
       }
     }
   }
   std::set<int> distinct_classes;
   for (int i = 0; i < N; ++i) {
-    distinct_classes.insert(classes[i]);
+    distinct_classes.insert(mst_classes[i]);
   }
   const Point zero_point = Point::Zero(3);
+
+  std::vector<c_info_t> mst_classes_info;
   for (int cluster_class : distinct_classes) {
     Point mean_point = zero_point;
     Point mean_normal = zero_point;
     int n = 0;
     for (int i = 0; i < N; ++i) {
-      if (classes[i] == cluster_class) {
+      if (mst_classes[i] == cluster_class) {
         mean_point += p_data[i];
         mean_normal += n_data[i];
         ++n;
@@ -234,13 +281,22 @@ void SubmapStitching::mini_clustering(
     }
     mean_point /= n;
     mean_normal /= n;
-    major_planes->emplace_back(mean_normal, mean_point);
+    mst_classes_info.emplace_back(n, mean_point, mean_normal.normalized());
+  }
+  std::sort(mst_classes_info.begin(), mst_classes_info.end(),
+            c_info_t::compDesc);
+  for (int i = 0; i < num_clustered_planes; ++i) {
+    const auto& c_i = mst_classes_info[i];
+    major_planes->emplace_back(c_i.point, c_i.normal);
   }
 }
 
 int SubmapStitching::ransacCheck(
     const std::vector<Eigen::Hyperplane<float, 3> >& hyperplanes,
     const std::vector<const Point*>& mesh_points) {
+  LOG_IF(INFO, config_.verbosity >= 5)
+      << "Calling ransacCheck for " << hyperplanes.size() << " hyperplanes and"
+      << mesh_points.size() << " points";
   int num_outliers = 0;
   for (const auto p : mesh_points) {
     // check if it is outlier
@@ -275,8 +331,15 @@ Eigen::Hyperplane<float, 3> SubmapStitching::createPlaneFrom3Points(
 
 void SubmapStitching::applyClassPreFilter(
     std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >* ret,
-    const voxblox::MeshLayer& mesh_layer, const ClassLayer& classLayer) {
+    const voxblox::MeshLayer& mesh_layer, const ClassLayer& class_layer) {
+  LOG_IF(INFO, config_.verbosity >= 3)
+      << "applying class pre-filter for mesh layer with "
+      << mesh_layer.getNumberOfAllocatedMeshes()
+      << " allocated meshes and class layer with "
+      << class_layer.getNumberOfAllocatedBlocks() << " number of blocks";
   // assign all background class IDs a zero-element vector
+  LOG_IF(INFO, config_.verbosity >= 3)
+      << "Initializing prefilter for background classes";
   const auto background_class_ids = getBackgroundClassIDS();
   for (ClassID class_id : background_class_ids) {
     ret->insert({class_id, std::vector<PointIndexType>()});
@@ -289,7 +352,7 @@ void SubmapStitching::applyClassPreFilter(
   for (const voxblox::BlockIndex& block_index : mesh_indices) {
     voxblox::Mesh::ConstPtr mesh = mesh_layer.getMeshPtrByIndex(block_index);
     panoptic_mapping::ClassBlock::ConstPtr class_block =
-        classLayer.getBlockConstPtrByIndex(block_index);
+        class_layer.getBlockConstPtrByIndex(block_index);
     // iterate over all indices of this block
     const size_t num_vertices = mesh->vertices.size();
     for (size_t i = 0u; i < num_vertices; ++i) {
@@ -301,13 +364,27 @@ void SubmapStitching::applyClassPreFilter(
       }
     }
   }
+  if (config_.verbosity >= 4) {
+    std::stringstream ss;
+    for (const auto& pair : *ret) {
+      ss << pair.first << "-->" << pair.second.size() << "\n";
+    }
+    LOG(INFO) << "Finished pre-filtering for the classes-> num point indices"
+              << "\n"
+              << ss.str();
+  }
 }
 
 // for stitching submap
-bool SubmapStitching::stitch(const Submap& SubmapA, Submap* submapB) {}
+bool SubmapStitching::stitch(const Submap& SubmapA, Submap* submapB) {
+  return true;
+}
 
 int SubmapStitching::findNeighboors(const Submap& s,
-                                    std::vector<int>* neighboor_ids) {}
+                                    std::vector<int>* neighboor_ids) {
+  return 0;
+}
+
 void SubmapStitching::matchNeighboorPlanes(
     const Submap& SubmapA, const Submap& SubmapB,
     const std::vector<int>& neighboor_ids) {}
@@ -393,5 +470,8 @@ float getMeshNormals(Submap* submap) {
 
   return static_cast<float>(mean_vertice_y);
 }
+
+SubmapStitching::c_info_t::c_info_t(int a0, Point a1, Point a2)
+    : n(a0), point(a1), normal(a2) {}
 
 }  // namespace panoptic_mapping

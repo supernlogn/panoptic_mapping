@@ -30,13 +30,13 @@ class SubmapStitching {
     int verbosity = 4;
     float z_threshold = 0.15;
     float xy_threshold = 0.01;
-    int max_walls = 4;
-    int max_floors = 4;
-    int max_ceilings = 4;
+    int max_walls = 3;
+    int max_floors = 1;
+    int max_ceilings = 1;
     float normal_cluster_threshold = 0.1;     // no-unit
     float position_cluster_threshold = 0.05;  // [m]
-    float max_outlier_percentage = 0.10;
-    float satisfying_outlier_percent = 0.10;
+    float max_outlier_percentage = 0.70;
+    float satisfying_outlier_percent = 0.70;
     int ransac_num_iterations = 1000;
     uint_fast32_t random_generator_seed = 100;
     Config() { setConfigName("SubmapStitching"); }
@@ -48,7 +48,7 @@ class SubmapStitching {
   explicit SubmapStitching(const Config& config);
   virtual ~SubmapStitching() = default;
 
-  void processSubmap(const Submap& s);
+  void processSubmap(Submap* s);
 
   bool stitch(const Submap& SubmapA, Submap* submapB);
   int findNeighboors(const Submap& s, std::vector<int>* neighboor_ids);
@@ -76,17 +76,26 @@ class SubmapStitching {
    * @return uint_fast32_t the sample
    */
   static uint_fast32_t getSample(const int min, const int max) {
-    assert(min > 0 && max > 0);
-    assert(max >= min);
+    // assert(min >= 0 && max >= 0);
+    // assert(max >= min);
     uint_fast32_t min_max_ = min + max;
     uint_fast32_t s = random_number_generator_();
-    return (s % min_max_) + min;
+    return (s % min_max_) + static_cast<uint_fast32_t>(min);
   }
 
  protected:
+  struct c_info_t {
+    int n;
+    Point point;
+    Point normal;
+    c_info_t(int a0, Point a1, Point a2);
+    static bool compDesc(const c_info_t& l, const c_info_t& r) {
+      return l.n > r.n;
+    }
+  };
   // for individual submap
   void findSubmapPlanes(
-      const voxblox::MeshLayer& meshLayer,
+      classToPlanesType* result, const voxblox::MeshLayer& meshLayer,
       const std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >&
           filtered_class_indices);
   bool planeRansac(std::vector<PlaneType>* merged_result,
@@ -100,7 +109,7 @@ class SubmapStitching {
       const ClassID class_id) const;
   void applyClassPreFilter(
       std::map<SubmapStitching::ClassID, std::vector<PointIndexType> >* ret,
-      const voxblox::MeshLayer& meshLayer, const ClassLayer& classLayer);
+      const voxblox::MeshLayer& meshLayer, const ClassLayer& class_layer);
   Eigen::Hyperplane<float, 3> createPlaneFrom3Points(
       const Point& p1, const Point& p2, const Point& p3,
       const Eigen::Vector3f& class_dir) const;
@@ -127,7 +136,6 @@ class SubmapStitching {
  private:
   const Config config_;
   std::map<int, int> submap_neighboors;
-  std::map<PlaneType::PlaneID, PlaneType> clustered_submap_planes_;
   // random number generator and its seed used for ransac
   static int seed_num_;
   static std::mt19937 random_number_generator_;
