@@ -241,9 +241,11 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
       for (int id : deactivated_submaps) {
         Submap* submap = submaps->getSubmapPtr(id);
         if (submap->getLabel() == PanopticLabel::kBackground) {
+          submap->applyClassLayer(*layer_manipulator_, false);
           submap_stitching_handler_->processSubmap(submap);
+        } else {
+          submap->applyClassLayer(*layer_manipulator_);
         }
-        submap->applyClassLayer(*layer_manipulator_);
       }
     }
     // Try to merge the submaps.
