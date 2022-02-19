@@ -238,6 +238,26 @@ void Submap::finishActivePeriod() {
   // Since the submap was active just before we assume it still exists.
   change_state_ = ChangeState::kPersistent;
   updateEverything();
+  // debug
+  // const auto & class_layer = current_background_submap->getClassLayer();
+  // const auto & mesh_layer = current_background_submap->getMeshLayer();
+  voxblox::BlockIndexList mesh_indices;
+  mesh_layer_->getAllAllocatedMeshes(&mesh_indices);
+  size_t observed_count = 0;
+  for (const voxblox::BlockIndex& block_index : mesh_indices) {
+    panoptic_mapping::ClassBlock::ConstPtr class_block =
+        class_layer_->getBlockConstPtrByIndex(block_index);
+    voxblox::Mesh::ConstPtr mesh = mesh_layer_->getMeshPtrByIndex(block_index);
+    const size_t num_vertices = mesh->vertices.size();
+    class_block->getNumVoxels();
+    for (size_t i = 0u; i < num_vertices; ++i) {
+      if (class_layer_->getVoxelPtrByCoordinates(mesh->vertices[i])
+              ->isObserverd()) {
+        ++observed_count;
+      }
+    }
+  }
+  LOG(WARNING) << "observed_count ===== " << observed_count;
 }
 
 void Submap::updateEverything(bool only_updated_blocks) {
