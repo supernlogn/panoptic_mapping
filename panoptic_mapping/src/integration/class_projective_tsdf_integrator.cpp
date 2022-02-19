@@ -59,7 +59,23 @@ void ClassProjectiveIntegrator::processInput(SubmapCollection* submaps,
     // arbitrarily large.
     num_classes_ = id_to_class_.size() + 1;
   }
-
+  // debug
+  // const auto & img = input->idImage();
+  // int count0s = 0;
+  // int count1s = 0;
+  // int count2s = 0;
+  // for (int i = 0; i < img.rows; ++i) {
+  //   for(int j = 0; j < img.cols; ++j) {
+  //     count0s += (img.at<int>(i, j) == 0);
+  //     count1s += (img.at<int>(i, j) == 1);
+  //     count2s += (img.at<int>(i, j) == 2);
+  //   }
+  // }
+  // if (count0s + count1s + count2s > 0) {
+  //   LOG(WARNING) << "count0s : " << count0s
+  //   << "\ncount1s : " << count1s
+  //   << "\ncount2s : " << count2s;
+  // }
   // Run the integration.
   ProjectiveIntegrator::processInput(submaps, input);
 }
@@ -173,7 +189,13 @@ void ClassProjectiveIntegrator::updateClassVoxel(InterpolatorBase* interpolator,
     }
   } else {
     if (config_.use_instance_classification) {
-      voxel->incrementCount(interpolator->interpolateID(input.idImage()));
+      // LOG(ERROR) << "reached here sucker " <<
+      // static_cast<int>(voxel->getVoxelType());
+      int iid = interpolator->interpolateID(input.idImage());
+      // if (submap_id == 11 && iid >= 0 && iid <= 2) {
+      //   LOG(WARNING) << "iid " << iid;
+      // }
+      voxel->incrementCount(iid);
     } else {
       // NOTE(schmluk): id_to_class should always exist since it's created based
       // on the input.
