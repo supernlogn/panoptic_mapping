@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Voxgraph1
         - /Voxgraph1/Meshes1
+        - /Voxgraph1/Meshes1/Merged map1
         - /Voxblox1/Mesh1
       Splitter Ratio: 0.4134078323841095
     Tree Height: 728
@@ -84,10 +85,37 @@ Visualization Manager:
           Enabled: true
           Name: Mesh
           Queue Size: 10
+          Toggle Visibility All: true
           Topic: /panoptic_mapper/visualization/submaps/mesh
           Unreliable: false
           Value: true
-          Visible: true
+          Visible:
+            10_SM_Floor_a: true
+            16_SM_Floor_a: true
+            1_SM_Floor_a: true
+            22_SM_Floor_a: true
+            28_SM_Floor_a: true
+            2_SM_Kitchen_a: true
+            34_SM_Floor_a: true
+            39_SM_Table_a: true
+            41_SM_Floor_a: true
+            45_SM_Floor_a: true
+            47_SM_Kitchen_a: true
+            50_SM_Table_b: true
+            51_SM_Floor_a: true
+            52_SM_TV_a: true
+            53_SM_Wall_Clock_a: true
+            54_SM_Coffee_Machine_a: true
+            55_SM_Table_Decor_a: true
+            56_SM_Coffee_Machine_a: true
+            57_SM_Tumblr_a: true
+            58_SM_Floor_a: true
+            59_SM_Tumblr_b: true
+            61_SM_Sofa_a: true
+            62_SM_Floor_a: true
+            63_SM_Floor_a: true
+            64_SM_Table_Decor_a: true
+            Value: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -205,15 +233,26 @@ Visualization Manager:
               Topic: /voxgraph_mapper/combined_mesh
               Unreliable: false
               Value: true
-              Visible: true
+              Visible: false
             - Class: voxblox_rviz_plugin/VoxbloxMultiMesh
               Enabled: true
               Name: Individual submaps
               Queue Size: 10
+              Toggle Visibility All: true
               Topic: /voxgraph_mapper/separated_mesh
               Unreliable: false
               Value: true
-              Visible: true
+              Visible:
+                Value: true
+                submap_0: true
+                submap_1: true
+                submap_2: true
+                submap_3: true
+                submap_4: true
+                submap_5: true
+                submap_6: true
+                submap_7: true
+                submap_8: true
           Enabled: true
           Name: Meshes
         - Class: rviz/Marker
@@ -259,7 +298,165 @@ Visualization Manager:
           Value: true
         _submap_0:
           Value: true
+        _submap_1:
+          Value: true
+        _submap_2:
+          Value: true
+        _submap_3:
+          Value: true
+        _submap_4:
+          Value: true
+        _submap_5:
+          Value: true
+        _submap_6:
+          Value: true
+        _submap_7:
+          Value: true
+        _submap_8:
+          Value: true
+        _submap_9:
+          Value: true
         depth_camera:
+          Value: true
+        pm_submap_0:
+          Value: true
+        pm_submap_1:
+          Value: true
+        pm_submap_10:
+          Value: true
+        pm_submap_11:
+          Value: true
+        pm_submap_12:
+          Value: true
+        pm_submap_13:
+          Value: true
+        pm_submap_14:
+          Value: true
+        pm_submap_15:
+          Value: true
+        pm_submap_16:
+          Value: true
+        pm_submap_17:
+          Value: true
+        pm_submap_18:
+          Value: true
+        pm_submap_19:
+          Value: true
+        pm_submap_2:
+          Value: true
+        pm_submap_20:
+          Value: true
+        pm_submap_21:
+          Value: true
+        pm_submap_22:
+          Value: true
+        pm_submap_23:
+          Value: true
+        pm_submap_24:
+          Value: true
+        pm_submap_25:
+          Value: true
+        pm_submap_26:
+          Value: true
+        pm_submap_27:
+          Value: true
+        pm_submap_28:
+          Value: true
+        pm_submap_29:
+          Value: true
+        pm_submap_3:
+          Value: true
+        pm_submap_30:
+          Value: true
+        pm_submap_31:
+          Value: true
+        pm_submap_32:
+          Value: true
+        pm_submap_33:
+          Value: true
+        pm_submap_34:
+          Value: true
+        pm_submap_35:
+          Value: true
+        pm_submap_36:
+          Value: true
+        pm_submap_37:
+          Value: true
+        pm_submap_38:
+          Value: true
+        pm_submap_39:
+          Value: true
+        pm_submap_4:
+          Value: true
+        pm_submap_40:
+          Value: true
+        pm_submap_41:
+          Value: true
+        pm_submap_42:
+          Value: true
+        pm_submap_43:
+          Value: true
+        pm_submap_44:
+          Value: true
+        pm_submap_45:
+          Value: true
+        pm_submap_46:
+          Value: true
+        pm_submap_47:
+          Value: true
+        pm_submap_48:
+          Value: true
+        pm_submap_49:
+          Value: true
+        pm_submap_5:
+          Value: true
+        pm_submap_50:
+          Value: true
+        pm_submap_51:
+          Value: true
+        pm_submap_52:
+          Value: true
+        pm_submap_53:
+          Value: true
+        pm_submap_54:
+          Value: true
+        pm_submap_55:
+          Value: true
+        pm_submap_56:
+          Value: true
+        pm_submap_57:
+          Value: true
+        pm_submap_58:
+          Value: true
+        pm_submap_59:
+          Value: true
+        pm_submap_6:
+          Value: true
+        pm_submap_60:
+          Value: true
+        pm_submap_61:
+          Value: true
+        pm_submap_62:
+          Value: true
+        pm_submap_63:
+          Value: true
+        pm_submap_64:
+          Value: true
+        pm_submap_65:
+          Value: true
+        pm_submap_66:
+          Value: true
+        pm_submap_67:
+          Value: true
+        pm_submap_68:
+          Value: true
+        pm_submap_69:
+          Value: true
+        pm_submap_7:
+          Value: true
+        pm_submap_8:
+          Value: true
+        pm_submap_9:
           Value: true
         world:
           Value: true
@@ -275,7 +472,165 @@ Visualization Manager:
             {}
           _submap_0:
             {}
+          _submap_1:
+            {}
+          _submap_2:
+            {}
+          _submap_3:
+            {}
+          _submap_4:
+            {}
+          _submap_5:
+            {}
+          _submap_6:
+            {}
+          _submap_7:
+            {}
+          _submap_8:
+            {}
+          _submap_9:
+            {}
           depth_camera:
+            {}
+          pm_submap_0:
+            {}
+          pm_submap_1:
+            {}
+          pm_submap_10:
+            {}
+          pm_submap_11:
+            {}
+          pm_submap_12:
+            {}
+          pm_submap_13:
+            {}
+          pm_submap_14:
+            {}
+          pm_submap_15:
+            {}
+          pm_submap_16:
+            {}
+          pm_submap_17:
+            {}
+          pm_submap_18:
+            {}
+          pm_submap_19:
+            {}
+          pm_submap_2:
+            {}
+          pm_submap_20:
+            {}
+          pm_submap_21:
+            {}
+          pm_submap_22:
+            {}
+          pm_submap_23:
+            {}
+          pm_submap_24:
+            {}
+          pm_submap_25:
+            {}
+          pm_submap_26:
+            {}
+          pm_submap_27:
+            {}
+          pm_submap_28:
+            {}
+          pm_submap_29:
+            {}
+          pm_submap_3:
+            {}
+          pm_submap_30:
+            {}
+          pm_submap_31:
+            {}
+          pm_submap_32:
+            {}
+          pm_submap_33:
+            {}
+          pm_submap_34:
+            {}
+          pm_submap_35:
+            {}
+          pm_submap_36:
+            {}
+          pm_submap_37:
+            {}
+          pm_submap_38:
+            {}
+          pm_submap_39:
+            {}
+          pm_submap_4:
+            {}
+          pm_submap_40:
+            {}
+          pm_submap_41:
+            {}
+          pm_submap_42:
+            {}
+          pm_submap_43:
+            {}
+          pm_submap_44:
+            {}
+          pm_submap_45:
+            {}
+          pm_submap_46:
+            {}
+          pm_submap_47:
+            {}
+          pm_submap_48:
+            {}
+          pm_submap_49:
+            {}
+          pm_submap_5:
+            {}
+          pm_submap_50:
+            {}
+          pm_submap_51:
+            {}
+          pm_submap_52:
+            {}
+          pm_submap_53:
+            {}
+          pm_submap_54:
+            {}
+          pm_submap_55:
+            {}
+          pm_submap_56:
+            {}
+          pm_submap_57:
+            {}
+          pm_submap_58:
+            {}
+          pm_submap_59:
+            {}
+          pm_submap_6:
+            {}
+          pm_submap_60:
+            {}
+          pm_submap_61:
+            {}
+          pm_submap_62:
+            {}
+          pm_submap_63:
+            {}
+          pm_submap_64:
+            {}
+          pm_submap_65:
+            {}
+          pm_submap_66:
+            {}
+          pm_submap_67:
+            {}
+          pm_submap_68:
+            {}
+          pm_submap_69:
+            {}
+          pm_submap_7:
+            {}
+          pm_submap_8:
+            {}
+          pm_submap_9:
             {}
       Update Interval: 0
       Value: true
@@ -309,6 +664,14 @@ Visualization Manager:
           Visible: true
       Enabled: false
       Name: Voxblox
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /panoptic_mapper/planes_bboxes
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
