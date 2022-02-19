@@ -31,7 +31,7 @@ submap_allocator:
   
   # submaps
   voxels_per_side: &voxels_per_side 16
-  truncation_distance: -2 # negative = #vs
+  truncation_distance: &submaps_truncation_distance -2 # negative = #vs
   mesh:
     clear_foreign_voxels: false
     required_belonging_corners: 1
@@ -44,7 +44,7 @@ submap_allocator:
   large_instance_voxel_size: 0.04
   background_voxel_size: 0.05
   unknown_voxel_size: 0.05
-  use_class_layer: true
+  use_class_layer: &use_class_layer true
 
 freespace_allocator:
   type: monolithic  # monolithic
@@ -52,7 +52,6 @@ freespace_allocator:
   voxels_per_side: *voxels_per_side 
   truncation_distance: -2   
   voxel_size: 0.3
-
 id_tracker:
   type: projective # ground_truth, projective, detectron, single_tsdf
   verbosity: 1
@@ -63,7 +62,9 @@ id_tracker:
   match_acceptance_threshold: 0.1  
   min_allocation_size: 2000 # px, for submap allocation.
   use_class_data_for_matching: true  
-
+  submap:
+    use_class_layer: *use_class_layer
+    truncation_distance: *submaps_truncation_distance
 tsdf_integrator:
   type: class_projective # projective, class_projective, single_tsdf
   verbosity: 1
