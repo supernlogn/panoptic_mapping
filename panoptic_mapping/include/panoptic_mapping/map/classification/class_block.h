@@ -56,7 +56,7 @@ class ClassBlock {
   virtual ClassVoxel& getVoxelByLinearIndex(size_t index) = 0;
   virtual ClassVoxel& getVoxelByVoxelIndex(const VoxelIndex& index) = 0;
   virtual ClassVoxelType getVoxelType() const = 0;
-
+  virtual const size_t getNumVoxels() const = 0;
   // Additional checks for validity.
   operator bool() const { return isValid(); }
 
@@ -81,6 +81,7 @@ class ClassBlockImpl : public ClassBlock {
   const ClassVoxel& getVoxelByLinearIndex(size_t index) const override {
     return block_->getVoxelByLinearIndex(index);
   }
+  const size_t getNumVoxels() const override { return block_->num_voxels(); }
   const ClassVoxel& getVoxelByVoxelIndex(
       const VoxelIndex& index) const override {
     return block_->getVoxelByVoxelIndex(index);
