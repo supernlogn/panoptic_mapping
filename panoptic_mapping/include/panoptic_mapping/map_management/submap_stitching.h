@@ -55,10 +55,9 @@ class SubmapStitching {
 
   bool stitch(const Submap& SubmapA, Submap* submapB);
   int findNeighboors(const Submap& s, std::vector<int>* neighboor_ids);
-  void publish_new_bboxes(const classToPlanesType& class_to_planes);
-  void publish_new_bboxes(
-      const ClassID class_id,
-      const std::vector<panoptic_mapping::PlaneType>& planes);
+  void publishNewBboxes(const classToPlanesType& class_to_planes);
+  void publishNewBboxes(const ClassID class_id,
+                        const std::vector<panoptic_mapping::PlaneType>& planes);
   /**
    * @brief Get the Max Num Planes Per class id
    *
@@ -103,8 +102,7 @@ class SubmapStitching {
   // for individual submap
   void findSubmapPlanes(
       classToPlanesType* result, const voxblox::MeshLayer& mesh_layer,
-      const std::vector<IsoSurfacePoint>& iso_surface_points,
-      const std::map<SubmapStitching::ClassID, std::vector<size_t>>&
+      const std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>&
           filtered_class_indices);
   bool planeRansac(std::vector<PlaneType>* merged_result,
                    const voxblox::MeshLayer& mesh_layer,
@@ -112,8 +110,8 @@ class SubmapStitching {
                    const int num_iterations, const int max_num_planes,
                    const ClassID class_id);
   bool planeRansacSimple(std::vector<PlaneType>* merged_result,
-                         const std::vector<IsoSurfacePoint>& iso_surface_points,
-                         const std::vector<size_t>& p_indices,
+                         const voxblox::MeshLayer& mesh_layer,
+                         const std::vector<PointIndexType>& p_indices,
                          const int num_iterations, const int max_num_planes,
                          const ClassID class_id);
   std::vector<Eigen::Hyperplane<float, 3>> ransacSample(
@@ -124,7 +122,7 @@ class SubmapStitching {
       const std::vector<const Point*>& mesh_points, const int max_num_planes,
       const ClassID class_id) const;
   void applyClassPreFilter(
-      std::map<SubmapStitching::ClassID, std::vector<size_t>>* ret,
+      std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>* ret,
       const voxblox::MeshLayer& meshLayer, const ClassLayer& class_layer);
   Eigen::Hyperplane<float, 3> createPlaneFrom3Points(
       const Point& p1, const Point& p2, const Point& p3,
