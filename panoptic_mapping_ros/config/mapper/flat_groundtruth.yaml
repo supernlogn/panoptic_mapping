@@ -36,7 +36,7 @@ submap_allocator:
     clear_foreign_voxels: false
     required_belonging_corners: 1
   classification:
-    type: moving_binary_count
+    type: fixed_count
   
   # Semantic
   small_instance_voxel_size: 0.02
@@ -77,8 +77,8 @@ tsdf_integrator:
   allocate_neighboring_blocks: true
   
   # Class Projective
-  use_binary_classification: true
-  use_instance_classification: &use_instance_classification false
+  use_binary_classification: false
+  use_instance_classification: &use_instance_classification true
   update_only_tracked_submaps: true
   
 map_management:
@@ -124,10 +124,12 @@ map_management:
   submap_stitching:
       verbosity: 4
       max_walls: 3
-      max_floors: 1
-      max_ceilings: 1
-      max_outlier_percentage: 0.70
-      satisfying_outlier_percent: 0.70
+      max_floors: 3
+      max_ceilings: 3
+      max_outlier_percentage: 0.75
+      satisfying_outlier_percent: 0.75
+      position_cluster_threshold: 0.05
+      publish_bboxes_topic: "/panoptic_mapper/planes_bboxes"
 visualization:
   submaps:
     type: submaps  # submaps, single_tsdf
