@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
+# pylint: skip-file
 import os
 import csv
 from struct import pack, unpack
@@ -12,10 +12,10 @@ from cv_bridge import CvBridge
 import rospy
 from rospy.timer import sleep
 import tf
+import numpy as np
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 from PIL import Image as PilImage
 
-import numpy as np
 import cv2
 
 
@@ -39,6 +39,7 @@ class FlatDataPlayer(object):
         self.sec_to_wait = rospy.get_param('~sec_to_wait', 6)
         self.use_noise = rospy.get_param("~use_noise", False)
         self.use_detectron = rospy.get_param("~use_detectron", False)
+        self.skip_first_n_inputs = rospy.get_param("~skip_first_n_inputs", 1)
         if self.use_point_cloud:
             self.initForPointCould()
         if self.use_image_data:
@@ -141,10 +142,12 @@ class FlatDataPlayer(object):
                 rospy.logwarn("Could not find file '%s', skipping frame." % f)
                 self.current_index += 1
                 return
+        if self.current_index < self.skip_first_n_inputs:
+            self.current_index += 1
+            return
         cv_color_img = cv2.imread(color_file)
         pill_img_depth = np.array(PilImage.open(depth_file))
         cv_pred_img = cv2.imread(pred_file)
-
         if self.use_image_data:
             self.publishImageData(cv_color_img, pill_img_depth, cv_pred_img,
                                   labels_file, now)
