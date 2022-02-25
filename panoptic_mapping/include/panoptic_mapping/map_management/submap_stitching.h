@@ -65,9 +65,29 @@ class SubmapStitching {
    * @return int maximum number of planes
    */
   int getMaxNumPlanesPerType(ClassID class_id) const;
+
+  const classToPlanesType& getPlanesForSubmapID(const int submap_id) const {
+    return submap_id_to_class_to_planes_->at(submap_id);
+  }
+
+  std::vector<panoptic_mapping_msgs::PlaneType> getPlaneMessagesForSubmapID(
+      const int submap_id) const {
+    std::vector<panoptic_mapping_msgs::PlaneType> ret;
+    if (submap_id_to_class_to_planes_->find(submap_id) !=
+        submap_id_to_class_to_planes_->end()) {
+      for (const auto& class_plane_pair :
+           submap_id_to_class_to_planes_->at(submap_id)) {
+        for (const auto& plane : class_plane_pair.second) {
+          ret.push_back(plane.toPlaneTypeMsg());
+        }
+      }
+    }
+    return ret;
+  }
+
   // float SubmapStitching::getClusteringThresholdForClass(const ClassID
   // class_id) const;
-  static const std::array<ClassID, 3> getBackgroundClassIDS() {
+  static constexpr std::array<ClassID, 3> getBackgroundClassIDS() {
     return {0, 1, 2};
   }
   static void set_seed(const int new_seed_num) {
@@ -140,14 +160,14 @@ class SubmapStitching {
 
   const Point& getPointFromPointIndex(
       const PointIndexType& p_idx, const voxblox::MeshLayer& mesh_layer) const;
-  // for stitching submap
-  void matchNeighboorPlanes(const Submap& SubmapA, const Submap& SubmapB,
-                            const std::vector<int>& neighboor_ids);
   void mini_clustering(std::vector<Eigen::Hyperplane<float, 3>>* major_planes,
                        const std::vector<Point>& point_set,
                        const std::vector<Point>& normals_set,
                        const int num_clustered_planes,
                        const float threshold) const;
+  // for stitching submap
+  void matchNeighboorPlanes(const Submap& SubmapA, const Submap& SubmapB,
+                            const std::vector<int>& neighboor_ids);
 
  private:
   const Config config_;

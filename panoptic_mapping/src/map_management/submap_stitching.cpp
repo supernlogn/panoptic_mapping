@@ -86,14 +86,27 @@ void SubmapStitching::findSubmapPlanes(
     ClassID class_id = p_indices_pair.first;
     result->insert({class_id, std::vector<PlaneType>()});
     const int max_num_planes = getMaxNumPlanesPerType(class_id);
-    LOG_IF(INFO, config_.verbosity >= 3)
-        << "Calling planeRansac for class" << class_id;
-    if (p_indices_pair.second.size() > 0) {
-      planeRansacSimple(&result->at(class_id), mesh_layer,
-                        p_indices_pair.second, config_.ransac_num_iterations,
-                        max_num_planes, class_id);
+
+    if (class_id == 0) {  // temp to remove
+      continue;
+      LOG_IF(INFO, config_.verbosity >= 3)
+          << "Calling planeRansac for class" << class_id;
+      if (p_indices_pair.second.size() > 0) {
+        planeRansac(&result->at(class_id), mesh_layer, p_indices_pair.second,
+                    config_.ransac_num_iterations, max_num_planes, class_id);
+      } else {
+        LOG_IF(INFO, config_.verbosity >= 4)
+            << "skipping class with no indices";
+      }
     } else {
-      LOG_IF(INFO, config_.verbosity >= 4) << "skipping class with no indices";
+      if (p_indices_pair.second.size() > 0) {
+        planeRansacSimple(&result->at(class_id), mesh_layer,
+                          p_indices_pair.second, config_.ransac_num_iterations,
+                          max_num_planes, class_id);
+      } else {
+        LOG_IF(INFO, config_.verbosity >= 4)
+            << "skipping class with no indices";
+      }
     }
   }
 }
@@ -201,7 +214,7 @@ bool SubmapStitching::planeRansacSimple(
     for (int i = 0; i < num_iterations; ++i) {
       const auto& hyperplane =
           ransacSampleSingle(mesh_points, max_num_planes, class_id);
-      if (hyperplane.normal().squaredNorm() < 1e-8) {
+      if (hyperplane.normal().squaredNorm() < 1e-6) {
         ++skipped;
         continue;
       }
@@ -211,7 +224,7 @@ bool SubmapStitching::planeRansacSimple(
         num_outliers = temp_num_outliers;
       }
     }
-    if (skipped == 1000) {
+    if (skipped == num_iterations) {
       LOG(ERROR) << "Skipped all iterations because of very small norm";
     }
     LOG_IF(WARNING, skipped > 100)
@@ -484,7 +497,6 @@ void SubmapStitching::applyClassPreFilter(
   voxblox::BlockIndexList mesh_indices;
   mesh_layer.getAllAllocatedMeshes(
       &mesh_indices);  // TODO(supernlogn): See if this is not needed
-  LOG(INFO) << "mesh_indices.size() =" << mesh_indices.size();
   // iterate over all submap blocks
   size_t counter = 0;
   for (const voxblox::BlockIndex& block_index : mesh_indices) {
@@ -495,13 +507,16 @@ void SubmapStitching::applyClassPreFilter(
     // iterate over all indices of this block
     const size_t num_vertices = mesh->vertices.size();
     for (size_t i = 0u; i < num_vertices; ++i) {
-      if (class_block->getVoxelByLinearIndex(i).isObserverd()) {
-        ClassID class_id =
-            class_block->getVoxelByLinearIndex(i).getBelongingID();
+      const auto& voxel_ptr =
+          class_block->getVoxelByCoordinates(mesh->vertices[i]);
+      if (voxel_ptr.isObserverd()) {
+        ClassID class_id = voxel_ptr.getBelongingID();
         // add this point index to its class list
-        if (std::find(background_class_ids.begin(), background_class_ids.end(),
-                      class_id) != background_class_ids.end()) {
+        if (ret->find(class_id) != ret->end()) {
           ret->at(class_id).emplace_back(block_index, i);
+          // } else {
+          //   ret->insert({class_id, std::vector<PointIndexType>{{block_index,
+          //   i}}});
         }
       }
     }
@@ -565,9 +580,9 @@ void SubmapStitching::matchNeighboorPlanes(
 // general
 int SubmapStitching::getMaxNumPlanesPerType(ClassID class_id) const {
   // TODO(supernlogn): define them arbitary
-  const ClassID ceiling_id = 0;
+  const ClassID ceiling_id = 2;
   const ClassID floor_id = 1;
-  const ClassID wall_id = 2;
+  const ClassID wall_id = 0;
   switch (class_id) {
     case ceiling_id:
       return config_.max_ceilings;
