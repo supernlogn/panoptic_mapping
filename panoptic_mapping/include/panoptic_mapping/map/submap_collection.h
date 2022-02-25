@@ -107,6 +107,13 @@ class SubmapCollection {
     return instance_to_submap_ids_;
   }
 
+  void updateInstanceToSubmapIDTable(const int submap_id, const int id) {
+    if (instance_to_submap_ids_.find(id) != instance_to_submap_ids_.end()) {
+      instance_to_submap_ids_.at(id).insert(submap_id);
+    } else {
+      instance_to_submap_ids_.insert({id, std::unordered_set<int>{submap_id}});
+    }
+  }
   // Setters.
   void setActiveFreeSpaceSubmapID(int id) { active_freespace_submap_id_ = id; }
 
@@ -134,8 +141,15 @@ class SubmapCollection {
    * @return The new filename.
    */
   static std::string checkMapFileExtension(const std::string& file);
-
+  /**
+   * @brief deactivates current background and creates a new active one. This is
+   * called per some frames.
+   *
+   * @param current_background_submap The current background submap.
+   * TODO(supernlogn): No need to have an argument.
+   */
   void deregisterBackground(Submap* current_background_submap) {
+    current_background_submap->setBackground_id_on_deactivation(background_id_);
     current_background_submap->finishActivePeriod();
     current_background_submap->setWasTracked(false);
     Submap* new_background_submap =
@@ -167,13 +181,30 @@ class SubmapCollection {
     background_id_ = background_id;
   }
 
+  bool submapWithClassIdExists(const int class_id) const {
+    return instance_to_submap_ids_.find(class_id) !=
+           instance_to_submap_ids_.end();
+  }
+
+  std::vector<Submap*> getActiveSubmapWithClassId(const int class_id) {
+    std::vector<Submap*> ret;
+    if (submapWithClassIdExists(class_id)) {
+      for (const int submap_id : instance_to_submap_ids_.at(class_id)) {
+        Submap* smap = getSubmapPtr(submap_id);
+        if (smap->isActive()) {
+          ret.push_back(smap);
+        }
+      }
+    }
+    return ret;
+  }
+
  private:
   // IDs are managed within a submap collection.
   SubmapIDManager submap_id_manager_;
   InstanceIDManager instance_id_manager_;
   // The map.
   std::vector<std::unique_ptr<Submap>> submaps_;
-
   // Bookkeeping.
   std::unordered_map<int, size_t> id_to_index_;
   std::unordered_map<int, std::unordered_set<int>> instance_to_submap_ids_;
