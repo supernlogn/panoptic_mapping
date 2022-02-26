@@ -27,8 +27,6 @@ target_link_libraries(${PROJECT_NAME}_proto ${PROTOBUF_LIBRARIES})
 cs_add_library(${PROJECT_NAME}
         src/common/camera.cpp
         src/common/input_data_user.cpp
-        src/common/bounding_box_extended.cpp
-        src/common/plane_type.cpp
         src/map/submap.cpp
         src/map/pseudo_submap.cpp
         src/map/submap_collection.cpp

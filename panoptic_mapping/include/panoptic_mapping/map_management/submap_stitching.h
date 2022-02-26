@@ -9,9 +9,9 @@
 #include <vector>
 
 #include <Eigen/Geometry>
+#include <voxgraph/frontend/plane_collection/plane_type.h>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
-#include "panoptic_mapping/common/plane_type.h"
 #include "panoptic_mapping/map/submap.h"
 
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
@@ -24,6 +24,10 @@ struct PointIndexType {
   voxblox::BlockIndex block_index;
   int linear_index;
 };
+
+using classToPlanesType = voxgraph::classToPlanesType;
+using PlaneType = voxgraph::PlaneType;
+using BoundingBoxType = voxgraph::BoundingBoxType;
 
 class SubmapStitching {
  public:
@@ -42,6 +46,7 @@ class SubmapStitching {
     int ransac_num_iterations = 1000;
     uint_fast32_t random_generator_seed = 100;
     std::string publish_bboxes_topic = "";
+    std::string publish_normals_topic = "";
     Config() { setConfigName("SubmapStitching"); }
 
    protected:
@@ -57,7 +62,8 @@ class SubmapStitching {
   int findNeighboors(const Submap& s, std::vector<int>* neighboor_ids);
   void publishNewBboxes(const classToPlanesType& class_to_planes);
   void publishNewBboxes(const ClassID class_id,
-                        const std::vector<panoptic_mapping::PlaneType>& planes);
+                        const std::vector<PlaneType>& planes);
+  void publishNormal(const PlaneType& plane);
   /**
    * @brief Get the Max Num Planes Per class id
    *
@@ -178,6 +184,7 @@ class SubmapStitching {
   static int seed_num_;
   static std::mt19937 random_number_generator_;
   ros::Publisher bboxes_publisher_;
+  ros::Publisher normal_publisher_;
   ros::NodeHandle nh_;
 };
 

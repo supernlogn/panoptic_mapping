@@ -3,12 +3,13 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <map>
 
 #include <cblox/QuatTransformation.pb.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <voxblox/io/layer_io.h>
+#include <voxgraph/frontend/plane_collection/plane_type.h>
 
-#include "panoptic_mapping/common/plane_type.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/tools/serialization.h"
 
@@ -239,25 +240,43 @@ void Submap::finishActivePeriod() {
   change_state_ = ChangeState::kPersistent;
   updateEverything();
   // debug
-  // const auto & class_layer = current_background_submap->getClassLayer();
-  // const auto & mesh_layer = current_background_submap->getMeshLayer();
-  voxblox::BlockIndexList mesh_indices;
-  mesh_layer_->getAllAllocatedMeshes(&mesh_indices);
-  size_t observed_count = 0;
-  for (const voxblox::BlockIndex& block_index : mesh_indices) {
-    panoptic_mapping::ClassBlock::ConstPtr class_block =
-        class_layer_->getBlockConstPtrByIndex(block_index);
-    voxblox::Mesh::ConstPtr mesh = mesh_layer_->getMeshPtrByIndex(block_index);
-    const size_t num_vertices = mesh->vertices.size();
-    class_block->getNumVoxels();
-    for (size_t i = 0u; i < num_vertices; ++i) {
-      if (class_layer_->getVoxelPtrByCoordinates(mesh->vertices[i])
-              ->isObserverd()) {
-        ++observed_count;
+  if (false) {
+    // const auto & class_layer = current_background_submap->getClassLayer();
+    // const auto & mesh_layer = current_background_submap->getMeshLayer();
+    size_t total_num_vertices = 0;
+    voxblox::BlockIndexList mesh_indices;
+    mesh_layer_->getAllAllocatedMeshes(&mesh_indices);
+    size_t observed_count = 0;
+    std::map<int, int> ids;
+    for (const voxblox::BlockIndex& block_index : mesh_indices) {
+      panoptic_mapping::ClassBlock::ConstPtr class_block =
+          class_layer_->getBlockConstPtrByIndex(block_index);
+      voxblox::Mesh::ConstPtr mesh =
+          mesh_layer_->getMeshPtrByIndex(block_index);
+      const size_t num_vertices = mesh->vertices.size();
+      total_num_vertices += num_vertices;
+      // class_block->getNumVoxels();
+      for (size_t i = 0u; i < num_vertices; ++i) {
+        const auto& voxel =
+            class_layer_->getVoxelPtrByCoordinates(mesh->vertices[i]);
+        CHECK_NOTNULL(voxel);
+        if (voxel->isObserverd()) {
+          ++observed_count;
+          int cid = voxel->getBelongingID();
+          if (ids.find(cid) == ids.end()) {
+            ids.emplace(cid, 0);
+          }
+          ids[cid]++;
+        }
       }
     }
+    LOG(WARNING) << "observed_count ===== " << observed_count
+                 << "num_vertices= " << total_num_vertices
+                 << " for submap_id: " << id_ << '\n';
+    for (const auto& pair : ids) {
+      std::cout << pair.first << "--->" << pair.second << '\n';
+    }
   }
-  LOG(WARNING) << "observed_count ===== " << observed_count;
 }
 
 void Submap::updateEverything(bool only_updated_blocks) {

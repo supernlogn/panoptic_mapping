@@ -22,13 +22,4 @@ DetectronLabels detectronLabelsFromMsg(
   return result;
 }
 
-BoundingBoxExtended boundingBoxExtendedFromMsg(
-    const panoptic_mapping_msgs::BoundingBox& msg) {
-  return BoundingBoxExtended::fromMsg(msg);
-}
-
-PlaneType planeTypeFromMsg(const panoptic_mapping_msgs::PlaneType& msg) {
-  return PlaneType::fromMsg(msg);
-}
-
 }  // namespace panoptic_mapping

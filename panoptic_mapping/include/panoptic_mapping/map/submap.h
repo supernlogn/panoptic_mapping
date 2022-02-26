@@ -12,11 +12,11 @@
 #include <ros/ros.h>
 #include <voxblox/core/layer.h>
 #include <voxblox/mesh/mesh_layer.h>
+#include <voxgraph/frontend/plane_collection/plane_type.h>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
 #include "panoptic_mapping/Submap.pb.h"
 #include "panoptic_mapping/common/common.h"
-#include "panoptic_mapping/common/plane_type.h"
 #include "panoptic_mapping/integration/mesh_integrator.h"
 #include "panoptic_mapping/map/classification/class_block.h"
 #include "panoptic_mapping/map/classification/class_layer.h"
@@ -39,7 +39,6 @@ class Submap {
     float voxel_size = 0.1;  // m
     bool use_class_layer = false;
     std::string visualizer_prefix = "pm_";
-
 
     // Size of the truncation band for TSDF in meters. Negative values indicate
     // multiples of the voxel size.
@@ -151,6 +150,15 @@ class Submap {
     auto it = pose_id_history_.begin();
     std::advance(it, pose_id_history_.size() / 2);
     return *it;
+  }
+
+  bool removeClassLayer() {
+    if (has_class_layer_) {
+      class_layer_.reset();
+      has_class_layer_ = false;
+      return true;
+    }
+    return false;
   }
 
   void addPoseID(const PoseManager::poseIdType pose_id);
