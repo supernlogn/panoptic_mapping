@@ -136,6 +136,7 @@ map_management:
       position_cluster_threshold: 0.02
       num_iterations: 10000
       publish_bboxes_topic: "/panoptic_mapper/planes_bboxes"
+      publish_normals_topic: "/panoptic_mapper/planes_normals"
 visualization:
   submaps:
     type: submaps  # submaps, single_tsdf

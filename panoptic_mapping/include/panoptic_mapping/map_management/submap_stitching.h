@@ -63,7 +63,8 @@ class SubmapStitching {
   void publishNewBboxes(const classToPlanesType& class_to_planes);
   void publishNewBboxes(const ClassID class_id,
                         const std::vector<PlaneType>& planes);
-  void publishNormal(const PlaneType& plane);
+  void publishNormal(const PlaneType& plane, const int marker_id,
+                     const int class_id);
   /**
    * @brief Get the Max Num Planes Per class id
    *

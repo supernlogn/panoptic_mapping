@@ -38,6 +38,7 @@ void SubmapStitching::Config::setupParamsAndPrinting() {
   setupParam("max_outlier_percentage", &max_outlier_percentage);
   setupParam("satisfying_outlier_percent", &satisfying_outlier_percent);
   setupParam("publish_bboxes_topic", &publish_bboxes_topic);
+  setupParam("publish_normals_topic", &publish_normals_topic);
 }
 
 SubmapStitching::SubmapStitching(const Config& config)
@@ -50,6 +51,8 @@ SubmapStitching::SubmapStitching(const Config& config)
   if (!config_.publish_bboxes_topic.empty()) {
     bboxes_publisher_ = nh_.advertise<visualization_msgs::Marker>(
         config_.publish_bboxes_topic, 100);
+    normal_publisher_ = nh_.advertise<visualization_msgs::Marker>(
+        config_.publish_normals_topic, 100);
   }
 }
 
@@ -544,9 +547,8 @@ void SubmapStitching::publishNewBboxes(
   }
 }
 
-void SubmapStitching::publishNewBboxes(
-    const ClassID class_id,
-    const std::vector<panoptic_mapping::PlaneType>& planes) {
+void SubmapStitching::publishNewBboxes(const ClassID class_id,
+                                       const std::vector<PlaneType>& planes) {
   static int marker_id = 0;
   for (const auto& plane : planes) {
     auto msg = plane.getVisualizationMsg();
@@ -560,7 +562,55 @@ void SubmapStitching::publishNewBboxes(
       msg.color.g = 1.0;
     }
     bboxes_publisher_.publish(msg);
+    publishNormal(plane, marker_id++, class_id);
   }
+}
+
+void SubmapStitching::publishNormal(const PlaneType& plane, const int marker_id,
+                                    const int class_id) {
+  const Eigen::Vector3d normal = plane.getPlaneNormal().cast<double>();
+  const Eigen::Vector3d point = plane.getPointInit().cast<double>();
+  visualization_msgs::Marker msg;
+  msg.header.frame_id = "world";
+  msg.type = visualization_msgs::Marker::LINE_LIST;
+  msg.action = visualization_msgs::Marker::ADD;
+  geometry_msgs::Point point_msg;
+  geometry_msgs::Point normal_end_msg;
+  tf::pointEigenToMsg(point, point_msg);
+  double scale_factor = 2.0;
+  const Eigen::Vector3d normal_end = point + normal * scale_factor;
+  tf::pointEigenToMsg(normal_end, normal_end_msg);
+  msg.points.push_back(point_msg);
+  msg.points.push_back(normal_end_msg);
+  // msg.pose.position.x = point.x();
+  // msg.pose.position.y = point.y();
+  // msg.pose.position.z = point.z();
+  // const auto q =
+  // plane.getPlaneTransformation().getRotation().conjugated().cast<double>();
+  // msg.pose.orientation.x = 5.0 * q.x();
+  // msg.pose.orientation.y = 5.0 * q.y();
+  // msg.pose.orientation.z = 5.0 * q.z();
+  // msg.pose.orientation.w = 5.0 * q.w();
+  msg.scale.x = 0.10;
+  msg.scale.y = 0.10;
+  msg.scale.z = 0.10;
+  msg.color.r = 1.0;
+  if (class_id == 2) {
+    msg.color.g = 1.0;
+    msg.color.r = 0.0;
+  } else if (class_id == 1) {
+    /* code */
+    msg.color.r = 0.0;
+    msg.color.b = 1.0;
+  }
+  msg.color.a = 1.0;
+  msg.id = marker_id;
+  msg.header.stamp = ros::Time::now();
+  normal_publisher_.publish(msg);
+  LOG_IF(INFO, config_.verbosity >= 4) << "bbox normal: \n" << normal;
+  Eigen::Vector3d normal_from_transform =
+      plane.getPlaneTransformation().getRotationMatrix().col(2).cast<double>();
+  CHECK_LT((normal - normal_from_transform).squaredNorm(), 0.1);
 }
 
 // for stitching submap
