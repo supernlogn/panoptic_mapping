@@ -107,6 +107,7 @@ map_management:
   apply_class_layer_when_deactivating_submaps: true
   update_whole_trajectory_with_voxgraph_tf: true
   update_contained_submaps_with_correction: true
+  use_submap_stitching: false
 
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
