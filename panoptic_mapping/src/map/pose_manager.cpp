@@ -31,7 +31,7 @@ void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
                                                  const poseIdType end_pose_id,
                                                  const Transformation& T_corr) {
   for (auto pose_id = 0; pose_id <= end_pose_id; ++pose_id) {
-    assert(poses_info_.find(pose_id) != poses_info_.end());
+    CHECK(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
@@ -40,7 +40,7 @@ void PoseManager::correctPoseRangeTransformation(
     const std::set<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
   for (const auto pose_id : pose_ids) {
-    assert(poses_info_.find(pose_id) != poses_info_.end());
+    CHECK(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
@@ -49,7 +49,7 @@ void PoseManager::correctPoseRangeTransformation(
     const std::vector<PoseManager::poseIdType>& pose_ids,
     const Transformation& T_corr) {
   for (const auto pose_id : pose_ids) {
-    assert(poses_info_.find(pose_id) != poses_info_.end());
+    CHECK(poses_info_.find(pose_id) != poses_info_.end());
     correctPoseInfo(&poses_info_[pose_id], T_corr);
   }
 }
@@ -84,14 +84,14 @@ PoseManager::poseIdType PoseManager::createPose(const Transformation& new_pose,
 
 void PoseManager::addSubmapIdToPose(const poseIdType pose_id,
                                     const submapIdType submap_id) {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   submap_id_to_pose_id_[submap_id].insert(pose_id);
   pose_id_to_submap_id_[pose_id].insert(submap_id);
 }
 
 void PoseManager::addSubmapIdToPoses(const poseIdType submap_id,
                                      const std::set<poseIdType>& pose_ids) {
-  assert(submap_id_to_pose_id_.find(submap_id) != submap_id_to_pose_id_.end());
+  CHECK(submap_id_to_pose_id_.find(submap_id) != submap_id_to_pose_id_.end());
   for (const PoseManager::poseIdType p_id : pose_ids) {
     addSubmapIdToPose(p_id, submap_id);
   }
@@ -99,7 +99,7 @@ void PoseManager::addSubmapIdToPoses(const poseIdType submap_id,
 
 void PoseManager::removeSubmapIdFromPose(const poseIdType pose_id,
                                          const submapIdType submap_id) {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   submap_id_to_pose_id_[submap_id].erase(pose_id);
   pose_id_to_submap_id_[pose_id].erase(submap_id);
 }
@@ -170,24 +170,24 @@ geometry_msgs::PoseStamped PoseManager::getPoseMessage(
 Transformation PoseManager::getPoseCorrectionTF(
     const poseIdType pose_id, const Transformation& T_M_R_voxgraph,
     const Transformation& T_C_R) const {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& T_M_R_voxgraph_init =
       gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
   Transformation result =
       T_C_R * T_M_R_voxgraph_init.inverse() * T_M_R_voxgraph * T_C_R.inverse();
-  // assert(T_M_R_voxgraph_init * result == T_M_R_voxgraph);
+  // CHECK(T_M_R_voxgraph_init * result == T_M_R_voxgraph);
   return result;
 }
 
 Transformation PoseManager::getPoseCorrectionTFInv(
     const poseIdType pose_id, const Transformation& T_M_R_voxgraph,
     const Transformation& T_C_R) const {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& T_M_R_voxgraph_init =
       gravityAlignPose(poses_info_.at(pose_id).pose_init * T_C_R);
   Transformation result = T_M_R_voxgraph.inverse() * T_M_R_voxgraph_init;
 
-  assert(result * T_M_R_voxgraph == T_M_R_voxgraph_init);
+  CHECK(result * T_M_R_voxgraph == T_M_R_voxgraph_init);
   return result;
 }
 
@@ -209,20 +209,20 @@ std::set<PoseManager::submapIdType> PoseManager::getConnectedSubmaps(
 PoseManager::PoseInformation PoseManager::getPoseInformation(
     const poseIdType pose_id) const {
   const auto it = poses_info_.find(pose_id);
-  assert(it != poses_info_.end());
+  CHECK(it != poses_info_.end());
   return it->second;
 }
 
 Transformation PoseManager::getPoseTransformation(
     const poseIdType pose_id) const {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& pose_transformation = poses_info_.at(pose_id).pose;
   return pose_transformation;
 }
 
 Transformation PoseManager::getInitPoseTransformation(
     const poseIdType pose_id) const {
-  assert(poses_info_.find(pose_id) != poses_info_.end());
+  CHECK(poses_info_.find(pose_id) != poses_info_.end());
   const Transformation& init_pose_transformation =
       poses_info_.at(pose_id).pose_init;
   return init_pose_transformation;
@@ -242,7 +242,7 @@ PoseManager::poseIdType PoseManager::getPoseIdAtTime(
       break;
     }
   }
-  assert(it_result != poses_info_.end());
+  CHECK(it_result != poses_info_.end());
   if (it_result == poses_info_.end()) {
     return INVALID_POSE_ID_NUM;
   }
@@ -261,7 +261,7 @@ const PoseManager::PoseInformation* PoseManager::getPoseInformationAtTime(
       break;
     }
   }
-  assert(it_result != poses_info_.end());
+  CHECK(it_result != poses_info_.end());
   if (it_result == poses_info_.end()) {
     return nullptr;
   }
