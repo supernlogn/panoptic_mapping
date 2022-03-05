@@ -4,7 +4,7 @@ auto_pause_rosbag: false
 
 submap_creation_interval: 5
 loop_closure_topic_queue_length: 1000
-submap_topic_queue_length: 10
+submap_topic_queue_length: 100
 publisher_queue_length: 10
 
 input_odom_frame: "world"
@@ -49,7 +49,13 @@ measurements:
   height:
     enabled: false
     information_zz: 2500.0
-
+  planes:
+    enabled: false
+    information_matrix:
+      x_x:     100.0
+      y_y:     100.0
+      z_z:     100.0
+      yaw_yaw: 50.0
 mesh_min_weight: 0.000001
 submap_mesh_color_mode: "lambert_color"
 combined_mesh_color_mode: "color"
