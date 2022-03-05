@@ -1,9 +1,9 @@
 #include "panoptic_mapping/map/submap.h"
 
+#include <map>
 #include <memory>
 #include <sstream>
 #include <vector>
-#include <map>
 
 #include <cblox/QuatTransformation.pb.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
@@ -225,7 +225,6 @@ std::unique_ptr<Submap> Submap::loadFromStream(
 
   return submap;
 }
-
 
 void Submap::addPoseID(const PoseManager::poseIdType pose_id) {
   pose_id_history_.insert(pose_id);
