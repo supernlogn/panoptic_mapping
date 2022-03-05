@@ -22,7 +22,9 @@
   <depend>protobuf_catkin</depend>
   <depend>opencv3_catkin</depend>
   <depend>voxgraph</depend>
-  
+  <depend>rviz_visual_tools</depend>
+  <depend>eigen_stl_containers</depend>
+
   <export>
   </export>
 </package>
