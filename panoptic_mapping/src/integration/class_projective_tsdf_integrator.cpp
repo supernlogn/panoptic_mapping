@@ -189,13 +189,7 @@ void ClassProjectiveIntegrator::updateClassVoxel(InterpolatorBase* interpolator,
     }
   } else {
     if (config_.use_instance_classification) {
-      // LOG(ERROR) << "reached here sucker " <<
-      // static_cast<int>(voxel->getVoxelType());
-      int iid = interpolator->interpolateID(input.idImage());
-      // if (submap_id == 11 && iid >= 0 && iid <= 2) {
-      //   LOG(WARNING) << "iid " << iid;
-      // }
-      voxel->incrementCount(iid);
+      voxel->incrementCount(interpolator->interpolateID(input.idImage()));
     } else {
       // NOTE(schmluk): id_to_class should always exist since it's created based
       // on the input.
