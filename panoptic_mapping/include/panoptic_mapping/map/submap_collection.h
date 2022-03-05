@@ -171,7 +171,7 @@ class SubmapCollection {
   }
 
   Submap* getBackground() {
-    assert(backgroundExists());
+    CHECK(backgroundExists());
     return getSubmapPtr(background_id_);
   }
 
