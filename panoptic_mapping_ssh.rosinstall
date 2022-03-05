@@ -35,6 +35,9 @@
 - git:
     local-name: catkin_grpc
     uri: git@github.com:CogRob/catkin_grpc.git
+- git:
+    local-name: cgal_catkin
+    uri: git@github.com:ethz-asl/cgal_catkin.git
 
 # Package Dependencies. Notice that all require a special branch, to send
 # a submap message
