@@ -62,7 +62,7 @@ cs_add_library(${PROJECT_NAME}
         src/map_management/activity_manager.cpp
         src/map_management/tsdf_registrator.cpp
         src/map_management/layer_manipulator.cpp
-        src/map_management/submap_stitching.cpp
+        src/map_management/plane_collection.cpp
         src/tools/planning_interface.cpp
         src/tools/map_renderer.cpp
         src/tools/null_data_writer.cpp
@@ -78,6 +78,7 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_proto stdc++fs)
 
 if (CATKIN_ENABLE_TESTING)
     catkin_add_gtest(serialization-test test/serialization.cpp)
+    catkin_add_gtest(plane_clustering-test test/plane_clustering.cpp)
     target_link_libraries(serialization-test ${catkin_LIBRARIES} ${PROJECT_NAME})
 endif()
 

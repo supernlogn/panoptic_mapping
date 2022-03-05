@@ -1,5 +1,5 @@
-#ifndef PANOPTIC_MAPPING_MAP_MANAGEMENT_SUBMAP_STITCHING_H_
-#define PANOPTIC_MAPPING_MAP_MANAGEMENT_SUBMAP_STITCHING_H_
+#ifndef PANOPTIC_MAPPING_MAP_MANAGEMENT_PLANE_COLLECTION_H_
+#define PANOPTIC_MAPPING_MAP_MANAGEMENT_PLANE_COLLECTION_H_
 
 #include <map>
 #include <memory>
@@ -29,11 +29,11 @@ using classToPlanesType = voxgraph::classToPlanesType;
 using PlaneType = voxgraph::PlaneType;
 using BoundingBoxType = voxgraph::BoundingBoxType;
 
-class SubmapStitching {
+class PlaneCollection {
  public:
   typedef int ClassID;
   struct Config : public config_utilities::Config<Config> {
-    int verbosity = 4;
+    int verbosity = 1;
     float z_threshold = 0.15;
     float xy_threshold = 0.01;
     int max_walls = 3;
@@ -47,19 +47,16 @@ class SubmapStitching {
     uint_fast32_t random_generator_seed = 100;
     std::string publish_bboxes_topic = "";
     std::string publish_normals_topic = "";
-    Config() { setConfigName("SubmapStitching"); }
+    Config() { setConfigName("PlaneCollection"); }
 
    protected:
     void setupParamsAndPrinting() override;
     void checkParams() const override;
   };
-  explicit SubmapStitching(const Config& config);
-  virtual ~SubmapStitching() = default;
+  explicit PlaneCollection(const Config& config);
+  virtual ~PlaneCollection() = default;
 
   void processSubmap(Submap* s);
-
-  bool stitch(const Submap& SubmapA, Submap* submapB);
-  int findNeighboors(const Submap& s, std::vector<int>* neighboor_ids);
   void publishNewBboxes(const classToPlanesType& class_to_planes);
   void publishNewBboxes(const ClassID class_id,
                         const std::vector<PlaneType>& planes);
@@ -91,8 +88,13 @@ class SubmapStitching {
     }
     return ret;
   }
-
-  // float SubmapStitching::getClusteringThresholdForClass(const ClassID
+  bool cgal_plane_finder(std::vector<PlaneType>* merged_result,
+                         const voxblox::MeshLayer& mesh_layer,
+                         const Transformation& T_mid_pose,
+                         const std::vector<PointIndexType>& p_indices,
+                         const int num_iterations, const int max_num_planes,
+                         const int class_id);
+  // float PlaneCollection::getClusteringThresholdForClass(const ClassID
   // class_id) const;
   static constexpr std::array<ClassID, 3> getBackgroundClassIDS() {
     return {0, 1, 2};
@@ -129,7 +131,8 @@ class SubmapStitching {
   // for individual submap
   void findSubmapPlanes(
       classToPlanesType* result, const voxblox::MeshLayer& mesh_layer,
-      const std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>&
+      const Transformation T_mid_pose,
+      const std::map<PlaneCollection::ClassID, std::vector<PointIndexType>>&
           filtered_class_indices);
   bool planeRansac(std::vector<PlaneType>* merged_result,
                    const voxblox::MeshLayer& mesh_layer,
@@ -149,8 +152,9 @@ class SubmapStitching {
       const std::vector<const Point*>& mesh_points, const int max_num_planes,
       const ClassID class_id) const;
   void applyClassPreFilter(
-      std::map<SubmapStitching::ClassID, std::vector<PointIndexType>>* ret,
-      const voxblox::MeshLayer& meshLayer, const ClassLayer& class_layer);
+      std::map<PlaneCollection::ClassID, std::vector<PointIndexType>>* ret,
+      const TsdfLayer& tsdf_layer, const voxblox::MeshLayer& meshLayer,
+      const ClassLayer& class_layer);
   Eigen::Hyperplane<float, 3> createPlaneFrom3Points(
       const Point& p1, const Point& p2, const Point& p3,
       const Eigen::Vector3f& class_dir) const;
@@ -191,4 +195,4 @@ class SubmapStitching {
 
 }  // namespace panoptic_mapping
 
-#endif  // PANOPTIC_MAPPING_MAP_MANAGEMENT_SUBMAP_STITCHING_H_
+#endif  // PANOPTIC_MAPPING_MAP_MANAGEMENT_PLANE_COLLECTION_H_
