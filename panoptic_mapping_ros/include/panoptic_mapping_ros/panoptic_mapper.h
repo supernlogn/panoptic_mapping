@@ -60,9 +60,10 @@ class PanopticMapper {
     bool load_submaps_conservative = true;
 
     // If true, finish mapping and shutdown the panoptic mapper when no frames
-    // are received for 3 seconds after the first frame was received.
+    // are received for `secs_to_wait_input_before_shutdown` seconds after the
+    // first frame was received.
     bool shutdown_when_finished = false;
-
+    float secs_to_wait_input_before_shutdown = 3.0;
     // Set this string to automatically save the map to the specified file when
     // shutting down when finished.
     std::string save_map_path_when_finished = "";

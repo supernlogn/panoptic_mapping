@@ -36,6 +36,8 @@ void PanopticMapper::Config::checkParams() const {
                  "'global_frame_name' may not be empty.");
   checkParamGT(ros_spinner_threads, 1, "ros_spinner_threads");
   checkParamGT(check_input_interval, 0.f, "check_input_interval");
+  checkParamGT(secs_to_wait_input_before_shutdown, 0.f,
+               "secs_to_wait_input_before_shutdown");
 }
 
 void PanopticMapper::Config::setupParamsAndPrinting() {
@@ -53,6 +55,8 @@ void PanopticMapper::Config::setupParamsAndPrinting() {
   setupParam("save_map_path_when_finished", &save_map_path_when_finished);
   setupParam("display_config_units", &display_config_units);
   setupParam("indicate_default_values", &indicate_default_values);
+  setupParam("secs_to_wait_input_before_shutdown",
+             &secs_to_wait_input_before_shutdown);
 }
 
 PanopticMapper::PanopticMapper(const ros::NodeHandle& nh,
@@ -228,10 +232,13 @@ void PanopticMapper::inputCallback(const ros::TimerEvent&) {
     }
   } else {
     if (config_.shutdown_when_finished && got_a_frame_ &&
-        (ros::Time::now() - last_input_).toSec() >= 3.0) {
+        (ros::Time::now() - last_input_).toSec() >=
+            config_.secs_to_wait_input_before_shutdown) {
       // No more frames, finish up.
       LOG_IF(INFO, config_.verbosity >= 1)
-          << "No more frames received for 3 seconds, shutting down.";
+          << "No more frames received for "
+          << config_.secs_to_wait_input_before_shutdown
+          << " seconds, shutting down.";
       finishMapping();
       if (!config_.save_map_path_when_finished.empty()) {
         saveMap(config_.save_map_path_when_finished);
