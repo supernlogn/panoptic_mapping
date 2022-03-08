@@ -277,7 +277,7 @@ void ProjectiveIntegrator::updateVoxelValues(TsdfVoxel* voxel, const float sdf,
     voxel->color =
         Color::blendTwoColors(voxel->color, voxel->weight, *color, weight);
   }
-}  // namespace panoptic_mapping
+}
 
 void ProjectiveIntegrator::allocateNewBlocks(SubmapCollection* submaps,
                                              const InputData& input) {
