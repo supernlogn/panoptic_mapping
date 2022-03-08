@@ -5,7 +5,7 @@ auto_pause_rosbag: false
 submap_creation_interval: 5
 loop_closure_topic_queue_length: 1000
 submap_topic_queue_length: 100
-publisher_queue_length: 10
+publisher_queue_length: 100
 
 input_odom_frame: "world"
 input_base_link_frame: "imu"
