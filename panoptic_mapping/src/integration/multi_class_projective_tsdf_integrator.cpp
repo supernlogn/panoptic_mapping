@@ -201,17 +201,7 @@ void MultiClassProjectiveIntegrator::updateClassVoxel(
     }
   } else {
     if (config_.use_instance_classification) {
-      // LOG(ERROR) << "reached here " <<
-      // static_cast<int>(voxel->getVoxelType());
-      int iid = interpolator->interpolateID(input.idImage());
-      // if (submap_id == 11 && iid >= 0 && iid <= 2) {
-      //   LOG(WARNING) << "iid " << iid;
-      // }
-      // if (submap_id == 84) {
-      //   LOG(INFO) << "incrementCount " << iid << " class of submap_id: " <<
-      //   submap_id;
-      // }
-      voxel->incrementCount(iid);
+      voxel->incrementCount(interpolator->interpolateID(input.idImage()));
     } else {
       // NOTE(schmluk): id_to_class should always exist since it's created based
       // on the input.
