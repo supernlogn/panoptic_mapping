@@ -73,7 +73,7 @@ class MultiClassProjectiveIntegrator : public ProjectiveIntegrator {
       TsdfIntegratorBase, MultiClassProjectiveIntegrator,
       std::shared_ptr<Globals>>
       registration_;
-
+  std::unordered_map<int, int> instance_to_active_submap_ids_;
   // Cached data.
   std::unordered_set<int> id_classes_set_1_;
   std::unordered_set<int> id_classes_set_2_;

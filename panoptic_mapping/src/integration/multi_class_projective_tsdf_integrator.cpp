@@ -59,6 +59,22 @@ void MultiClassProjectiveIntegrator::processInput(SubmapCollection* submaps,
   for (const Submap& submap : *submaps) {
     submap_id_to_class_.emplace(submap.getID(), submap.getClassID());
   }
+  instance_to_active_submap_ids_.clear();
+  for (const auto& pair : submaps->getInstanceToSubmapIDTable()) {
+    for (const int submap_id : pair.second) {
+      // in case the segmentation id has no active submap
+      // then use whatever was before
+      if (instance_to_active_submap_ids_.count(pair.first) == 0) {
+        instance_to_active_submap_ids_.emplace(pair.first, submap_id);
+      } else if (submaps->getSubmapPtr(submap_id)->isActive()) {
+        instance_to_active_submap_ids_.emplace(pair.first, submap_id);
+      }
+    }
+  }
+  const int bckg_id = submaps->getBackgroundID();
+  for (const int ids : id_classes_set_1_) {
+    instance_to_active_submap_ids_[ids] = bckg_id;
+  }
   submap_id_to_class_[-1] = -1;  // Used for unknown classes.
   if (config_.use_instance_classification &&
       !config_.use_binary_classification) {
@@ -181,13 +197,29 @@ bool MultiClassProjectiveIntegrator::updateVoxel(
 void MultiClassProjectiveIntegrator::updateClassVoxel(
     InterpolatorBase* interpolator, ClassVoxel* voxel, const InputData& input,
     const int submap_id) const {
-  if (config_.use_binary_classification) {
+  const int id = interpolator->interpolateID(input.idImage());
+  if (id_classes_set_1_.find(id) != id_classes_set_1_.end()) {
+    // use classification for class set 1
+    if (config_.use_instance_classification) {
+      voxel->incrementCount(id);
+    } else {
+      // NOTE(schmluk): id_to_class should always exist since it's created based
+      // on the input.
+      voxel->incrementCount(submap_id_to_class_.at(id));
+    }
+  } else {
+    // use classification for class set 2
+    // use binary classification
     // Use ID 0 for belongs, 1 for does not belong.
     if (config_.use_instance_classification) {
       // Just count how often the assignments were right.
-      voxel->incrementCount(
-          1 - static_cast<int>(interpolator->interpolateID(input.idImage()) ==
-                               submap_id));
+      if (instance_to_active_submap_ids_.count(id) != 0) {
+        const int input_submap_id = instance_to_active_submap_ids_.at(id);
+        voxel->incrementCount(1 -
+                              static_cast<int>(input_submap_id == submap_id));
+      } else {
+        voxel->incrementCount(1);
+      }
     } else {
       // Only the class needs to match.
       auto it = submap_id_to_class_.find(submap_id);
@@ -198,15 +230,6 @@ void MultiClassProjectiveIntegrator::updateClassVoxel(
       } else {
         voxel->incrementCount(1);
       }
-    }
-  } else {
-    if (config_.use_instance_classification) {
-      voxel->incrementCount(interpolator->interpolateID(input.idImage()));
-    } else {
-      // NOTE(schmluk): id_to_class should always exist since it's created based
-      // on the input.
-      voxel->incrementCount(
-          submap_id_to_class_.at(interpolator->interpolateID(input.idImage())));
     }
   }
 }
@@ -231,7 +254,6 @@ void MultiClassProjectiveIntegrator::allocateNewBlocks(
       max_range_in_image_ = std::max(max_range_in_image_, ray_distance);
       const int id = input.idImage().at<int>(v, u);
       bool is_on_set_1 = id_classes_set_1_.find(id) != id_classes_set_1_.end();
-
       bool submap_id_exists = submaps->submapWithClassIdExists(id);
       Submap* submap = nullptr;
       if (is_on_set_1) {
