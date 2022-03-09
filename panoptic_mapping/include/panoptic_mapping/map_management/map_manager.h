@@ -16,7 +16,7 @@
 #include "panoptic_mapping/map_management/activity_manager.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
-#include "panoptic_mapping/map_management/submap_stitching.h"
+#include "panoptic_mapping/map_management/plane_collection.h"
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
 
 #include "cblox_msgs/MapHeader.h"
@@ -45,7 +45,7 @@ class MapManager : public MapManagerBase {
     int num_submaps_to_merge_for_voxgraph = 1;
     // If true deactivated background submaps
     // don't get merged with other submaps.
-    bool avoid_merging_deactivated_backhround_submaps = false;
+    bool avoid_merging_deactivated_background_submaps = false;
     // If true background submaps will be published (and sent) to a voxgraph
     // node, when they get deactivated
     bool send_deactivated_submaps_to_voxgraph = false;
@@ -82,11 +82,14 @@ class MapManager : public MapManagerBase {
     std::string save_voxgraph_trajectory_on_finish = "";
     std::string input_odom_frame = "world";
     std::string robot_name = "robot";
+    // If true then the planes of each submap are detected
+    // and sent to voxgraph to stitch the submaps
+    bool use_submap_stitching = true;
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
     LayerManipulator::Config layer_manipulator_config;
-    SubmapStitching::Config submap_stitching_config;
+    PlaneCollection::Config submap_stitching_config;
     Config() { setConfigName("MapManager"); }
 
    protected:
@@ -160,7 +163,6 @@ class MapManager : public MapManagerBase {
                                          PseudoSubmap* submapB);
 
   std::string pruneBlocks(Submap* submap) const;
-  std::vector<PseudoSubmap> pseudo_submaps_sent_;
 
  private:
   static config_utilities::Factory::RegistrationRos<MapManagerBase, MapManager>
@@ -171,7 +173,7 @@ class MapManager : public MapManagerBase {
   std::shared_ptr<ActivityManager> activity_manager_;
   std::shared_ptr<TsdfRegistrator> tsdf_registrator_;
   std::shared_ptr<LayerManipulator> layer_manipulator_;
-  std::shared_ptr<SubmapStitching> submap_stitching_handler_;
+  std::shared_ptr<PlaneCollection> plane_collection_;
   PoseManager* pose_manager_;
   // For publishing background to voxgraph
   ros::NodeHandle nh_;
@@ -184,6 +186,7 @@ class MapManager : public MapManagerBase {
   ros::Subscriber optimized_background_poses_sub_;
   std::queue<cblox_msgs::MapPoseUpdates> voxgraph_correction_tfs_;
   size_t received_counter_;
+  std::vector<PoseManager::poseIdType> pseudo_submaps_sent_mid_pose_ids_;
   // For voxgraph_correction_tfs_ access synchronization
   static std::mutex callback_mutex_;
 
