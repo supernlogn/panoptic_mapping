@@ -89,7 +89,7 @@ class MapManager : public MapManagerBase {
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
     LayerManipulator::Config layer_manipulator_config;
-    PlaneCollection::Config submap_stitching_config;
+    PlaneCollection::Config plane_collection_config;
     Config() { setConfigName("MapManager"); }
 
    protected:

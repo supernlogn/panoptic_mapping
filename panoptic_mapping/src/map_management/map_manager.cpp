@@ -46,7 +46,7 @@ void MapManager::Config::checkParams() const {
   checkParamConfig(activity_manager_config);
   checkParamConfig(tsdf_registrator_config);
   checkParamConfig(layer_manipulator_config);
-  checkParamConfig(submap_stitching_config);
+  checkParamConfig(plane_collection_config);
   checkParamEq(num_submaps_to_merge_for_voxgraph % 2, 1,
                "num_submaps_to_merge_for_voxgraph should always be odd");
 }
@@ -75,8 +75,8 @@ void MapManager::Config::setupParamsAndPrinting() {
   setupParam("layer_manipulator_config", &layer_manipulator_config,
              "layer_manipulator");
   setupParam("use_submap_stitching", &use_submap_stitching);
-  setupParam("submap_stitching_config", &submap_stitching_config,
-             "submap_stitching");
+  setupParam("plane_collection_config", &plane_collection_config,
+             "plane_collection");
   setupParam("background_submap_topic_name", &background_submap_topic_name);
   setupParam("optimized_background_poses_topic_name",
              &optimized_background_poses_topic_name);
@@ -103,7 +103,7 @@ MapManager::MapManager(const Config& config)
   layer_manipulator_ =
       std::make_shared<LayerManipulator>(config_.layer_manipulator_config);
   plane_collection_ =
-      std::make_shared<PlaneCollection>(config_.submap_stitching_config);
+      std::make_shared<PlaneCollection>(config_.plane_collection_config);
   pose_manager_ = PoseManager::getGlobalInstance();
   LOG_IF(INFO, config_.verbosity >= 4)
       << "created all handlers/managers/manipulators/registrators";
@@ -231,7 +231,8 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
   // Process de-activated submaps if requested.
   if (config_.merge_deactivated_submaps_if_possible ||
       config_.apply_class_layer_when_deactivating_submaps ||
-      config_.send_deactivated_submaps_to_voxgraph) {
+      config_.send_deactivated_submaps_to_voxgraph ||
+      config_.use_submap_stitching) {
     // get all deactivated submaps
     std::unordered_set<int> deactivated_submaps;
     for (Submap& submap : *submaps) {

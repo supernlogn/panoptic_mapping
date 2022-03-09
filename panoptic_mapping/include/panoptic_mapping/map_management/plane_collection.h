@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <Eigen/Geometry>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 #include <voxgraph/frontend/plane_collection/plane_type.h>
 
 #include "panoptic_mapping/3rd_party/config_utilities.hpp"
@@ -45,8 +46,9 @@ class PlaneCollection {
     float satisfying_outlier_percent = 0.70;
     int ransac_num_iterations = 1000;
     uint_fast32_t random_generator_seed = 100;
-    std::string publish_bboxes_topic = "";
-    std::string publish_normals_topic = "";
+    // if not empty planes found are visualized
+    // after processing a submap
+    std::string plane_visualization_topic = "";
     Config() { setConfigName("PlaneCollection"); }
 
    protected:
@@ -57,11 +59,11 @@ class PlaneCollection {
   virtual ~PlaneCollection() = default;
 
   void processSubmap(Submap* s);
-  void publishNewBboxes(const classToPlanesType& class_to_planes);
-  void publishNewBboxes(const ClassID class_id,
-                        const std::vector<PlaneType>& planes);
-  void publishNormal(const PlaneType& plane, const int marker_id,
-                     const int class_id);
+  void visualizePlanesOfClasses(const classToPlanesType& class_to_planes);
+  void visualizePlanesOfClass(const ClassID class_id,
+                              const std::vector<PlaneType>& planes);
+  // void publishNormal(const PlaneType& plane, const int marker_id,
+  //                    const int class_id);
   /**
    * @brief Get the Max Num Planes Per class id
    *
@@ -88,12 +90,6 @@ class PlaneCollection {
     }
     return ret;
   }
-  bool cgal_plane_finder(std::vector<PlaneType>* merged_result,
-                         const voxblox::MeshLayer& mesh_layer,
-                         const Transformation& T_mid_pose,
-                         const std::vector<PointIndexType>& p_indices,
-                         const int num_iterations, const int max_num_planes,
-                         const int class_id);
   // float PlaneCollection::getClusteringThresholdForClass(const ClassID
   // class_id) const;
   static constexpr std::array<ClassID, 3> getBackgroundClassIDS() {
@@ -176,9 +172,12 @@ class PlaneCollection {
                        const std::vector<Point>& normals_set,
                        const int num_clustered_planes,
                        const float threshold) const;
-  // for stitching submap
-  void matchNeighboorPlanes(const Submap& SubmapA, const Submap& SubmapB,
-                            const std::vector<int>& neighboor_ids);
+  bool cgal_plane_finder(std::vector<PlaneType>* merged_result,
+                         const voxblox::MeshLayer& mesh_layer,
+                         const Transformation& T_mid_pose,
+                         const std::vector<PointIndexType>& p_indices,
+                         const int num_iterations, const int max_num_planes,
+                         const int class_id);
 
  private:
   const Config config_;
@@ -188,9 +187,7 @@ class PlaneCollection {
       submap_id_to_class_to_planes_;
   static int seed_num_;
   static std::mt19937 random_number_generator_;
-  ros::Publisher bboxes_publisher_;
-  ros::Publisher normal_publisher_;
-  ros::NodeHandle nh_;
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_visualizer_;
 };
 
 }  // namespace panoptic_mapping

@@ -50,114 +50,6 @@ std::vector<size_t> argsort(const std::vector<T>& array) {
   return indices;
 }
 
-bool PlaneCollection::PlaneCollection::cgal_plane_finder(
-    std::vector<PlaneType>* merged_result, const voxblox::MeshLayer& mesh_layer,
-    const Transformation& T_mid_pose,
-    const std::vector<PointIndexType>& p_indices, const int num_iterations,
-    const int max_num_planes, const int class_id) {
-  size_t num_points = p_indices.size();
-  Pwn_vector mesh_points(num_points);
-  std::vector<const Point*> eigen_mesh_points(num_points);
-  std::vector<const Point*> eigen_mesh_normals(num_points);
-  {
-    int i = 0;
-    for (const auto& p_idx : p_indices) {
-      const auto& p_n = getPointAndNormalFromPointIndex(p_idx, mesh_layer);
-      eigen_mesh_points[i] = p_n.first;
-      eigen_mesh_normals[i] = p_n.second;
-      mesh_points[i].first =
-          Kernel::Point_3(p_n.first->x(), p_n.first->y(), p_n.first->z());
-      mesh_points[i].second =
-          Kernel::Vector_3(p_n.second->x(), p_n.second->y(), p_n.second->z());
-      ++i;
-    }
-    LOG_IF(INFO, config_.verbosity >= 3)
-        << "Planeransac: Initialized mesh_points pointers";
-  }
-  // Instantiates shape detection engine.
-  Efficient_ransac shape_detection;
-
-  // Sets parameters for shape detection.
-  Efficient_ransac::Parameters parameters;
-  // Sets probability to miss the largest primitive at each iteration.
-  parameters.probability = 0.05;
-
-  // Detect shapes with at least 500 points.
-  parameters.min_points =
-      std::max(num_points / static_cast<size_t>(config_.max_floors),
-               std::min(size_t(2000u), num_points));
-  // Sets maximum Euclidean distance between a point and a shape.
-  parameters.epsilon = 0.05;
-
-  // Sets maximum Euclidean distance between points to be clustered.
-  parameters.cluster_epsilon = 0.05;
-
-  // Sets maximum normal deviation.
-  // 0.9 < dot(surface_normal, point_normal);
-  parameters.normal_threshold = 0.1;
-
-  // Provides the input data.
-  shape_detection.set_input(mesh_points);
-
-  // Registers planar shapes via template method.
-  shape_detection.template add_shape_factory<Cgal_plane_type>();
-
-  // Detects registered shapes with default parameters.
-  shape_detection.detect(parameters);
-
-  LOG_IF(INFO, config_.verbosity >= 4)
-      << shape_detection.shapes().end() - shape_detection.shapes().begin()
-      << " shapes detected.";
-  // find out which planes have the most points
-  std::vector<size_t> num_points_per_plane;
-  for (const auto& cshape : shape_detection.shapes()) {
-    num_points_per_plane.push_back(cshape->indices_of_assigned_points().size());
-  }
-  // keep only the planes with the most points
-  std::vector<size_t> indices = argsort(num_points_per_plane);
-  size_t count = 0;
-  const size_t num_new_planes = shape_detection.shapes().size();
-  for (const auto idx : indices) {
-    if (count >= config_.max_floors) {
-      break;
-    }
-    const Efficient_ransac::Shape* cshape =
-        (shape_detection.shapes().begin() + idx)->get();
-    const Cgal_plane_type* cplane =
-        dynamic_cast<const Cgal_plane_type*>(cshape);
-    float d = static_cast<float>(cplane->d());
-    Eigen::Vector3d eigen_normal(cplane->plane_normal().x(),
-                                 cplane->plane_normal().y(),
-                                 cplane->plane_normal().z());
-    eigen_normal.stableNormalize();
-    Point p = eigen_normal.cast<float>() * static_cast<float>(d);
-    LOG_IF(INFO, config_.verbosity >= 5) << "eigen_normal:\n" << eigen_normal;
-    merged_result->emplace_back(eigen_normal.cast<float>().stableNormalized(),
-                                p, class_id);
-    PlaneType* full_plane = &merged_result->back();
-    std::vector<const Point*> temp_points;
-    std::vector<const Point*> temp_normals;
-    for (const auto& idx : cplane->indices_of_assigned_points()) {
-      temp_points.push_back(
-          eigen_mesh_points[idx]);  // if this works with [] and not with .at it
-                                    // is very suspicious
-      temp_normals.push_back(eigen_mesh_normals[idx]);
-    }
-    full_plane->createPlaneSegmentAaBb(temp_points,
-                                       config_.position_cluster_threshold);
-    Point v = T_mid_pose.getPosition() - full_plane->getPointInit();
-    // full_plane->fixNormal(temp_points, temp_normals);
-    if (v.dot(full_plane->getPlaneNormal()) < 0) {
-      full_plane->reverseNormal();
-    }
-    ++count;
-    if (full_plane->getNumPoints() < 1000) {
-      merged_result->pop_back();
-    }
-  }
-  return true;
-}
-
 int PlaneCollection::seed_num_ = 2;
 std::mt19937 PlaneCollection::random_number_generator_;
 
@@ -180,23 +72,23 @@ void PlaneCollection::Config::setupParamsAndPrinting() {
   setupParam("ransac_num_iterations", &ransac_num_iterations);
   setupParam("max_outlier_percentage", &max_outlier_percentage);
   setupParam("satisfying_outlier_percent", &satisfying_outlier_percent);
-  setupParam("publish_bboxes_topic", &publish_bboxes_topic);
-  setupParam("publish_normals_topic", &publish_normals_topic);
+  setupParam("plane_visualization_topic", &plane_visualization_topic);
 }
 
 PlaneCollection::PlaneCollection(const Config& config)
-    : config_(config.checkValid()), nh_("") {
+    : config_(config.checkValid()) {
   LOG_IF(INFO, config_.verbosity >= 1) << "\n" << config_.toString();
   set_seed(config_.random_generator_seed);
   submap_id_to_class_to_planes_ =
       std::make_shared<std::map<int, classToPlanesType>>(
           std::map<int, classToPlanesType>());
-  if (!config_.publish_bboxes_topic.empty()) {
-    bboxes_publisher_ = nh_.advertise<visualization_msgs::Marker>(
-        config_.publish_bboxes_topic, 100);
-    normal_publisher_ = nh_.advertise<visualization_msgs::Marker>(
-        config_.publish_normals_topic, 100);
+  if (!config_.plane_visualization_topic.empty()) {
+    visual_tools_visualizer_ =
+        std::make_shared<rviz_visual_tools::RvizVisualTools>(
+            "world", config_.plane_visualization_topic);
   }
+  CHECK_NE(config_.plane_visualization_topic.empty(), true);
+  CHECK_NE(visual_tools_visualizer_.get(), nullptr);
 }
 
 void PlaneCollection::processSubmap(Submap* s) {
@@ -207,6 +99,7 @@ void PlaneCollection::processSubmap(Submap* s) {
     s->updateEverything();
   }
   CHECK_NE(s->getIsoSurfacePoints().size(), 0u);
+  LOG(INFO) << "Calling plane collection";
   applyClassPreFilter(&filtered_class_indices, s->getTsdfLayer(),
                       s->getMeshLayer(), s->getClassLayer());
   // s->getIsoSurfacePoints();
@@ -225,7 +118,7 @@ void PlaneCollection::processSubmap(Submap* s) {
   }
   LOG(INFO) << "\n" << ss.str();
   submap_id_to_class_to_planes_->insert({s->getID(), class_id_to_planes});
-  publishNewBboxes(class_id_to_planes);
+  visualizePlanesOfClasses(class_id_to_planes);
 }
 
 void PlaneCollection::findSubmapPlanes(
@@ -241,7 +134,6 @@ void PlaneCollection::findSubmapPlanes(
     const int max_num_planes = getMaxNumPlanesPerType(class_id);
 
     if (class_id != 0) {  // temp to remove
-      continue;
       LOG_IF(INFO, config_.verbosity >= 3)
           << "Calling planeRansac for class" << class_id;
       if (p_indices_pair.second.size() > 0) {
@@ -483,51 +375,6 @@ Eigen::Hyperplane<float, 3> PlaneCollection::ransacSampleSingle(
   return createPlaneFrom3Points(*p1, *p2, *p3, class_dir);
 }
 
-// void rejectAlgo(std::vector<Eigen::Hyperplane<float, 3> > * major_planes,
-//                      const std::vector<Point> &point_set,
-//                      const std::vector<Point> & normals_set,
-//                      const float threshold) {
-//   const size_t N = point_set.size();
-//   // initialize reject, means, nums matrices
-//   bool reject_mtx[N];
-//   Point mean_points[N];
-//   Point mean_normals[N];
-//   int nums[N];
-//   const Point p_zero = Point::Zero(3);
-//   for(int i = 0; i <N;++i){
-//     reject_mtx[i] = false;
-//     mean_points[i] = p_zero;
-//     mean_normals[i] = p_zero;
-//     nums[i] = 1;
-//   }
-//   // start rejecting planes
-//   for (int i = 0; i < N; ++i) {
-//     if (reject_mtx[i]) {
-//       continue;
-//     }
-//     mean_points[i] += point_set[i];
-//     mean_normals[i] += normals_set[i];
-//     for (int j = i+1; j < N; ++j) {
-//       if (reject_mtx[j]) {
-//         continue;
-//       }
-//       float dist = PlaneType::distFunc2(point_set[i], normals_set[i],
-//       point_set[j], normals_set[j]); if (dist < threshold) {
-//         reject_mtx[j] = true;
-//         mean_points[i] += point_set[j];
-//         mean_normals[i] += normals_set[j];
-//         nums[i]++;
-//       }
-//     }
-//     mean_points[i] /= nums[i];
-//     mean_normals[i] /= nums[i];
-//   }
-
-//   for(int i = 0; i < N; ++i) {
-
-//   }
-// }
-
 void PlaneCollection::mini_clustering(
     std::vector<Eigen::Hyperplane<float, 3>>* major_planes,
     const std::vector<Point>& point_set, const std::vector<Point>& normals_set,
@@ -579,6 +426,114 @@ void PlaneCollection::mini_clustering(
     const auto& c_i = mst_classes_info[i];
     major_planes->emplace_back(c_i.point, c_i.normal);
   }
+}
+
+bool PlaneCollection::PlaneCollection::cgal_plane_finder(
+    std::vector<PlaneType>* merged_result, const voxblox::MeshLayer& mesh_layer,
+    const Transformation& T_mid_pose,
+    const std::vector<PointIndexType>& p_indices, const int num_iterations,
+    const int max_num_planes, const int class_id) {
+  size_t num_points = p_indices.size();
+  Pwn_vector mesh_points(num_points);
+  std::vector<const Point*> eigen_mesh_points(num_points);
+  std::vector<const Point*> eigen_mesh_normals(num_points);
+  {
+    int i = 0;
+    for (const auto& p_idx : p_indices) {
+      const auto& p_n = getPointAndNormalFromPointIndex(p_idx, mesh_layer);
+      eigen_mesh_points[i] = p_n.first;
+      eigen_mesh_normals[i] = p_n.second;
+      mesh_points[i].first =
+          Kernel::Point_3(p_n.first->x(), p_n.first->y(), p_n.first->z());
+      mesh_points[i].second =
+          Kernel::Vector_3(p_n.second->x(), p_n.second->y(), p_n.second->z());
+      ++i;
+    }
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Planeransac: Initialized mesh_points pointers";
+  }
+  // Instantiates shape detection engine.
+  Efficient_ransac shape_detection;
+
+  // Sets parameters for shape detection.
+  Efficient_ransac::Parameters parameters;
+  // Sets probability to miss the largest primitive at each iteration.
+  parameters.probability = 0.05;
+
+  // Detect shapes with at least 500 points.
+  parameters.min_points =
+      std::max(num_points / static_cast<size_t>(config_.max_floors),
+               std::min(size_t(2000u), num_points));
+  // Sets maximum Euclidean distance between a point and a shape.
+  parameters.epsilon = 0.05;
+
+  // Sets maximum Euclidean distance between points to be clustered.
+  parameters.cluster_epsilon = 0.05;
+
+  // Sets maximum normal deviation.
+  // 0.9 < dot(surface_normal, point_normal);
+  parameters.normal_threshold = 0.1;
+
+  // Provides the input data.
+  shape_detection.set_input(mesh_points);
+
+  // Registers planar shapes via template method.
+  shape_detection.template add_shape_factory<Cgal_plane_type>();
+
+  // Detects registered shapes with default parameters.
+  shape_detection.detect(parameters);
+
+  LOG_IF(INFO, config_.verbosity >= 4)
+      << shape_detection.shapes().end() - shape_detection.shapes().begin()
+      << " shapes detected.";
+  // find out which planes have the most points
+  std::vector<size_t> num_points_per_plane;
+  for (const auto& cshape : shape_detection.shapes()) {
+    num_points_per_plane.push_back(cshape->indices_of_assigned_points().size());
+  }
+  // keep only the planes with the most points
+  std::vector<size_t> indices = argsort(num_points_per_plane);
+  size_t count = 0;
+  const size_t num_new_planes = shape_detection.shapes().size();
+  for (const auto idx : indices) {
+    if (count >= config_.max_floors) {
+      break;
+    }
+    const Efficient_ransac::Shape* cshape =
+        (shape_detection.shapes().begin() + idx)->get();
+    const Cgal_plane_type* cplane =
+        dynamic_cast<const Cgal_plane_type*>(cshape);
+    float d = static_cast<float>(cplane->d());
+    Eigen::Vector3d eigen_normal(cplane->plane_normal().x(),
+                                 cplane->plane_normal().y(),
+                                 cplane->plane_normal().z());
+    eigen_normal.stableNormalize();
+    Point p = eigen_normal.cast<float>() * static_cast<float>(d);
+    LOG_IF(INFO, config_.verbosity >= 5) << "eigen_normal:\n" << eigen_normal;
+    merged_result->emplace_back(eigen_normal.cast<float>().stableNormalized(),
+                                p, class_id);
+    PlaneType* full_plane = &merged_result->back();
+    std::vector<const Point*> temp_points;
+    std::vector<const Point*> temp_normals;
+    for (const auto& idx : cplane->indices_of_assigned_points()) {
+      temp_points.push_back(
+          eigen_mesh_points[idx]);  // if this works with [] and not with .at it
+                                    // is very suspicious
+      temp_normals.push_back(eigen_mesh_normals[idx]);
+    }
+    full_plane->createPlaneSegmentAaBb(temp_points,
+                                       config_.position_cluster_threshold);
+    Point v = T_mid_pose.getPosition() - full_plane->getPointInit();
+    // full_plane->fixNormal(temp_points, temp_normals);
+    if (v.dot(full_plane->getPlaneNormal()) < 0) {
+      full_plane->reverseNormal();
+    }
+    ++count;
+    if (full_plane->getNumPoints() < 1000) {
+      merged_result->pop_back();
+    }
+  }
+  return true;
 }
 
 int PlaneCollection::ransacCheck(
@@ -697,81 +652,35 @@ void PlaneCollection::applyClassPreFilter(
   }
 }
 
-// publish bounding boxes
-void PlaneCollection::publishNewBboxes(
+// publish planes with normals
+void PlaneCollection::visualizePlanesOfClasses(
     const classToPlanesType& class_to_planes) {
-  if (config_.publish_bboxes_topic.empty()) {
+  if (config_.plane_visualization_topic.empty()) {
     return;
   }
   for (const auto& pair : class_to_planes) {
-    publishNewBboxes(pair.first, pair.second);
+    visualizePlanesOfClass(pair.first, pair.second);
   }
+  visual_tools_visualizer_->trigger();
 }
 
-void PlaneCollection::publishNewBboxes(const ClassID class_id,
-                                       const std::vector<PlaneType>& planes) {
+void PlaneCollection::visualizePlanesOfClass(
+    const ClassID class_id, const std::vector<PlaneType>& planes) {
   static int marker_id = 0;
+  CHECK(visual_tools_visualizer_);
   for (const auto& plane : planes) {
-    auto msg = plane.getVisualizationMsg();
-    msg.id = marker_id++;
+    rviz_visual_tools::colors plane_color;
     if (class_id == 2) {
-      msg.color.b = 0.0;
-      msg.color.r = 1.0;
+      plane_color = rviz_visual_tools::RED;
     } else if (class_id == 1) {
-      /* code */
-      msg.color.b = 0.0;
-      msg.color.g = 1.0;
+      plane_color = rviz_visual_tools::GREEN;
+    } else {
+      plane_color = rviz_visual_tools::BLUE;
     }
-    bboxes_publisher_.publish(msg);
-    publishNormal(plane, marker_id++, class_id);
+    plane.publishPlaneVisualization(visual_tools_visualizer_, plane_color,
+                                    marker_id++);
   }
 }
-
-void PlaneCollection::publishNormal(const PlaneType& plane, const int marker_id,
-                                    const int class_id) {
-  const Eigen::Vector3d normal = plane.getPlaneNormal().cast<double>();
-  const Eigen::Vector3d point = plane.getPointInit().cast<double>();
-  visualization_msgs::Marker msg;
-  msg.header.frame_id = "world";
-  msg.ns = "normal";
-  msg.type = visualization_msgs::Marker::LINE_LIST;
-  msg.action = visualization_msgs::Marker::ADD;
-  geometry_msgs::Point point_msg;
-  geometry_msgs::Point normal_end_msg;
-  tf::pointEigenToMsg(point, point_msg);
-  double scale_factor = 2.0;
-  const Eigen::Vector3d normal_end = point + normal * scale_factor;
-  tf::pointEigenToMsg(normal_end, normal_end_msg);
-  msg.points.push_back(point_msg);
-  msg.points.push_back(normal_end_msg);
-  msg.scale.x = 0.10;
-  msg.scale.y = 0.10;
-  msg.scale.z = 0.10;
-  msg.color.r = 1.0;
-  if (class_id == 2) {
-    msg.color.g = 1.0;
-    msg.color.r = 0.0;
-  } else if (class_id == 1) {
-    /* code */
-    msg.color.r = 0.0;
-    msg.color.b = 1.0;
-  }
-  msg.color.a = 1.0;
-  msg.id = marker_id;
-  msg.header.stamp = ros::Time::now();
-  normal_publisher_.publish(msg);
-  LOG_IF(INFO, config_.verbosity >= 4) << "bbox normal: \n" << normal;
-  Eigen::Vector3d normal_from_transform = plane.getPlaneTransformation()
-                                              .getRotationMatrix()
-                                              .col(2)
-                                              .cast<double>()
-                                              .stableNormalized();
-  // CHECK_LT(std::fabs(normal.dot(normal_from_transform)), 0.9);
-}
-
-void PlaneCollection::matchNeighboorPlanes(
-    const Submap& SubmapA, const Submap& SubmapB,
-    const std::vector<int>& neighboor_ids) {}
 
 // general
 int PlaneCollection::getMaxNumPlanesPerType(ClassID class_id) const {
