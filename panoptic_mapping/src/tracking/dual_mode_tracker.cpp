@@ -93,9 +93,10 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
     // see if it is background and there is already an active background
     LabelEntry label;
     const bool label_exists = getLabelIfExists(input_id, &label);
+    const bool is_background =
+        (label_exists && label.label == PanopticLabel::kBackground);
     const bool is_2new_background =
-        (label_exists && label.label == PanopticLabel::kBackground &&
-         submaps->backgroundExists());
+        (is_background && submaps->backgroundExists());
 
     // Find matches.
     if (is_2new_background) {
@@ -160,14 +161,17 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
       submaps->getSubmapPtr(submap_id)->setWasTracked(true);
     } else if (allocate_new_submap) {
       n_new++;
-      Submap* new_submap = allocateSubmap(input_id, submaps, input);
-      submap_id = new_submap->getID();
-      if (new_submap->getLabel() == PanopticLabel::kBackground) {
+      Submap* new_submap = nullptr;
+      if (is_background) {
+        new_submap = allocateBackgroundSubmap(input_id, submaps, input);
         // this should occur only once, when there is no background submap
         submaps->setBackgroundID(new_submap->getID());
         new_submap->setIsActive(true);
         new_submap->setWasTracked(true);
+      } else {
+        new_submap = allocateSubmap(input_id, submaps, input);
       }
+      submap_id = new_submap->getID();
     }
     alloc_timer.Pause();
     // Logging.
@@ -246,6 +250,17 @@ Submap* DualModeTracker::allocateSubmap(int input_id, SubmapCollection* submaps,
     label = globals_->labelHandler()->getLabelEntry(input_id);
   }
   return submap_allocator_->allocateSubmap(submaps, input, input_id, label);
+}
+
+Submap* DualModeTracker::allocateBackgroundSubmap(int input_id,
+                                                  SubmapCollection* submaps,
+                                                  InputData* input) {
+  LabelEntry label;
+  if (globals_->labelHandler()->segmentationIdExists(input_id)) {
+    label = globals_->labelHandler()->getLabelEntry(input_id);
+  }
+  return background_submap_allocator_->allocateSubmap(submaps, input, input_id,
+                                                      label);
 }
 
 bool DualModeTracker::classesMatch(int input_id, int submap_class_id) {

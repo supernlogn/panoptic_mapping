@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <opencv2/core/mat.hpp>
@@ -71,7 +72,10 @@ class DualModeTracker : public IDTrackerBase {
   DualModeTracker(const Config& config, std::shared_ptr<Globals> globals,
                   bool print_config = true);
   ~DualModeTracker() override = default;
-
+  void setBackgroundSubmapAllocator(
+      std::shared_ptr<SubmapAllocatorBase> alocator) {
+    background_submap_allocator_ = std::move(alocator);
+  }
   void processInput(SubmapCollection* submaps, InputData* input) override;
 
  protected:
@@ -79,6 +83,8 @@ class DualModeTracker : public IDTrackerBase {
   virtual bool classesMatch(int input_id, int submap_class_id);
   virtual Submap* allocateSubmap(int input_id, SubmapCollection* submaps,
                                  InputData* input);
+  Submap* allocateBackgroundSubmap(int input_id, SubmapCollection* submaps,
+                                   InputData* input);
   TrackingInfoAggregator computeTrackingData(SubmapCollection* submaps,
                                              InputData* input);
   TrackingInfo renderTrackingInfo(const Submap& submap,
@@ -102,6 +108,7 @@ class DualModeTracker : public IDTrackerBase {
 
  protected:
   MapRenderer renderer_;  // The renderer is only used if visualization is on.
+  std::shared_ptr<SubmapAllocatorBase> background_submap_allocator_;
   cv::Mat rendered_vis_;  // Store visualization data.
 };
 
