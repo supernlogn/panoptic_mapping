@@ -91,18 +91,8 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     // see if it is background and there is already an active background
     LabelEntry label;
     const bool label_exists = getLabelIfExists(input_id, &label);
-    const bool is_2new_background =
-        (label_exists && label.label == PanopticLabel::kBackground &&
-         submaps->backgroundExists());
 
-    // Find matches.
-    if (is_2new_background) {
-      // if there is a a background and
-      // new background is detected
-      matched = true;
-      submap_id = submaps->getBackgroundID();
-      value = 1.f;
-    } else if (config_.use_class_data_for_matching || config_.verbosity >= 4) {
+    if (config_.use_class_data_for_matching || config_.verbosity >= 4) {
       std::vector<std::pair<int, float>> ids_values;
       any_overlap = tracking_data.getAllMetrics(input_id, &ids_values,
                                                 config_.tracking_metric);
@@ -160,12 +150,6 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     } else if (allocate_new_submap) {
       n_new++;
       Submap* new_submap = allocateSubmap(input_id, submaps, input);
-      if (new_submap->getLabel() == PanopticLabel::kBackground) {
-        // this should occur only once, when there is no background submap
-        submaps->setBackgroundID(new_submap->getID());
-        new_submap->setIsActive(true);
-        new_submap->setWasTracked(true);
-      }
       if (new_submap) {
         input_to_output[input_id] = new_submap->getID();
       } else {
