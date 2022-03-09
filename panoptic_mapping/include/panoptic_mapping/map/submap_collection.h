@@ -152,6 +152,8 @@ class SubmapCollection {
     current_background_submap->setBackground_id_on_deactivation(background_id_);
     current_background_submap->finishActivePeriod();
     current_background_submap->setWasTracked(false);
+    // NOTE(supernlogn): We use the same config as the previous one, so the
+    // same classification layer type is used
     Submap* new_background_submap =
         createSubmap(current_background_submap->getConfig());
     new_background_submap->setClassID(current_background_submap->getClassID());
