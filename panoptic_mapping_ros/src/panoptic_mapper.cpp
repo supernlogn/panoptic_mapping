@@ -12,6 +12,7 @@
 #include <panoptic_mapping/map/classification/fixed_count.h>
 #include <panoptic_mapping/submap_allocation/freespace_allocator_base.h>
 #include <panoptic_mapping/submap_allocation/submap_allocator_base.h>
+#include <panoptic_mapping/tracking/dual_mode_tracker.h>
 
 namespace panoptic_mapping {
 
@@ -22,6 +23,8 @@ const std::map<std::string, std::pair<std::string, std::string>>
         {"camera", {"camera", ""}},
         {"label_handler", {"labels", "null"}},
         {"submap_allocator", {"submap_allocator", "null"}},
+        {"background_submap_allocator",
+         {"background_submap_allocator", "null"}},
         {"freespace_allocator", {"freespace_allocator", "null"}},
         {"id_tracker", {"id_tracker", ""}},
         {"tsdf_integrator", {"tsdf_integrator", ""}},
@@ -97,7 +100,7 @@ void PanopticMapper::setupMembers() {
           defaultNh("label_handler"));
 
   // Setup the number of labels.
-  FixedCountVoxel::setNumCounts(label_handler->numberOfLabels());
+  FixedCountVoxel::setNumCounts(3);
 
   // Globals.
   globals_ = std::make_shared<Globals>(camera, label_handler);
@@ -106,6 +109,9 @@ void PanopticMapper::setupMembers() {
   std::shared_ptr<SubmapAllocatorBase> submap_allocator =
       config_utilities::FactoryRos::create<SubmapAllocatorBase>(
           defaultNh("submap_allocator"));
+  std::shared_ptr<SubmapAllocatorBase> background_submap_allocator =
+      config_utilities::FactoryRos::create<SubmapAllocatorBase>(
+          defaultNh("background_submap_allocator"));
   std::shared_ptr<FreespaceAllocatorBase> freespace_allocator =
       config_utilities::FactoryRos::create<FreespaceAllocatorBase>(
           defaultNh("freespace_allocator"));
@@ -115,6 +121,19 @@ void PanopticMapper::setupMembers() {
       defaultNh("id_tracker"), globals_);
   id_tracker_->setSubmapAllocator(submap_allocator);
   id_tracker_->setFreespaceAllocator(freespace_allocator);
+  std::string id_tracker_type = "";
+  if (defaultNh("id_tracker").getParam("type", id_tracker_type)) {
+    if ("dual_mode" == id_tracker_type) {
+      CHECK(background_submap_allocator);
+      dynamic_cast<DualModeTracker*>(id_tracker_.get())
+          ->setBackgroundSubmapAllocator(background_submap_allocator);
+    } else {
+      LOG(WARNING) << "id_tracker_type " << id_tracker_type
+                   << " is not dual mode";
+    }
+  } else {
+    LOG(ERROR) << "Cannot use tracker without a proper type";
+  }
 
   // Tsdf Integrator.
   tsdf_integrator_ = config_utilities::FactoryRos::create<TsdfIntegratorBase>(
