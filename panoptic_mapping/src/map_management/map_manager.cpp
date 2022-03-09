@@ -11,11 +11,13 @@
 #include <cblox_ros/submap_conversions.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
+#include <panoptic_mapping_msgs/SubmapWithPlanes.h>
 #include <std_msgs/Empty.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/conversions.h>
 #include <voxgraph/frontend/submap_collection/voxgraph_submap.h>
+
 namespace panoptic_mapping {
 
 Transformation computeT_C_R(const double rotX, const double rotY,
@@ -58,8 +60,8 @@ void MapManager::Config::setupParamsAndPrinting() {
              &update_poses_with_voxgraph_frequency);
   setupParam("num_submaps_to_merge_for_voxgraph",
              &num_submaps_to_merge_for_voxgraph);
-  setupParam("avoid_merging_deactivated_backhround_submaps",
-             &avoid_merging_deactivated_backhround_submaps);
+  setupParam("avoid_merging_deactivated_background_submaps",
+             &avoid_merging_deactivated_background_submaps);
   setupParam("merge_deactivated_submaps_if_possible",
              &merge_deactivated_submaps_if_possible);
   setupParam("apply_class_layer_when_deactivating_submaps",
@@ -72,6 +74,7 @@ void MapManager::Config::setupParamsAndPrinting() {
              "tsdf_registrator");
   setupParam("layer_manipulator_config", &layer_manipulator_config,
              "layer_manipulator");
+  setupParam("use_submap_stitching", &use_submap_stitching);
   setupParam("submap_stitching_config", &submap_stitching_config,
              "submap_stitching");
   setupParam("background_submap_topic_name", &background_submap_topic_name);
@@ -99,8 +102,8 @@ MapManager::MapManager(const Config& config)
       std::make_shared<TsdfRegistrator>(config_.tsdf_registrator_config);
   layer_manipulator_ =
       std::make_shared<LayerManipulator>(config_.layer_manipulator_config);
-  submap_stitching_handler_ =
-      std::make_shared<SubmapStitching>(config_.submap_stitching_config);
+  plane_collection_ =
+      std::make_shared<PlaneCollection>(config_.submap_stitching_config);
   pose_manager_ = PoseManager::getGlobalInstance();
   LOG_IF(INFO, config_.verbosity >= 4)
       << "created all handlers/managers/manipulators/registrators";
@@ -124,8 +127,9 @@ MapManager::MapManager(const Config& config)
   if (config.send_deactivated_submaps_to_voxgraph) {
     sent_counter_ = 0;
     received_counter_ = 0;
-    background_submap_publisher_ = nh_.advertise<voxblox_msgs::Submap>(
-        config_.background_submap_topic_name, 100);
+    background_submap_publisher_ =
+        nh_.advertise<panoptic_mapping_msgs::SubmapWithPlanes>(
+            config_.background_submap_topic_name, 100);
     optimized_background_poses_sub_ =
         nh_.subscribe(config_.optimized_background_poses_topic_name, 100,
                       &MapManager::optimizedVoxgraphPosesCallback, this);
@@ -164,6 +168,7 @@ void MapManager::updatePublishedSubmaps(SubmapCollection* submaps) {
                     id) == published_submap_ids_to_voxgraph_.end();
       if (is_new) {
         publishSubmapToVoxGraph(submaps, *submap);
+        submap->removeClassLayer();  // class layer is useless anymore
       }
     }
   }
@@ -235,16 +240,24 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
         deactivated_submaps.insert(submap.getID());
       }
     }
+    // get planes for each submap if submap stitching is activated
+    if (config_.use_submap_stitching) {
+      for (int id : deactivated_submaps) {
+        Submap* submap = submaps->getSubmapPtr(id);
+        if (submap->getLabel() == PanopticLabel::kBackground) {
+          plane_collection_->processSubmap(submap);
+        }
+      }
+    }
 
     // Apply the class layer if requested.
     if (config_.apply_class_layer_when_deactivating_submaps) {
       for (int id : deactivated_submaps) {
         Submap* submap = submaps->getSubmapPtr(id);
         if (submap->getLabel() == PanopticLabel::kBackground) {
-          submap->applyClassLayer(*layer_manipulator_, false);
-          submap_stitching_handler_->processSubmap(submap);
+          // submap->applyClassLayer(*layer_manipulator_, false);
         } else {
-          submap->applyClassLayer(*layer_manipulator_);
+          // submap->applyClassLayer(*layer_manipulator_);
         }
       }
     }
@@ -253,7 +266,7 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
       for (int id : deactivated_submaps) {
         if (submaps->submapIdExists(id)) {
           const Submap* submap = submaps->getSubmapPtr(id);
-          if (config_.send_deactivated_submaps_to_voxgraph &&
+          if (config_.avoid_merging_deactivated_background_submaps &&
               submap->getLabel() == PanopticLabel::kBackground) {
             continue;
           }
@@ -279,13 +292,8 @@ void MapManager::performChangeDetection(SubmapCollection* submaps) {
 
 void MapManager::finishMapping(SubmapCollection* submaps) {
   // Remove all empty blocks.
-  std::stringstream info;
-  info << "Finished mapping: ";
-  for (Submap& submap : *submaps) {
-    info << pruneBlocks(&submap);
-  }
-  LOG_IF(INFO, config_.verbosity >= 3) << info.str();
 
+  LOG(INFO) << "Finished mapping:";
   // call voxgraph for one last time
   // send the last background submaps to voxgraph
   // and call for a full graph optimization
@@ -340,6 +348,13 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     optimizePosesWithVoxgraphPoses(submaps);
   }
 
+  std::stringstream info;
+  info << "Pruning blocks: \n";
+  for (Submap& submap : *submaps) {
+    info << pruneBlocks(&submap);
+  }
+  LOG_IF(INFO, config_.verbosity >= 3) << info.str();
+
   LOG_IF(INFO, config_.verbosity >= 3) << "Merging Submaps:";
 
   // Merge what is possible.
@@ -362,29 +377,27 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
   pose_manager_->savePoseIdsToFile("/home/ioannis/datasets/mid_poses.bag",
                                    actualy_used_mid_pose_ids_);
   // Finish submaps.
-  // if (config_.apply_class_layer_when_deactivating_submaps) {
-  //   LOG_IF(INFO, config_.verbosity >= 3) << "Applying class layers:";
-  //   std::vector<int> empty_submaps;
-  //   for (Submap& submap : *submaps) {
-  //     if (submap.hasClassLayer()) {
-  //       if (!submap.applyClassLayer(*layer_manipulator_)) {
-  //         empty_submaps.emplace_back(submap.getID());
-  //       }
-  //     }
-  //   }
-  //   for (const int id : empty_submaps) {
-  //     for (int published_id : published_submap_ids_to_voxgraph_) {
-  //       if (published_id == id) {
-  //         break;
-  //       }
-  //     }
-
-  //     submaps->removeSubmap(id);
-
-  //     LOG_IF(INFO, config_.verbosity >= 3)
-  //         << "Removed submap " << id << " which was empty.";
-  //   }
-  // }
+  if (config_.apply_class_layer_when_deactivating_submaps) {
+    LOG_IF(INFO, config_.verbosity >= 3) << "Applying class layers:";
+    std::vector<int> empty_submaps;
+    for (Submap& submap : *submaps) {
+      if (submap.hasClassLayer()) {
+        if (!submap.applyClassLayer(*layer_manipulator_)) {
+          empty_submaps.emplace_back(submap.getID());
+        }
+      }
+    }
+    for (const int id : empty_submaps) {
+      for (int published_id : published_submap_ids_to_voxgraph_) {
+        if (published_id == id) {
+          break;
+        }
+      }
+      submaps->removeSubmap(id);
+      LOG_IF(INFO, config_.verbosity >= 3)
+          << "Removed submap " << id << " which was empty.";
+    }
+  }
 }
 
 bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
@@ -411,7 +424,7 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
       continue;
     }
 
-    if (config_.avoid_merging_deactivated_backhround_submaps &&
+    if (config_.avoid_merging_deactivated_background_submaps &&
         !other.isActive() && other.getLabel() == PanopticLabel::kBackground) {
       continue;
     }
@@ -502,6 +515,7 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
   // for all the map headers in the message
   std::vector<Transformation> T_C_C_corrections;
   std::vector<int> submap_ids;
+
   for (const auto map_header : msg.map_headers) {
     // get the actual transformation coming from Voxgraph
     kindr::minimal::QuatTransformationTemplate<double> tf_received;
@@ -541,16 +555,16 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
     // and we should correct the (n/2+1)-th --> 0 + n//2
     id_it += config_.num_submaps_to_merge_for_voxgraph / 2;
     if (id_it == published_submap_ids_to_voxgraph_.end()) {
-      ROS_ERROR("There are less ids than map_headers");
+      LOG(ERROR) << "There are less ids than map_headers";
       break;
     }
-    assert(loop_index < pseudo_submaps_sent_.size());
+    CHECK(loop_index < pseudo_submaps_sent_mid_pose_ids_.size());
     // get middle pose from pose history
-    const Submap::PoseIdHistory& poseHistory =
-        pseudo_submaps_sent_[loop_index].getPoseHistory();
-    auto poseHistory_iterator = poseHistory.begin();
-    std::advance(poseHistory_iterator, poseHistory.size() / 2);
-    const int mid_pose_id = *poseHistory_iterator;
+    // const Submap::PoseIdHistory& poseHistory =
+    //     pseudo_submaps_sent_[loop_index].getPoseHistory();
+    // auto poseHistory_iterator = poseHistory.begin();
+    // std::advance(poseHistory_iterator, poseHistory.size() / 2);
+    const int mid_pose_id = pseudo_submaps_sent_mid_pose_ids_[loop_index];
     actualy_used_mid_pose_ids_.push_back(mid_pose_id);
     //  get the submap and change its pose
     if (submaps->submapIdExists(*id_it)) {
@@ -569,6 +583,12 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
     ++id_it;
     ++loop_index;
   }
+  LOG_IF(INFO, config_.verbosity >= 4)
+      << "optimizePosesWithVoxgraphPoses(...) corrected " << submap_ids.size()
+      << " submap poses out of " << msg.map_headers.size()
+      << " received and sent "
+      << published_submap_ids_to_voxgraph_.size() -
+             config_.num_submaps_to_merge_for_voxgraph + 1;
   const size_t s = actualy_used_mid_pose_ids_.size();
   // correct background submaps
   for (size_t i = 0; i < s; ++i) {
@@ -622,6 +642,7 @@ void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
             activ_background->getT_M_S(), deactiv_background->getT_M_S(),
             lambda);
         submapToChange.setT_M_S(submapT_M_S);
+        submapToChange.updateEverything(/* only_updated_blocks= */ false);
       }
     }
   }
@@ -684,10 +705,11 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
     PseudoSubmap prev_pseudo_map(prev_published_submap);
     mergePseudoSubmapAToPseudoSubmapB(prev_pseudo_map, &new_pseudo_submap);
   }
-  pseudo_submaps_sent_.emplace_back(new_pseudo_submap);
+  // pseudo_submaps_sent_.emplace_back(new_pseudo_submap);
   // store mid pose id to be published
   auto mid_pose_it = new_pseudo_submap.getPoseHistory().begin();
   std::advance(mid_pose_it, new_pseudo_submap.getPoseHistory().size() / 2);
+  pseudo_submaps_sent_mid_pose_ids_.push_back(*mid_pose_it);
   // create the submap message
   voxblox_msgs::Submap submap_msg;
   {
@@ -712,11 +734,16 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
       submap_msg.trajectory.poses.emplace_back(pose_msg);
     }
   }
+  panoptic_mapping_msgs::SubmapWithPlanes msg;
+  msg.submap = submap_msg;
+  const auto& it = published_submap_ids_to_voxgraph_.rbegin() +
+                   config_.num_submaps_to_merge_for_voxgraph / 2;
+  msg.planes = plane_collection_->getPlaneMessagesForSubmapID(*it);
   LOG_IF(INFO, config_.verbosity >= 4)
       << "Publishing submap to Voxgraph with "
       << new_pseudo_submap.getPoseHistory().size() << " poses";
   if (0 < background_submap_publisher_.getNumSubscribers()) {
-    background_submap_publisher_.publish(submap_msg);
+    background_submap_publisher_.publish(msg);
     ++sent_counter_;
   }
 }
