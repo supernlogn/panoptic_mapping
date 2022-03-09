@@ -36,7 +36,7 @@ class FlatDataPlayer(object):
         self.refresh_rate = rospy.get_param('~refresh_rate', 1)  # Hz
         self.use_point_cloud = rospy.get_param('~use_point_cloud', True)
         self.use_image_data = rospy.get_param('~use_image_data', False)
-        self.sec_to_wait = rospy.get_param('~sec_to_wait', 6)
+        self.sec_to_wait = rospy.get_param('~sec_to_wait', 10)
         self.use_noise = rospy.get_param("~use_noise", False)
         self.use_detectron = rospy.get_param("~use_detectron", False)
         self.skip_first_n_inputs = rospy.get_param("~skip_first_n_inputs", 1)
