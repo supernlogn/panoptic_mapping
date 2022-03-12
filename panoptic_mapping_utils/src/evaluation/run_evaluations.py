@@ -196,6 +196,21 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
     args_specific = yaml_data['experiment' + str(index)]
     for k, v in args_specific.items():
         args_experiment[k] = v
+    if 'base_voxgraph_yaml_data' in yaml_data.keys():
+        with open(yaml_data['base_voxgraph_yaml_data'], 'rb') as fr:
+            base_voxgraph_yaml_data = yaml.load(fr, Loader=yaml.FullLoader)
+            experiment_voxgraph_yaml_data_changes = args_experiment[
+                'voxgraph_yaml_data']
+            args_experiment.pop('panoptic_yaml_data')
+        data_to_yaml_generated = changeBaseDictDataWithOtherDict(
+            base_voxgraph_yaml_data, experiment_voxgraph_yaml_data_changes)
+        logger.info(data_to_yaml_generated)
+        yaml_file_path = os.path.join(
+            os.path.dirname(yaml_data['base_voxgraph_yaml_data']),
+            args_experiment['voxgraph_config'] + '.yaml')
+        with open(yaml_file_path, 'w') as fw:
+            logger.debug("Writting yaml data to %s", yaml_file_path)
+            yaml.dump(data_to_yaml_generated, fw)
     if 'base_panoptic_yaml_data' in yaml_data.keys():
         with open(yaml_data['base_panoptic_yaml_data'], 'rb') as fr:
             base_panoptic_yaml_data = yaml.load(fr, Loader=yaml.FullLoader)
