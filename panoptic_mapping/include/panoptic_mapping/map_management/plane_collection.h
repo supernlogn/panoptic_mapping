@@ -8,6 +8,11 @@
 #include <utility>
 #include <vector>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/Point_with_normal_3.h>
+#include <CGAL/Shape_detection.h>
+#include <CGAL/property_map.h>
 #include <Eigen/Geometry>
 #include <rviz_visual_tools/rviz_visual_tools.h>
 #include <voxgraph/frontend/plane_collection/plane_type.h>
@@ -18,6 +23,19 @@
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 
 namespace panoptic_mapping {
+
+// Type declarations for cgal plane extractor
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef std::pair<Kernel::Point_3, Kernel::Vector_3> Point_with_normal;
+typedef std::vector<Point_with_normal> Pwn_vector;
+typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
+typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
+typedef CGAL::Shape_detection::Efficient_RANSAC_traits<Kernel, Pwn_vector,
+                                                       Point_map, Normal_map>
+    Traits;
+typedef CGAL::Shape_detection::Efficient_RANSAC<Traits> Efficient_ransac;
+typedef CGAL::Shape_detection::Plane<Traits> Cgal_plane_type;
+
 // TODO(supernlogn): see if this can occupy less memory
 struct PointIndexType {
   PointIndexType(const voxblox::BlockIndex b_i, const int l_i)
@@ -45,6 +63,17 @@ class PlaneCollection {
     float max_outlier_percentage = 0.70;
     float satisfying_outlier_percent = 0.70;
     int ransac_num_iterations = 1000;
+    // Sets probability to miss the largest primitive at each iteration.
+    double ransac_probability = 0.05;
+    // Detect shapes with at least so many points.
+    size_t ransac_min_points = size_t(2000u);
+    // Sets maximum Euclidean distance between a point and a shape.
+    double ransac_epsilon = 0.05;
+    // Sets maximum Euclidean distance between points to be clustered.
+    double ransac_cluster_epsilon = 0.05;
+    // Sets maximum normal deviation.
+    // 0.9 < dot(surface_normal, point_normal);
+    double ransac_normal_threshold = 0.1;
     uint_fast32_t random_generator_seed = 100;
     // if not empty planes found are visualized
     // after processing a submap
@@ -172,12 +201,13 @@ class PlaneCollection {
                        const std::vector<Point>& normals_set,
                        const int num_clustered_planes,
                        const float threshold) const;
-  bool cgal_plane_finder(std::vector<PlaneType>* merged_result,
-                         const voxblox::MeshLayer& mesh_layer,
-                         const Transformation& T_mid_pose,
-                         const std::vector<PointIndexType>& p_indices,
-                         const int num_iterations, const int max_num_planes,
-                         const int class_id);
+  bool cgalExtractPlane(std::vector<PlaneType>* merged_result,
+                        const voxblox::MeshLayer& mesh_layer,
+                        const Transformation& T_mid_pose,
+                        const std::vector<PointIndexType>& p_indices,
+                        const int num_iterations, const int max_num_planes,
+                        const int class_id);
+  void cgalSetPlaneExtractor();
 
  private:
   const Config config_;
@@ -187,6 +217,8 @@ class PlaneCollection {
       submap_id_to_class_to_planes_;
   static int seed_num_;
   static std::mt19937 random_number_generator_;
+  Efficient_ransac shape_detector_;
+  Efficient_ransac::Parameters shape_detection_parameters_;
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_visualizer_;
 };
 

@@ -12,28 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/IO/read_xyz_points.h>
-#include <CGAL/Point_with_normal_3.h>
-#include <CGAL/Shape_detection_3.h>
-#include <CGAL/property_map.h>
-
 #include "panoptic_mapping/common/index_getter.h"
-
-// Type declarations
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef std::pair<Kernel::Point_3, Kernel::Vector_3> Point_with_normal;
-typedef std::vector<Point_with_normal> Pwn_vector;
-typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
-typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
-
-typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel, Pwn_vector,
-                                                        Point_map, Normal_map>
-    Traits;
-typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits> Efficient_ransac;
-// typedef CGAL::Shape_detection_3::Region_growing_depr<Traits>
-//     Cgal_region_growing;
-typedef CGAL::Shape_detection_3::Plane<Traits> Cgal_plane_type;
 
 namespace panoptic_mapping {
 
@@ -60,6 +39,12 @@ void PlaneCollection::Config::checkParams() const {
   checkParamGT(max_floors, 0, "max_floors");
   checkParamGT(max_ceilings, 0, "max_ceilings");
   checkParamGT(ransac_num_iterations, 0, "ransac_num_iterations");
+  checkParamGT(ransac_probability, 0.0, "ransac_probability");
+  const int minPoints = ransac_min_points;
+  checkParamGT(minPoints, 0, "ransac_min_points");
+  checkParamGT(ransac_epsilon, 0.0, "ransac_epsilon");
+  checkParamGT(ransac_cluster_epsilon, 0.0, "ransac_cluster_epsilon");
+  checkParamGE(ransac_normal_threshold, 0.0, "ransac_normal_threshold");
 }
 
 void PlaneCollection::Config::setupParamsAndPrinting() {
@@ -70,6 +55,13 @@ void PlaneCollection::Config::setupParamsAndPrinting() {
   setupParam("max_floors", &max_floors);
   setupParam("max_ceilings", &max_ceilings);
   setupParam("ransac_num_iterations", &ransac_num_iterations);
+  setupParam("ransac_probability", &ransac_probability);
+  int min_points = static_cast<int>(ransac_min_points);
+  setupParam("ransac_min_points", &min_points);
+  ransac_min_points = static_cast<size_t>(min_points);
+  setupParam("ransac_epsilon", &ransac_epsilon);
+  setupParam("ransac_cluster_epsilon", &ransac_cluster_epsilon);
+  setupParam("ransac_normal_threshold", &ransac_normal_threshold);
   setupParam("max_outlier_percentage", &max_outlier_percentage);
   setupParam("satisfying_outlier_percent", &satisfying_outlier_percent);
   setupParam("plane_visualization_topic", &plane_visualization_topic);
@@ -82,6 +74,7 @@ PlaneCollection::PlaneCollection(const Config& config)
   submap_id_to_class_to_planes_ =
       std::make_shared<std::map<int, classToPlanesType>>(
           std::map<int, classToPlanesType>());
+  cgalSetPlaneExtractor();
   if (!config_.plane_visualization_topic.empty()) {
     visual_tools_visualizer_ =
         std::make_shared<rviz_visual_tools::RvizVisualTools>(
@@ -137,18 +130,18 @@ void PlaneCollection::findSubmapPlanes(
       LOG_IF(INFO, config_.verbosity >= 3)
           << "Calling planeRansac for class" << class_id;
       if (p_indices_pair.second.size() > 0) {
-        cgal_plane_finder(&result->at(class_id), mesh_layer, T_mid_pose,
-                          p_indices_pair.second, config_.ransac_num_iterations,
-                          max_num_planes, class_id);
+        cgalExtractPlane(&result->at(class_id), mesh_layer, T_mid_pose,
+                         p_indices_pair.second, config_.ransac_num_iterations,
+                         max_num_planes, class_id);
       } else {
         LOG_IF(INFO, config_.verbosity >= 4)
             << "skipping class with no indices";
       }
     } else {
       if (p_indices_pair.second.size() > 0) {
-        cgal_plane_finder(&result->at(class_id), mesh_layer, T_mid_pose,
-                          p_indices_pair.second, config_.ransac_num_iterations,
-                          max_num_planes, class_id);
+        cgalExtractPlane(&result->at(class_id), mesh_layer, T_mid_pose,
+                         p_indices_pair.second, config_.ransac_num_iterations,
+                         max_num_planes, class_id);
       } else {
         LOG_IF(INFO, config_.verbosity >= 4)
             << "skipping class with no indices";
@@ -428,7 +421,7 @@ void PlaneCollection::mini_clustering(
   }
 }
 
-bool PlaneCollection::PlaneCollection::cgal_plane_finder(
+bool PlaneCollection::cgalExtractPlane(
     std::vector<PlaneType>* merged_result, const voxblox::MeshLayer& mesh_layer,
     const Transformation& T_mid_pose,
     const std::vector<PointIndexType>& p_indices, const int num_iterations,
@@ -452,55 +445,32 @@ bool PlaneCollection::PlaneCollection::cgal_plane_finder(
     LOG_IF(INFO, config_.verbosity >= 3)
         << "Planeransac: Initialized mesh_points pointers";
   }
-  // Instantiates shape detection engine.
-  Efficient_ransac shape_detection;
-
-  // Sets parameters for shape detection.
-  Efficient_ransac::Parameters parameters;
-  // Sets probability to miss the largest primitive at each iteration.
-  parameters.probability = 0.05;
-
-  // Detect shapes with at least 500 points.
-  parameters.min_points =
-      std::max(num_points / static_cast<size_t>(config_.max_floors),
-               std::min(size_t(2000u), num_points));
-  // Sets maximum Euclidean distance between a point and a shape.
-  parameters.epsilon = 0.05;
-
-  // Sets maximum Euclidean distance between points to be clustered.
-  parameters.cluster_epsilon = 0.05;
-
-  // Sets maximum normal deviation.
-  // 0.9 < dot(surface_normal, point_normal);
-  parameters.normal_threshold = 0.1;
-
   // Provides the input data.
-  shape_detection.set_input(mesh_points);
-
-  // Registers planar shapes via template method.
-  shape_detection.template add_shape_factory<Cgal_plane_type>();
-
+  shape_detector_.set_input(mesh_points);
+  shape_detection_parameters_.min_points =
+      std::max(num_points / static_cast<size_t>(config_.max_floors),
+               std::min(config_.ransac_min_points, num_points));
   // Detects registered shapes with default parameters.
-  shape_detection.detect(parameters);
+  shape_detector_.detect(shape_detection_parameters_);
 
   LOG_IF(INFO, config_.verbosity >= 4)
-      << shape_detection.shapes().end() - shape_detection.shapes().begin()
+      << shape_detector_.shapes().end() - shape_detector_.shapes().begin()
       << " shapes detected.";
   // find out which planes have the most points
   std::vector<size_t> num_points_per_plane;
-  for (const auto& cshape : shape_detection.shapes()) {
+  for (const auto& cshape : shape_detector_.shapes()) {
     num_points_per_plane.push_back(cshape->indices_of_assigned_points().size());
   }
   // keep only the planes with the most points
   std::vector<size_t> indices = argsort(num_points_per_plane);
   size_t count = 0;
-  const size_t num_new_planes = shape_detection.shapes().size();
+  const size_t num_new_planes = shape_detector_.shapes().size();
   for (const auto idx : indices) {
     if (count >= config_.max_floors) {
       break;
     }
     const Efficient_ransac::Shape* cshape =
-        (shape_detection.shapes().begin() + idx)->get();
+        (shape_detector_.shapes().begin() + idx)->get();
     const Cgal_plane_type* cplane =
         dynamic_cast<const Cgal_plane_type*>(cshape);
     float d = static_cast<float>(cplane->d());
@@ -534,6 +504,17 @@ bool PlaneCollection::PlaneCollection::cgal_plane_finder(
     }
   }
   return true;
+}
+
+void PlaneCollection::cgalSetPlaneExtractor() {
+  // Sets parameters for shape detection.
+  shape_detection_parameters_.probability = config_.ransac_probability;
+  shape_detection_parameters_.epsilon = config_.ransac_epsilon;
+  shape_detection_parameters_.cluster_epsilon = config_.ransac_cluster_epsilon;
+  shape_detection_parameters_.normal_threshold =
+      config_.ransac_normal_threshold;
+  // Registers planar shapes via template method.
+  shape_detector_.template add_shape_factory<Cgal_plane_type>();
 }
 
 int PlaneCollection::ransacCheck(

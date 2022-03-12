@@ -16,7 +16,13 @@
 #include "panoptic_mapping/map_management/activity_manager.h"
 #include "panoptic_mapping/map_management/layer_manipulator.h"
 #include "panoptic_mapping/map_management/map_manager_base.h"
+// TODO(supernlogn): This is an ugly fix for not getting
+// redefinition warning. See if it can be done otherwise.
+#define BOOST_PARAMETER_MAX_ARITY_PREV BOOST_PARAMETER_MAX_ARITY
+#undef BOOST_PARAMETER_MAX_ARITY
 #include "panoptic_mapping/map_management/plane_collection.h"
+#undef BOOST_PARAMETER_MAX_ARITY
+#define BOOST_PARAMETER_MAX_ARITY BOOST_PARAMETER_MAX_ARITY_PREV
 #include "panoptic_mapping/map_management/tsdf_registrator.h"
 
 #include "cblox_msgs/MapHeader.h"
@@ -63,6 +69,10 @@ class MapManager : public MapManagerBase {
     // If true then the whole trajectory is updated when optimized
     // transformations are received from voxgraph
     bool update_whole_trajectory_with_voxgraph_tf = true;
+    // If true(default) then submaps and poses get optimized, while
+    // panoptic mapping is running. If false, optimizations are performed only
+    // in finish mapping.
+    bool optimize_poses_online = true;
     // publish to voxgraph topic names
     std::string background_submap_topic_name =
         "/panoptic_mapper/background_submap_out";
@@ -77,6 +87,9 @@ class MapManager : public MapManagerBase {
     // If not empty the trajectory stored in panoptic mapping is saved
     // to this file in a custom format
     std::string save_trajectory_on_finish = "";
+    // If not empty the midposes are stored in a bag file of this
+    // path.
+    std::string debug_mid_poses_file = "";
     // If not empty then voxgraph's trajectory is saved to
     // this file as a .bag file
     std::string save_voxgraph_trajectory_on_finish = "";
