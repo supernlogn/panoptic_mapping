@@ -125,27 +125,14 @@ void PlaneCollection::findSubmapPlanes(
     ClassID class_id = p_indices_pair.first;
     result->insert({class_id, std::vector<PlaneType>()});
     const int max_num_planes = getMaxNumPlanesPerType(class_id);
-
-    if (class_id != 0) {  // temp to remove
-      LOG_IF(INFO, config_.verbosity >= 3)
-          << "Calling planeRansac for class" << class_id;
-      if (p_indices_pair.second.size() > 0) {
-        cgalExtractPlane(&result->at(class_id), mesh_layer, T_mid_pose,
-                         p_indices_pair.second, config_.ransac_num_iterations,
-                         max_num_planes, class_id);
-      } else {
-        LOG_IF(INFO, config_.verbosity >= 4)
-            << "skipping class with no indices";
-      }
+    LOG_IF(INFO, config_.verbosity >= 3)
+        << "Calling planeRansac for class" << class_id;
+    if (p_indices_pair.second.size() > 0) {
+      cgalExtractPlane(&result->at(class_id), mesh_layer, T_mid_pose,
+                       p_indices_pair.second, config_.ransac_num_iterations,
+                       max_num_planes, class_id);
     } else {
-      if (p_indices_pair.second.size() > 0) {
-        cgalExtractPlane(&result->at(class_id), mesh_layer, T_mid_pose,
-                         p_indices_pair.second, config_.ransac_num_iterations,
-                         max_num_planes, class_id);
-      } else {
-        LOG_IF(INFO, config_.verbosity >= 4)
-            << "skipping class with no indices";
-      }
+      LOG_IF(INFO, config_.verbosity >= 4) << "skipping class with no indices";
     }
   }
 }
@@ -445,32 +432,35 @@ bool PlaneCollection::cgalExtractPlane(
     LOG_IF(INFO, config_.verbosity >= 3)
         << "Planeransac: Initialized mesh_points pointers";
   }
+  Efficient_ransac shape_detector;
+  // Registers planar shapes via template method.
+  shape_detector.template add_shape_factory<Cgal_plane_type>();
   // Provides the input data.
-  shape_detector_.set_input(mesh_points);
+  shape_detector.set_input(mesh_points);
   shape_detection_parameters_.min_points =
       std::max(num_points / static_cast<size_t>(config_.max_floors),
                std::min(config_.ransac_min_points, num_points));
   // Detects registered shapes with default parameters.
-  shape_detector_.detect(shape_detection_parameters_);
+  shape_detector.detect(shape_detection_parameters_);
 
   LOG_IF(INFO, config_.verbosity >= 4)
-      << shape_detector_.shapes().end() - shape_detector_.shapes().begin()
+      << shape_detector.shapes().end() - shape_detector.shapes().begin()
       << " shapes detected.";
   // find out which planes have the most points
   std::vector<size_t> num_points_per_plane;
-  for (const auto& cshape : shape_detector_.shapes()) {
+  for (const auto& cshape : shape_detector.shapes()) {
     num_points_per_plane.push_back(cshape->indices_of_assigned_points().size());
   }
   // keep only the planes with the most points
   std::vector<size_t> indices = argsort(num_points_per_plane);
   size_t count = 0;
-  const size_t num_new_planes = shape_detector_.shapes().size();
+  const size_t num_new_planes = shape_detector.shapes().size();
   for (const auto idx : indices) {
     if (count >= config_.max_floors) {
       break;
     }
     const Efficient_ransac::Shape* cshape =
-        (shape_detector_.shapes().begin() + idx)->get();
+        (shape_detector.shapes().begin() + idx)->get();
     const Cgal_plane_type* cplane =
         dynamic_cast<const Cgal_plane_type*>(cshape);
     float d = static_cast<float>(cplane->d());
@@ -513,8 +503,6 @@ void PlaneCollection::cgalSetPlaneExtractor() {
   shape_detection_parameters_.cluster_epsilon = config_.ransac_cluster_epsilon;
   shape_detection_parameters_.normal_threshold =
       config_.ransac_normal_threshold;
-  // Registers planar shapes via template method.
-  shape_detector_.template add_shape_factory<Cgal_plane_type>();
 }
 
 int PlaneCollection::ransacCheck(

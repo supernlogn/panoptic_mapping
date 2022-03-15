@@ -217,7 +217,6 @@ class PlaneCollection {
       submap_id_to_class_to_planes_;
   static int seed_num_;
   static std::mt19937 random_number_generator_;
-  Efficient_ransac shape_detector_;
   Efficient_ransac::Parameters shape_detection_parameters_;
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_visualizer_;
 };
