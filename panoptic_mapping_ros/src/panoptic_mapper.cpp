@@ -100,7 +100,7 @@ void PanopticMapper::setupMembers() {
           defaultNh("label_handler"));
 
   // Setup the number of labels.
-  FixedCountVoxel::setNumCounts(3);
+  FixedCountVoxel::setNumCounts(label_handler->numberOfLabels());
 
   // Globals.
   globals_ = std::make_shared<Globals>(camera, label_handler);
