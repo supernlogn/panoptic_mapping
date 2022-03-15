@@ -88,9 +88,6 @@ void ProjectiveIDTracker::processInput(SubmapCollection* submaps,
     float value;
     bool any_overlap;
     std::stringstream logging_details;
-    // see if it is background and there is already an active background
-    LabelEntry label;
-    const bool label_exists = getLabelIfExists(input_id, &label);
 
     if (config_.use_class_data_for_matching || config_.verbosity >= 4) {
       std::vector<std::pair<int, float>> ids_values;
