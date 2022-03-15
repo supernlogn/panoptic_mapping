@@ -1,0 +1,23 @@
+<launch>
+<!-- ============ Arguments ============ -->
+  <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/> 
+  <arg name="play_rate" default="1"/>
+  <arg name="clock_refresh_rate" default="50" />
+  <arg name="data_player_refresh_rate" default="100" />
+  <arg name="sim_speed_multiplier" default="5" />  
+  <arg name="wait" default="false"/>
+  <arg name="namespace" default="data"/>
+  <arg name="use_detectron" default="false"/>
+  <arg name="max_frames" default="100000"/>
+  <arg name="global_frame_name" default="world"/>
+  <arg name="sensor_frame_name" default="depth_camera"/>
+  
+<!-- ============ Translate Data ============ -->
+<node pkg="panoptic_mapping_utils" type="panmap_to_ply" name="panmap_translator" output="screen">
+  <param name="map_file" value="/home/ioannis/datasets/large_flat/ground_truth_panmap/panmap.panmap"/>
+  <param name="output_pointcloud_file" value="gt_ply"/>
+  <param name="output_directory" value="/home/ioannis/datasets/large_flat/ground_truth_panmap/"/>
+</node>
+<!-- Visualize the point cloud in rviz -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find point_cloud_io)/examples/point_cloud_io.rviz" /> -->
+</launch>
