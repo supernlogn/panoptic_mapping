@@ -1,0 +1,26 @@
+<launch>
+<!-- ============ Arguments ============ -->
+  <!-- Groundtruth -->
+  <arg name="generated_path_file_path" default="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt"/>
+  
+  <!-- Params -->
+  <arg name="evaluate_only_optimized_points" default="false"/>
+  <arg name="trajectory_file_path" default="/home/ioannis/datasets/trajectory.in"/>
+  <arg name="output_file_path" default="/home/ioannis/datasets/trajectory_evaluation.csv"/>
+
+  <!-- debug -->
+  <arg name="debug_mode"
+       default="false"
+       doc="Run the mapper in debug mode." />
+  <arg unless="$(arg debug_mode)" name="launch_prefix" value="" />
+  <arg if="$(arg debug_mode)" name="launch_prefix" value="gdb -ex run --args" />
+
+<!-- ============ Evaluations ============ -->
+  <node name="evaluator" pkg="panoptic_mapping_utils" type="trajectory_evaluation" output="screen" required="true" launch-prefix="$(arg launch_prefix)">
+    <param name="evaluate_only_optimized_points" value="$(arg evaluate_only_optimized_points)" /> 
+    <param name="generated_path_file_path" value="$(arg generated_path_file_path)" /> 
+    <param name="trajectory_file_path" value="$(arg trajectory_file_path)" /> 
+    <param name="output_file_path" value="$(arg output_file_path)" /> 
+  </node>
+
+</launch>
