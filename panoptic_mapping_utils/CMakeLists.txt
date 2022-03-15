@@ -32,6 +32,12 @@ cs_add_executable(multi_map_evaluation
         )
 target_link_libraries(multi_map_evaluation ${PROJECT_NAME})
 
+cs_add_executable(panmap_to_ply
+        app/panmap_to_ply.cpp
+        src/translation/panmap_translator.cpp
+        )
+target_link_libraries(panmap_to_ply ${PROJECT_NAME})
+
 cs_add_executable(drift_generator_node
         src/drift_generator/drift_generator_node.cpp
         src/drift_generator/drift_generator.cpp
