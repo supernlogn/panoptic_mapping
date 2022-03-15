@@ -59,23 +59,6 @@ void ClassProjectiveIntegrator::processInput(SubmapCollection* submaps,
     // arbitrarily large.
     num_classes_ = id_to_class_.size() + 1;
   }
-  // debug
-  // const auto & img = input->idImage();
-  // int count0s = 0;
-  // int count1s = 0;
-  // int count2s = 0;
-  // for (int i = 0; i < img.rows; ++i) {
-  //   for(int j = 0; j < img.cols; ++j) {
-  //     count0s += (img.at<int>(i, j) == 0);
-  //     count1s += (img.at<int>(i, j) == 1);
-  //     count2s += (img.at<int>(i, j) == 2);
-  //   }
-  // }
-  // if (count0s + count1s + count2s > 0) {
-  //   LOG(WARNING) << "count0s : " << count0s
-  //   << "\ncount1s : " << count1s
-  //   << "\ncount2s : " << count2s;
-  // }
   // Run the integration.
   ProjectiveIntegrator::processInput(submaps, input);
 }
