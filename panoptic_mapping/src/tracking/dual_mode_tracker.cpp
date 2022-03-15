@@ -95,12 +95,12 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
     const bool label_exists = getLabelIfExists(input_id, &label);
     const bool is_background =
         (label_exists && label.label == PanopticLabel::kBackground);
-    const bool is_2new_background =
+    const bool belongs_to_current_background =
         (is_background && submaps->backgroundExists());
 
     // Find matches.
-    if (is_2new_background) {
-      // if there is a a background and
+    if (belongs_to_current_background) {
+      // if there is a background and
       // new background is detected
       matched = true;
       submap_id = submaps->getBackgroundID();
@@ -163,11 +163,9 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
       n_new++;
       Submap* new_submap = nullptr;
       if (is_background) {
-        new_submap = allocateBackgroundSubmap(input_id, submaps, input);
         // this should occur only once, when there is no background submap
+        new_submap = allocateBackgroundSubmap(input_id, submaps, input);
         submaps->setBackgroundID(new_submap->getID());
-        new_submap->setIsActive(true);
-        new_submap->setWasTracked(true);
       } else {
         new_submap = allocateSubmap(input_id, submaps, input);
       }
