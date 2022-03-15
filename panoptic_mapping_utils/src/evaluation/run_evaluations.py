@@ -245,7 +245,7 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
     ]
     line_strs += [
         "generated_path_file_path:=%s" % generated_path_file_path
-    ] + ["save_trajectory_on_finish:=%s" % trajectory_file_path] + [
+    ] + ["save_pm_trajectory_on_finish:=%s" % trajectory_file_path] + [
         "save_voxgraph_trajectory_on_finish:=%s" % voxgraph_traj_file_path
     ]
     line = " ".join(line_strs)
