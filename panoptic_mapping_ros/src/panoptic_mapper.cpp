@@ -127,9 +127,6 @@ void PanopticMapper::setupMembers() {
       CHECK(background_submap_allocator);
       dynamic_cast<DualModeTracker*>(id_tracker_.get())
           ->setBackgroundSubmapAllocator(background_submap_allocator);
-    } else {
-      LOG(WARNING) << "id_tracker_type " << id_tracker_type
-                   << " is not dual mode";
     }
   } else {
     LOG(ERROR) << "Cannot use tracker without a proper type";
@@ -258,6 +255,9 @@ void PanopticMapper::inputCallback(const ros::TimerEvent&) {
           << config_.secs_to_wait_input_before_shutdown
           << " seconds, shutting down.";
       finishMapping();
+      // visualize the result after finishMapping
+      // in case submaps have changed orientation
+      publishVisualization();
       if (!config_.save_map_path_when_finished.empty()) {
         saveMap(config_.save_map_path_when_finished);
       }
