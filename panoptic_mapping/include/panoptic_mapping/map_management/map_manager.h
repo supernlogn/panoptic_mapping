@@ -98,6 +98,13 @@ class MapManager : public MapManagerBase {
     // If true then the planes of each submap are detected
     // and sent to voxgraph to stitch the submaps
     bool use_submap_stitching = true;
+    // If true the last background submap which uses
+    // less frames than all the other ones, gets updated
+    // using the pre-last background submap
+    bool optimize_last_background_separately = true;
+    // If true then submaps with unknown labels
+    // are deleted upon finishMapping
+    bool clear_unknown_labels = false;
     // Member configs.
     TsdfRegistrator::Config tsdf_registrator_config;
     ActivityManager::Config activity_manager_config;
