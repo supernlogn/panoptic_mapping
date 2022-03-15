@@ -51,6 +51,9 @@ class MultiClassProjectiveIntegrator : public ProjectiveIntegrator {
   void processInput(SubmapCollection* submaps, InputData* input) override;
 
  protected:
+  void updateSubmap(Submap* submap, InterpolatorBase* interpolator,
+                    const voxblox::BlockIndexList& block_indices,
+                    const InputData& input) const override;
   void updateBlock(Submap* submap, InterpolatorBase* interpolator,
                    const voxblox::BlockIndex& block_index,
                    const Transformation& T_C_S,

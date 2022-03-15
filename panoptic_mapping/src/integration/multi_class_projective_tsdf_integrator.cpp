@@ -83,27 +83,19 @@ void MultiClassProjectiveIntegrator::processInput(SubmapCollection* submaps,
     // arbitrarily large.
     num_classes_ = submap_id_to_class_.size() + 1;
   }
-  // debug
-  // const auto & img = input->idImage();
-  // int count0s = 0;
-  // int count1s = 0;
-  // int count2s = 0;
-  // for (int i = 0; i < img.rows; ++i) {
-  //   for(int j = 0; j < img.cols; ++j) {
-  //     count0s += (img.at<int>(i, j) == 0);
-  //     count1s += (img.at<int>(i, j) == 1);
-  //     count2s += (img.at<int>(i, j) == 2);
-  //   }
-  // }
-  // if (count0s + count1s + count2s > 0) {
-  //   LOG(WARNING) << "count0s : " << count0s
-  //   << "\ncount1s : " << count1s
-  //   << "\ncount2s : " << count2s;
-  // }
   // Run the integration.
   ProjectiveIntegrator::processInput(submaps, input);
 }
 
+void MultiClassProjectiveIntegrator::updateSubmap(
+    Submap* submap, InterpolatorBase* interpolator,
+    const voxblox::BlockIndexList& block_indices,
+    const InputData& input) const {
+  Transformation T_C_S = input.T_M_C().inverse() * submap->getT_M_S();
+  for (const auto& block_index : block_indices) {
+    updateBlock(submap, interpolator, block_index, T_C_S, input);
+  }
+}
 void MultiClassProjectiveIntegrator::updateBlock(
     Submap* submap, InterpolatorBase* interpolator,
     const voxblox::BlockIndex& block_index, const Transformation& T_C_S,
@@ -199,7 +191,7 @@ void MultiClassProjectiveIntegrator::updateClassVoxel(
     const int submap_id) const {
   const int id = interpolator->interpolateID(input.idImage());
   if (id_classes_set_1_.find(id) != id_classes_set_1_.end()) {
-    // use classification for class set 1
+    // use (fixed_count) classification for class set 1
     if (config_.use_instance_classification) {
       voxel->incrementCount(id);
     } else {
