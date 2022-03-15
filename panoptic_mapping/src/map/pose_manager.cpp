@@ -5,9 +5,10 @@
 #include <string>
 #include <vector>
 
+#include <geometry_msgs/PoseStamped.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
-#include <voxgraph/tools/io.h>
+#include <rosbag/bag.h>
 
 #define INVALID_POSE_ID_NUM -1
 
@@ -22,9 +23,22 @@ void PoseManager::copy(PoseManager* other) const {
   other->next_pose_id_index_ = next_pose_id_index_;
 }
 
+bool savePoseHistoryToFile(
+    const std::string& filepath,
+    const std::vector<geometry_msgs::PoseStamped>& pose_history) {
+  // Write the pose history to a rosbag
+  rosbag::Bag bag;
+  bag.open(filepath, rosbag::bagmode::Write);
+  for (const geometry_msgs::PoseStamped& pose_stamped : pose_history) {
+    bag.write("pose_history", pose_stamped.header.stamp, pose_stamped);
+  }
+  bag.close();
+  return true;  // Zero error checking here!
+}
+
 void PoseManager::correctPoseInfo(PoseManager::PoseInformation* pose_info,
                                   const Transformation& T_corr) {
-  pose_info->pose = pose_info->pose_init * T_corr;
+  pose_info->pose = T_corr * pose_info->pose_init;
 }
 
 void PoseManager::correctPoseRangeTransformation(const poseIdType start_pose_id,
@@ -133,7 +147,7 @@ bool PoseManager::saveAllPosesToFile(const std::string& file_path) const {
     const geometry_msgs::PoseStamped pose_stamped_msg = getPoseMessage(p_info);
     trajectoryPoses.push_back(pose_stamped_msg);
   }
-  bool res = voxgraph::io::savePoseHistoryToFile(file_path, trajectoryPoses);
+  bool res = savePoseHistoryToFile(file_path, trajectoryPoses);
   return res;
 }
 
@@ -143,7 +157,7 @@ bool PoseManager::savePoseIdsToFile(const std::string& file_path,
   for (const int id : pose_ids) {
     trajectoryPoses.push_back(getPoseMessage(id));
   }
-  bool res = voxgraph::io::savePoseHistoryToFile(file_path, trajectoryPoses);
+  bool res = savePoseHistoryToFile(file_path, trajectoryPoses);
   return res;
 }
 
