@@ -414,6 +414,9 @@ bool PlaneCollection::cgalExtractPlane(
     const std::vector<PointIndexType>& p_indices, const int num_iterations,
     const int max_num_planes, const int class_id) {
   size_t num_points = p_indices.size();
+  if (num_points < config_.ransac_min_points) {
+    return false;
+  }
   Pwn_vector mesh_points(num_points);
   std::vector<const Point*> eigen_mesh_points(num_points);
   std::vector<const Point*> eigen_mesh_normals(num_points);
