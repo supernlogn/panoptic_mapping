@@ -1,0 +1,170 @@
+# General Params
+verbosity: 3
+use_threadsafe_submap_collection: true
+use_transform_caching: true
+transform_lookup_time: 0.5
+global_frame_name: world
+visualization_interval: -1.0
+data_logging_interval: -1.0
+print_timing_interval: 0.0
+max_input_queue_length: 1000
+ros_spinning_threads: 8
+secs_to_wait_input_before_shutdown: 20.0
+
+labels:
+  type: csv
+  file_name: /home/ioannis/datasets/flat_dataset/groundtruth_labels.csv
+
+camera:
+  verbosity: 1
+  width: 640  # Px
+  height: 480
+  vx: 320
+  vy: 240
+  fx: 320
+  fy: 320
+  max_range: 5  # m
+  min_range: 0.1
+  
+submap_allocator:
+  type: semantic  # semantic
+  verbosity: 1
+  
+  # submaps
+  voxels_per_side: &voxels_per_side 16
+  truncation_distance: &submaps_truncation_distance -2 # negative = #vs
+  mesh:
+    clear_foreign_voxels: false
+    required_belonging_corners: 1
+  classification:
+    type: moving_binary_count
+  
+  # Semantic
+  small_instance_voxel_size: 0.02
+  medium_instance_voxel_size: 0.02
+  large_instance_voxel_size: 0.02
+  background_voxel_size: 0.02
+  unknown_voxel_size: 0.02
+  use_class_layer: &use_class_layer false
+
+freespace_allocator:
+  type: monolithic  # monolithic
+  verbosity: 1  
+  voxels_per_side: *voxels_per_side 
+  truncation_distance: -2   
+  voxel_size: 0.3
+  use_class_layer: false
+id_tracker:
+  type: single_tsdf # ground_truth, projective, detectron, single_tsdf, dual_mode
+  verbosity: 1
+  
+  # Projective ID tracker
+  depth_tolerance: -1  # m, negative = #vs
+  tracking_metric: IoU  # IoU, overlap
+  match_acceptance_threshold: 0.1
+  min_allocation_size: 2000 # px, for submap allocation.
+  use_class_data_for_matching: true
+  voxel_size: 0.02
+  submap:
+    voxels_per_side: *voxels_per_side
+    use_class_layer: *use_class_layer
+    truncation_distance: -2
+tsdf_integrator:
+  type: single_tsdf # projective, class_projective, multi_class_projective, single_tsdf
+  verbosity: 1
+  # single tsdf
+  use_segmentation: false
+  # multi_class
+  id_classes_set_1: [0,1,2]
+  # Projective
+  use_weight_dropoff: true
+  max_weight: 10000
+  interpolation_method: adaptive  # nearest, bilinear, adaptive
+  foreign_rays_clear: true
+  integration_threads: 8
+  allocate_neighboring_blocks: false
+  
+  # Class Projective
+  use_binary_classification: true
+  use_instance_classification: &use_instance_classification false
+  update_only_tracked_submaps: true
+  
+map_management:
+  type: submaps
+  verbosity: 4
+  
+  # Frequencies
+  prune_active_blocks_frequency: 0
+  activity_management_frequency: 0
+  change_detection_frequency: 5
+  update_poses_with_voxgraph_frequency: 3
+  publish_poses_to_voxgraph_frequency: 1
+  
+  # voxgraph publishing
+  num_submaps_to_merge_for_voxgraph: 3
+  avoid_merging_deactivated_background_submaps: false
+  
+  # Behavior
+  send_deactivated_submaps_to_voxgraph: false
+  merge_deactivated_submaps_if_possible: true
+  apply_class_layer_when_deactivating_submaps: true
+  update_whole_trajectory_with_voxgraph_tf: true
+  update_contained_submaps_with_correction: true
+  use_submap_stitching: false
+  optimize_poses_online: false
+  optimize_last_background_separately: false
+  clear_unknown_labels: false
+
+  activity_manager:
+    required_reobservations: 5 # Consecutive observations to keep new submaps.
+    deactivate_after_missed_detections: 5  # Deactivate submaps when not observed for x frames.
+    new_background_per_n_ticks: 0 # Update the background submaps per so much frames. Leave 0 to disable it
+
+  tsdf_registrator:
+    verbosity: 1
+    min_voxel_weight: 0.000001
+    error_threshold: -1 # m, negative = #vs
+    match_rejection_points: 20
+    match_rejection_percentage: 0.02
+    match_acceptance_points: 20
+    match_acceptance_percentage: 0.02
+    normalize_by_voxel_weight: true
+
+  layer_manipulator:
+      verbosity: 1
+      use_instance_classification: *use_instance_classification
+  plane_collection:
+      verbosity: 4
+      max_walls: 3
+      max_floors: 3
+      max_ceilings: 3
+      max_outlier_percentage: 0.75
+      satisfying_outlier_percent: 0.75
+      position_cluster_threshold: 0.02
+      num_iterations: 10000
+      plane_visualization_topic: "/panoptic_mapper/planes_visualization"
+visualization:
+  submaps:
+    type: submaps  # submaps, single_tsdf
+    verbosity: 1
+    color_mode: color # submaps, instances, color, normals, classes, change, classification
+    visualization_mode: all  # all, active, active_only, inactive, persistent
+    submap_color_discretization: 800
+    visualize_mesh: true
+    visualize_tsdf_blocks: true
+    visualize_free_space: true
+    visualize_bounding_volumes: true
+    include_free_space: false
+    use_different_colors_for_background: true
+    initial_background_color: 450
+    mesh_min_weight: 0.000001
+  
+  planning:
+    verbosity: 1
+    visualize_slice: true
+    slice_resolution: 0.1
+    slice_height: -0.5
+  
+  tracking:
+    verbosity: 1
+    visualize_tracking: true
