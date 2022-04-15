@@ -149,8 +149,7 @@ def evaluateAfterMapIsBuilt(experiment_name,
             os.system("rm %s" % voxgraph_trajectory_file_path)
         # wait till the map and trajectory files appear
         while not (os.path.exists(map_file_path)
-                   and os.path.exists(trajectory_file_path)
-                   and os.path.exists(voxgraph_trajectory_file_path)):
+                   and os.path.exists(trajectory_file_path)):
             time.sleep(20)
     logger.info("taking screenshot for %s", experiment_name)
     if not screenshot_name.endswith(".png"):
@@ -201,7 +200,7 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
             base_voxgraph_yaml_data = yaml.load(fr, Loader=yaml.FullLoader)
             experiment_voxgraph_yaml_data_changes = args_experiment[
                 'voxgraph_yaml_data']
-            args_experiment.pop('panoptic_yaml_data')
+            args_experiment.pop('voxgraph_yaml_data')
         data_to_yaml_generated = changeBaseDictDataWithOtherDict(
             base_voxgraph_yaml_data, experiment_voxgraph_yaml_data_changes)
         logger.info(data_to_yaml_generated)
