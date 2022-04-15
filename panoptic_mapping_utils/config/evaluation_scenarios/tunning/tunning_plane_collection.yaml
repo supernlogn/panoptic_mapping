@@ -1,0 +1,187 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+defaults:
+  base_name: "runWithVoxgraph_plane_collection"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+experiment1:
+  name: num_iterations_1000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 1000
+
+experiment2:
+  name: num_iterations_2000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 2000
+
+experiment3:
+  name: num_iterations_5000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 5000
+
+experiment4:
+  name: num_iterations_10000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+
+experiment5:
+  name: min_points_500
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_min_points: 500
+
+experiment6:
+  name: min_points_1000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_min_points: 1000
+
+experiment7:
+  name: min_points_2000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_min_points: 2000
+
+experiment8:
+  name: min_points_4000
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_min_points: 4000
+
+experiment9:
+  name: epsilon_0_01
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_epsilon: 0.01
+
+experiment10:
+  name: epsilon_0_02
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_epsilon: 0.02
+
+experiment11:
+  name: epsilon_0_05
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_epsilon: 0.05
+
+experiment12:
+  name: epsilon_0_1
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_epsilon: 0.1
+
+experiment13:
+  name: cluster_epsilon_0_01
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_cluster_epsilon: 0.01
+
+experiment14:
+  name: cluster_epsilon_0_02
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_cluster_epsilon: 0.02
+
+experiment15:
+  name: cluster_epsilon_0_05
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_cluster_epsilon: 0.05
+
+experiment16:
+  name: cluster_epsilon_0_1
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      optimize_poses_online: false
+      use_submap_stitching: true
+      plane_collection:
+        num_iterations: 10000
+        ransac_cluster_epsilon: 0.1
+

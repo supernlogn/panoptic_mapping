@@ -1,0 +1,29 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+defaults:
+  base_name: "runWithVoxgraph_drift_behavior"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "flat_groundtruth"
+
+experiment1:
+  name: light
+  drift_type: light
+
+experiment2:
+  name: moderate
+  drift_type: moderate
+
+experiment3:
+  name: strong
+  drift_type: strong
+
+experiment4:
+  name: severe
+  drift_type: severe

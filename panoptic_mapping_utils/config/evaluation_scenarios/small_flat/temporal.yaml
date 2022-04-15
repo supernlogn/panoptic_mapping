@@ -1,0 +1,245 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+defaults:
+  base_path: "/home/ioannis/datasets/flat_dataset/run1"
+  base_name: "runWithVoxgraph_interpolation_"
+  name: default
+  use_noise: true
+  drift_type: severe
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+# run 1 no use of our algo
+experiment1:
+  name: light_none_run1
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment2:
+  name: moderate_none_run1
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment3:
+  name: strong_none_run1
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment4:
+  name: severe_none_run1
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+# run 1 using our algo
+experiment5:
+  name: light_on_run1
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment6:
+  name: moderate_on_run1
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment7:
+  name: strong_on_run1
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment8:
+  name: severe_on_run1
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+# run 2 no use of our algo
+experiment9:
+  name: light_none_run2
+  drift_type: light
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment10:
+  name: moderate_none_run2
+  drift_type: moderate
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment11:
+  name: strong_none_run2
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment12:
+  name: severe_none_run2
+  drift_type: severe
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+# run 2 using our algo
+experiment13:
+  name: light_on_run2
+  drift_type: light
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment14:
+  name: moderate_on_run2
+  drift_type: moderate
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment15:
+  name: strong_on_run2
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment16:
+  name: severe_on_run2
+  drift_type: severe
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+
+## Change detection
+
+
+# run 2 no use of our algo
+experiment17:
+  name: light_none_run2_change
+  drift_type: light
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment0/runWithVoxgraph_interpolation_light_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment18:
+  name: moderate_none_run2_change
+  drift_type: moderate
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment1/runWithVoxgraph_interpolation_moderate_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment19:
+  name: strong_none_run2_change
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment2/runWithVoxgraph_interpolation_strong_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+experiment20:
+  name: severe_none_run2_change
+  drift_type: severe
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment3/runWithVoxgraph_interpolation_severe_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+# run 2 using our algo
+experiment21:
+  name: light_on_run2_change
+  drift_type: light
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment4/runWithVoxgraph_interpolation_light_on_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment22:
+  name: moderate_on_run2_change
+  drift_type: moderate
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment5/runWithVoxgraph_interpolation_moderate_on_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment23:
+  name: strong_on_run2_change
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment6/runWithVoxgraph_interpolation_strong_on_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment24:
+  name: severe_on_run2_change
+  drift_type: severe
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal/experiment7/runWithVoxgraph_interpolation_severe_on_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+
+
+

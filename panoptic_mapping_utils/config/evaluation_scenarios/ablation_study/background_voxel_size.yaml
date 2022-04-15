@@ -1,0 +1,53 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+base_voxgraph_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper.yaml"
+defaults:
+  base_name: "runWithVoxgraph_per_"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+  voxgraph_config: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper_generated.yaml"
+
+
+experiment1:
+  name: background_voxel_size_0_04
+  panoptic_yaml_data:
+    background_submap_allocator:
+      background_voxel_size: 0.04
+      unknown_voxel_size: 0.05
+  voxgraph_yaml_data:
+    tsdf_voxel_size: 0.04
+
+experiment2:
+  name: background_voxel_size_0_05
+  panoptic_yaml_data:
+    background_submap_allocator:
+      background_voxel_size: 0.05
+      unknown_voxel_size: 0.05
+  voxgraph_yaml_data:
+    tsdf_voxel_size: 0.05
+
+experiment3:
+  name: background_voxel_size_0_07
+  panoptic_yaml_data:
+    background_submap_allocator:
+      background_voxel_size: 0.07
+      unknown_voxel_size: 0.07
+  voxgraph_yaml_data:
+    tsdf_voxel_size: 0.07
+
+experiment4:
+  name: background_voxel_size_0_10
+  panoptic_yaml_data:
+    background_submap_allocator:
+      background_voxel_size: 0.10
+      unknown_voxel_size: 0.10
+  voxgraph_yaml_data:
+    tsdf_voxel_size: 0.10

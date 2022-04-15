@@ -1,0 +1,84 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+defaults:
+  base_name: "runWithVoxgraph_per_"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+experiment1:
+  name: n_5
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 5
+
+experiment2:
+  name: n_6
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 6
+
+experiment3:
+  name: n_8
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 8
+
+experiment4:
+  name: n_10
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 10
+
+experiment5:
+  name: n_12
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 12
+
+experiment6:
+  name: n_14
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 14
+
+experiment7:
+  name: n_16
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 16
+
+experiment8:
+  name: n_18
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 18
+
+experiment9:
+  name: n_20
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 20
+
+experiment10:
+  name: n_22
+  panoptic_yaml_data:
+    map_management:
+      activity_manager:
+        new_background_per_n_ticks: 22

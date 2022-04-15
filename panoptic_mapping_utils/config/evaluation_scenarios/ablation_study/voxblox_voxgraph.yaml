@@ -1,0 +1,30 @@
+launch_file: runWithVoxgraph.launch
+defaults:
+  base_name: "voxgraph_traj_icp_off_"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+experiment1:
+  name: "light"
+  drift_type: light
+
+experiment2:
+  name: "moderate"
+  drift_type: moderate
+
+experiment3:
+  name: "strong"
+  drift_type: strong
+
+experiment4:
+  name: "severe"
+  drift_type: severe
+
+# This is not inteded for experiment execution 

@@ -1,0 +1,142 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth.yaml"
+defaults:
+  base_path: "/home/ioannis/datasets/flat_dataset/run1"
+  base_name: "runWithVoxgraph_"
+  name: default
+  use_noise: true
+  drift_type: severe
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+# run 1 no use of our algo
+# experiment1:
+#   name: light_none_run1
+#   drift_type: light
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+# experiment2:
+#   name: moderate_none_run1
+#   drift_type: moderate
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+experiment1:
+  name: strong_none_run1
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+# experiment4:
+#   name: severe_none_run1
+#   drift_type: severe
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+# run 2 no use of our algo
+# experiment5:
+#   name: light_none_run2
+#   drift_type: light
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+# experiment6:
+#   name: moderate_none_run2
+#   drift_type: moderate
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+experiment2:
+  name: strong_none_run2
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  panoptic_yaml_data:
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+# experiment8:
+#   name: severe_none_run2
+#   drift_type: severe
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   panoptic_yaml_data:
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+## Change detection
+
+
+# run 2 no use of our algo
+# experiment9:
+#   name: light_none_run2_change
+#   drift_type: light
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   load_map: "/home/ioannis/datasets/temporal_voxgraph/experiment1/runWithVoxgraph_light_none_run1.panmap"
+#   panoptic_yaml_data:
+#     visualization:
+#       color_mode: change
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+# experiment10:
+#   name: moderate_none_run2_change
+#   drift_type: moderate
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   load_map: "/home/ioannis/datasets/temporal_voxgraph/experiment2/runWithVoxgraph_moderate_none_run1.panmap"
+#   panoptic_yaml_data:
+#     visualization:
+#       color_mode: change
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+
+experiment3:
+  name: strong_none_run2_change
+  drift_type: strong
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment0/runWithVoxgraph_strong_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      submaps:
+        color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: true
+
+experiment4:
+  name: strong_none_run2_change
+  drift_type: none
+  base_path: "/home/ioannis/datasets/flat_dataset/run2"
+  load_map: true
+  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment0/runWithVoxgraph_strong_none_run1.panmap"
+  panoptic_yaml_data:
+    visualization:
+      submaps:
+        color_mode: change
+    map_management:
+      send_deactivated_submaps_to_voxgraph: false
+
+
+# experiment12:
+#   name: severe_none_run2_change
+#   drift_type: severe
+#   base_path: "/home/ioannis/datasets/flat_dataset/run2"
+#   load_map: "/home/ioannis/datasets/temporal_voxgraph/experiment4/runWithVoxgraph_severe_none_run1.panmap"
+#   panoptic_yaml_data:
+#     visualization:
+#       color_mode: change
+#     map_management:
+#       send_deactivated_submaps_to_voxgraph: true
+

@@ -1,0 +1,113 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+defaults:
+  base_name: "runWithVoxgraph_per_"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+
+
+experiment1:
+  name: submaps_to_merge_1_ticks_6
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 1
+      activity_manager:
+        new_background_per_n_ticks: 6
+
+experiment2:
+  name: submaps_to_merge_1_ticks_8
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 1
+      activity_manager:
+        new_background_per_n_ticks: 8
+
+experiment3:
+  name: submaps_to_merge_1_ticks_10
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 1
+      activity_manager:
+        new_background_per_n_ticks: 10
+
+experiment4:
+  name: submaps_to_merge_1_ticks_12
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 1
+      activity_manager:
+        new_background_per_n_ticks: 12
+
+
+experiment5:
+  name: submaps_to_merge_3_ticks_6
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 3
+      activity_manager:
+        new_background_per_n_ticks: 6
+
+experiment6:
+  name: submaps_to_merge_3_ticks_8
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 3
+      activity_manager:
+        new_background_per_n_ticks: 8
+
+experiment7:
+  name: submaps_to_merge_3_ticks_10
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 3
+      activity_manager:
+        new_background_per_n_ticks: 10
+
+experiment8:
+  name: submaps_to_merge_3_ticks_12
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 3
+      activity_manager:
+        new_background_per_n_ticks: 12
+
+
+experiment9:
+  name: submaps_to_merge_5_ticks_6
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 5
+      activity_manager:
+        new_background_per_n_ticks: 6
+
+experiment10:
+  name: submaps_to_merge_5_ticks_8
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 5
+      activity_manager:
+        new_background_per_n_ticks: 8
+
+experiment11:
+  name: submaps_to_merge_5_ticks_10
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 5
+      activity_manager:
+        new_background_per_n_ticks: 10
+
+experiment12:
+  name: submaps_to_merge_5_ticks_12
+  panoptic_yaml_data:
+    map_management:
+      num_submaps_to_merge_for_voxgraph: 5
+      activity_manager:
+        new_background_per_n_ticks: 12

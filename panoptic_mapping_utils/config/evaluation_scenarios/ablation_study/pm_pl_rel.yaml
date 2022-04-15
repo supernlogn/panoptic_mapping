@@ -1,0 +1,85 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+base_voxgraph_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper.yaml"
+defaults:
+  base_name: "runWithVoxgraph_drift_behavior"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+  voxgraph_config: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper_generated.yaml"
+
+experiment1:
+  name: pm_voxgraph_planes_plus_relative_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment2:
+  name: pm_voxgraph_planes_plus_relative_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment3:
+  name: pm_voxgraph_planes_plus_relative_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment4:
+  name: pm_voxgraph_planes_plus_relative_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true

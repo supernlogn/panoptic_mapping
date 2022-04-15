@@ -1,0 +1,365 @@
+launch_file: runWithVoxgraph.launch
+time_for_experiment: 200
+base_panoptic_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_ros/config/mapper/flat_groundtruth_with_voxgraph.yaml"
+base_voxgraph_yaml_data: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper.yaml"
+defaults:
+  base_name: "runWithVoxgraph_drift_behavior"
+  name: default
+  use_noise: true
+  drift_type: strong
+  use_sim_time: false
+  play_rate: 1
+  debug_mode: false
+  save_map_path_when_finished: "default_map.panmap"
+  shutdown_when_finished: true
+  config: "generated"
+  voxgraph_config: "/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/config/voxgraph/voxgraph_mapper_generated.yaml"
+
+experiment1:
+  name: pm_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      merge_deactivated_submaps_if_possible: true
+      avoid_merging_deactivated_background_submaps: false
+      send_deactivated_submaps_to_voxgraph: false
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: false
+experiment2:
+  name: pm_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      merge_deactivated_submaps_if_possible: true
+      avoid_merging_deactivated_background_submaps: false
+      send_deactivated_submaps_to_voxgraph: false
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: false
+experiment3:
+  name: pm_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      merge_deactivated_submaps_if_possible: true
+      avoid_merging_deactivated_background_submaps: false
+      send_deactivated_submaps_to_voxgraph: false
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: false
+experiment4:
+  name: pm_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      merge_deactivated_submaps_if_possible: true
+      avoid_merging_deactivated_background_submaps: false
+      send_deactivated_submaps_to_voxgraph: false
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: false
+
+experiment5:
+  name: pm_voxgraph_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: false
+
+experiment6:
+  name: pm_voxgraph_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: false
+experiment7:
+  name: pm_voxgraph_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: false
+experiment8:
+  name: pm_voxgraph_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: false
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: false
+
+experiment9:
+  name: pm_voxgraph_planes_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment10:
+  name: pm_voxgraph_planes_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment11:
+  name: pm_voxgraph_planes_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment12:
+  name: pm_voxgraph_planes_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: true
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+
+experiment13:
+  name: pm_voxgraph_planes_no_relative_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: true
+experiment14:
+  name: pm_voxgraph_planes_no_relative_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: true
+experiment15:
+  name: pm_voxgraph_planes_no_relative_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: true
+experiment16:
+  name: pm_voxgraph_planes_no_relative_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: false
+      planes:
+        enabled: true
+experiment17:
+  name: pm_voxgraph_planes_plus_relative_light
+  drift_type: light
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment18:
+  name: pm_voxgraph_planes_plus_relative_moderate
+  drift_type: moderate
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment19:
+  name: pm_voxgraph_planes_plus_relative_strong
+  drift_type: strong
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
+experiment20:
+  name: pm_voxgraph_planes_plus_relative_severe
+  drift_type: severe
+  panoptic_yaml_data:
+    map_management:
+      avoid_merging_deactivated_background_submaps: true
+      send_deactivated_submaps_to_voxgraph: true
+      use_submap_stitching: true
+      optimize_poses_online: false
+  voxgraph_yaml_data:
+    measurements:
+      submap_registration:
+        enabled: false
+      odometry:
+        enabled: true
+      planes:
+        enabled: true
