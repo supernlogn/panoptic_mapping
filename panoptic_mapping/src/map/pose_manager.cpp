@@ -105,7 +105,8 @@ void PoseManager::addSubmapIdToPose(const poseIdType pose_id,
 
 void PoseManager::addSubmapIdToPoses(const poseIdType submap_id,
                                      const std::set<poseIdType>& pose_ids) {
-  CHECK(submap_id_to_pose_id_.find(submap_id) != submap_id_to_pose_id_.end());
+  // CHECK(submap_id_to_pose_id_.find(submap_id) !=
+  // submap_id_to_pose_id_.end());
   for (const PoseManager::poseIdType p_id : pose_ids) {
     addSubmapIdToPose(p_id, submap_id);
   }

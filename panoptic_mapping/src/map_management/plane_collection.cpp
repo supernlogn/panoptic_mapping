@@ -91,7 +91,10 @@ void PlaneCollection::processSubmap(Submap* s) {
   if (s->getIsoSurfacePoints().size() == 0u) {
     s->updateEverything();
   }
-  CHECK_NE(s->getIsoSurfacePoints().size(), 0u);
+  if (s->getIsoSurfacePoints().size() == 0u) {
+    return;
+  }
+  // CHECK_NE(s->getIsoSurfacePoints().size(), 0u);
   LOG(INFO) << "Calling plane collection";
   applyClassPreFilter(&filtered_class_indices, s->getTsdfLayer(),
                       s->getMeshLayer(), s->getClassLayer());
