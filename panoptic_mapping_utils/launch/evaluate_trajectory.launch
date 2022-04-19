@@ -1,7 +1,7 @@
 <launch>
 <!-- ============ Arguments ============ -->
   <!-- Groundtruth -->
-  <arg name="generated_path_file_path" default="/home/ioannis/catkin_ws/src/panoptic_mapping/panoptic_mapping_utils/generated_path.txt"/>
+  <arg name="generated_path_file_path" default="/home/ioannis/datasets/generated_path.txt"/>
   
   <!-- Params -->
   <arg name="evaluate_only_optimized_points" default="false"/>

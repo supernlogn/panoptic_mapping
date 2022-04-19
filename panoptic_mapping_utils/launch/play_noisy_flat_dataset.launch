@@ -7,7 +7,7 @@
   <arg name="wait" default="false"/>
   <arg name="namespace" default="data"/>
   <arg name="use_detectron" default="false"/>
-  <arg name="max_frames" default="1e9"/>
+  <arg name="max_frames" default="100000"/>
   <arg name="global_frame_name" default="world"/>
   <arg name="sensor_frame_name" default="depth_camera"/>
   <arg name="use_noise" default="true"/>

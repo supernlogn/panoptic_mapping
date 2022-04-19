@@ -11,8 +11,8 @@
   <!-- Flat Dataset args -->
   <arg name="base_path" default="/home/ioannis/datasets/large_flat/run1"/> 
   <arg name="play_rate" default="5"/>  <!-- Realtime factor -->
-  <arg name="wait_time" default="0"/>  <!-- s -->
-  <arg name="max_frames" default="1000"/> <!-- 90 -->
+  <arg name="wait_time" default="10"/>  <!-- s -->
+  <arg name="max_frames" default="10000"/> <!-- 90 -->
 
   <!-- Rio Dataset args -->
   <arg name="data_path" default="/home/ioannis/datasets/3RScan"/> 
@@ -23,10 +23,11 @@
   <!-- Mapper -->
   <arg name="use_rosbag_for_pm" default="false"/>
   <arg name="record_pm" default="false"/>
-  <arg name="config" default="flat_groundtruth"/> <!-- flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
+  <arg name="config" default="flat_groundtruth_with_voxgraph"/> <!-- flat_groundtruth_with_voxgraph, flat_groundtruth, flat_detectron, rio_groundtruth, rio_detectron, single_tsdf -->
   <arg name="shutdown_when_finished" default="true"/> 
   <arg name="save_voxgraph_trajectory_on_finish" default="/home/ioannis/datasets/voxgraph_traj.bag"/>
   <arg name="save_pm_trajectory_on_finish" default="/home/ioannis/datasets/trajectory.in"/>
+  <arg name="debug_mid_poses_file" default="/home/ioannis/datasets/mid_poses.bag"/>
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/ioannis/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
@@ -43,7 +44,9 @@
        doc="Run the mapper in debug mode." />
   <arg unless="$(arg debug_mode)" name="launch_prefix" value="" />
   <arg if="$(arg debug_mode)" name="launch_prefix" value="gdb -ex run --args" />
-
+  <arg name="voxgraph_mapper_prefix"
+       default=""
+       doc="run prefix for the voxgraph mapper"/>
 <!-- ============ Run ============ -->
   <!-- Play data -->
   <arg name="wait" default="true" if="$(arg load_map)"/>
@@ -59,6 +62,7 @@
     <param name="save_map_path_when_finished" value="$(arg save_map_path_when_finished)"/>
     <param name="map_management/save_voxgraph_trajectory_on_finish" value="$(arg save_voxgraph_trajectory_on_finish)"/>
     <param name="map_management/save_trajectory_on_finish" value="$(arg save_pm_trajectory_on_finish)"/>
+    <param name="map_management/debug_mid_poses_file" value="$(arg debug_mid_poses_file)"/>
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
@@ -74,9 +78,9 @@
   </node>
 
   <!-- Voxgraph -->
-  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" launch-prefix="$(arg voxgraph_mapper_prefix)">
     <rosparam file="$(find panoptic_mapping_utils)/config/voxgraph/voxgraph_mapper.yaml"/>
-    <param name="submap_topic" value="/panoptic_mapper/background_submap_out" />
+    <param name="submap_with_planes_topic" value="/panoptic_mapper/background_submap_out" />
   </node>
 
 
