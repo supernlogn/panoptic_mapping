@@ -183,6 +183,8 @@ bool SubmapCollection::loadFromFile(const std::string& file_path,
 
     // Add to the collection.
     id_to_index_[submap_ptr->getID()] = submaps_.size();
+    PoseManager::getGlobalInstance()->addSubmapIdToPoses(
+        submap_ptr->getID(), submap_ptr->getPoseHistory());
     submaps_.emplace_back(std::move(submap_ptr));
   }
   proto_file.close();
