@@ -364,13 +364,19 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     // optimize last background in case it was not optimized
     // because of lack of frames
     // NOTE(supernlogn): Last background will always lack frames
-    if (submaps->getBackground()->getT_M_S() == Transformation() &&
-        config_.optimize_last_background_separately) {
-      submaps->getBackground()->setT_M_S(
-          submaps
-              ->getSubmapPtr(*(published_submap_ids_to_voxgraph_.rbegin() + 1))
-              ->getT_M_S());
-      submaps->getBackground()->updateEverything(/*only_updated_blocks=*/false);
+    if (submaps->backgroundExists()) {
+      if (submaps->getBackground()->getT_M_S() == Transformation() &&
+          config_.optimize_last_background_separately) {
+        submaps->getBackground()->setT_M_S(
+            submaps
+                ->getSubmapPtr(
+                    *(published_submap_ids_to_voxgraph_.rbegin() + 1))
+                ->getT_M_S());
+        submaps->getBackground()->updateEverything(
+            /*only_updated_blocks=*/false);
+      }
+    } else {
+      LOG(ERROR) << "BACKGROUND DOES NOT EXIST";
     }
   }
   {
@@ -530,7 +536,7 @@ void MapManager::optimizedVoxgraphPosesCallback(
 void MapManager::optimizePosesWithVoxgraphPoses(SubmapCollection* submaps) {
   // The elements of the voxgraph_correction_tfs_ queue are updated in
   // optimizedVoxgraphPosesCallback when a message with optimized poses
-  // is received from Voxgraph. The front elements of the queue are used
+  // is received from Voxgraph. The back elements of the queue are used
   // here to update the background submap sent to voxgraph and which the
   // optimized pose regards to. To find this submap, the
   // published_submap_ids_to_voxgraph_ is used.
