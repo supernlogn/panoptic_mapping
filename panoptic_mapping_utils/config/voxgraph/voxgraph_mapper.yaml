@@ -2,7 +2,7 @@ verbose: false
 debug: true
 auto_pause_rosbag: false
 
-submap_creation_interval: 5
+submap_creation_interval: 10
 loop_closure_topic_queue_length: 1000
 submap_topic_queue_length: 100
 publisher_queue_length: 100
@@ -25,14 +25,14 @@ tsdf_integrator:
   max_ray_length_m: 5.0
   use_const_weight: false
   use_weight_dropoff: true
-  use_sparsity_compensation_factor: true
+  use_sparsity_compensation_factor: false
   sparsity_compensation_factor: 20.0
   # integration_order_mode: "sorted"
 
 measurements:
   submap_registration:
     enabled: true
-    sampling_ratio: 1.0
+    sampling_ratio: 0.1
     registration_method: "explicit_to_implicit"
     information_matrix:
       x_x:     1.0
@@ -50,12 +50,12 @@ measurements:
     enabled: false
     information_zz: 2500.0
   planes:
-    enabled: false
+    enabled: true
     information_matrix:
-      x_x:     100.0
-      y_y:     100.0
-      z_z:     100.0
-      yaw_yaw: 50.0
-mesh_min_weight: 0.000001
+      x_x:     1000.0
+      y_y:     1000.0
+      z_z:     2500.0
+      yaw_yaw: 1000.0
+mesh_min_weight: 2.0
 submap_mesh_color_mode: "lambert_color"
-combined_mesh_color_mode: "color"
+combined_mesh_color_mode: "normals"
