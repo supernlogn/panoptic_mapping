@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Panoptic Mapper1
         - /Panoptic Mapper1/Mesh1
+        - /Panoptic Mapper1/MarkerArray1
         - /Voxgraph1
         - /Voxgraph1/Meshes1
         - /Voxgraph1/Meshes1/Merged map1
@@ -94,23 +95,8 @@ Visualization Manager:
           Unreliable: false
           Value: true
           Visible:
-            102_SM_Floor_a: true
-            116_SM_Floor_a: true
-            135_SM_Floor_a: true
-            148_SM_Floor_a: true
-            155_SM_Floor_a: true
-            168_SM_Floor_a: true
-            199_SM_Floor_a: true
-            21_SM_Floor_a: true
-            225_SM_Floor_a: true
-            241_SM_Floor_a: true
-            2_SM_Floor_a: true
-            37_SM_Floor_a: true
-            53_SM_Floor_a: true
-            69_SM_Floor_a: true
-            85_SM_Floor_a: true
-            94_SM_Floor_a: true
-            Value: false
+            0_Unknown: true
+            Value: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -215,22 +201,14 @@ Visualization Manager:
               Value: true
           Enabled: false
           Name: Tracking
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /panoptic_mapper/planes_bboxes
-          Name: Marker
+        - Class: rviz/MarkerArray
+          Enabled: false
+          Marker Topic: /panoptic_mapper/planes_visualization
+          Name: MarkerArray
           Namespaces:
-            "": true
+            {}
           Queue Size: 100
-          Value: true
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /panoptic_mapper/planes_normals
-          Name: Marker
-          Namespaces:
-            normal: true
-          Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
       Name: Panoptic Mapper
     - Class: rviz/Group
@@ -253,28 +231,15 @@ Visualization Manager:
               Topic: /voxgraph_mapper/separated_mesh
               Unreliable: false
               Value: true
-              Visible:
-                Value: true
-                submap_0: true
-                submap_1: true
-                submap_10: true
-                submap_12: true
-                submap_2: true
-                submap_3: true
-                submap_4: true
-                submap_5: true
-                submap_6: true
-                submap_7: true
-                submap_8: true
-                submap_9: true
+              Visible: false
             - Class: rviz/MarkerArray
-              Enabled: true
+              Enabled: false
               Marker Topic: /voxgraph_mapper/submap_stitcher
               Name: MarkerArray
               Namespaces:
                 {}
               Queue Size: 100
-              Value: true
+              Value: false
           Enabled: true
           Name: Meshes
         - Class: rviz/Marker
@@ -358,7 +323,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -371,7 +336,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 1000
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Class: voxblox_rviz_plugin/VoxbloxMesh
@@ -420,7 +385,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 17.3173828125
+      Distance: 19.673583984375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -428,17 +393,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.6235504150390625
-        Y: -0.23040300607681274
-        Z: -1.2022953033447266
+        X: 1.3984594345092773
+        Y: -0.07690143585205078
+        Z: -1.2160253524780273
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.324797123670578
+      Pitch: 1.4160593748092651
       Target Frame: <Fixed Frame>
-      Yaw: 1.3151060342788696
+      Yaw: 1.5609991550445557
     Saved: ~
 Window Geometry:
   Color:
