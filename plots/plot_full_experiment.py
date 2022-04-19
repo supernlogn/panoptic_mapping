@@ -4,6 +4,7 @@ import sys
 import logging
 import plot_trajectories
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 logger = logging.getLogger()
 
 

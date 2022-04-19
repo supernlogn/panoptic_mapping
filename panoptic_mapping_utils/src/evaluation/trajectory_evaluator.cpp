@@ -9,8 +9,12 @@
 #include <vector>
 
 #include <Eigen/Dense>
+#include <geometry_msgs/TransformStamped.h>
+#include <minkindr_conversions/kindr_msg.h>
 #include <panoptic_mapping/3rd_party/config_utilities.hpp>
 #include <ros/ros.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
 
 #include "panoptic_mapping_utils/evaluation/progress_bar.h"
 
@@ -30,114 +34,90 @@ void TrajectoryEvaluator::EvaluationRequest::setupParamsAndPrinting() {
   setupParam("max_distance_allowed", &max_distance_allowed);
 }
 
-void read4x4MatrixFromFile(std::ifstream* ifile, Transformation* ret) {
-  Transformation::TransformationMatrix mat;
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      double t;
-      *ifile >> t;
-      mat(i, j) = t;
-    }
-  }
-  *ret = Transformation(mat);
-}
-
 void TrajectoryEvaluator::readOptimizedTrajectory(
     const TrajectoryEvaluator::EvaluationRequest& request) {
   // Load the provided trajectory.
-  std::ifstream trajectory_file(request.trajectory_file_path,
-                                std::ios::in | std::ios::binary);
-  int num_trajectory_points = -1;
-  if (!trajectory_file.is_open()) {
-    LOG(ERROR) << "trajectory file at " << request.trajectory_file_path
-               << " cannot be opened";
+  {
+    std::ifstream trajectory_file(request.trajectory_file_path,
+                                  std::ios::in | std::ios::binary);
+    if (!trajectory_file) {
+      LOG(ERROR) << "trajectory file at " << request.trajectory_file_path
+                 << " cannot be opened";
+      return;
+    }
   }
-  trajectory_file >> num_trajectory_points;
-  LOG_IF(INFO, request.verbosity > 1)
-      << "num_trajectory_points: " << num_trajectory_points << '\n';
-
-  for (int i = 0; i < num_trajectory_points; ++i) {
+  const std::string topic = "pose_history";
+  rosbag::Bag bag;
+  bag.open(request.trajectory_file_path, rosbag::bagmode::Read);
+  for (rosbag::MessageInstance const m :
+       rosbag::View(bag, rosbag::TopicQuery(topic))) {
     PoseManager::PoseInformation p_info;
-    double t;
-    read4x4MatrixFromFile(&trajectory_file, &p_info.pose);
-    trajectory_file >> p_info.pose_idx;
-    trajectory_file >> t;
-    p_info.time = ros::Time(t);
+    geometry_msgs::PoseStamped::ConstPtr tfs =
+        m.instantiate<geometry_msgs::PoseStamped>();
+    if (tfs == nullptr) {
+      continue;
+    }
+    kindr::minimal::QuatTransformationTemplate<double> pose_d;
+    tf::poseMsgToKindr(tfs->pose, &pose_d);
+    p_info.pose = pose_d.cast<float>();
+    p_info.pose_init = pose_d.cast<float>();
+    p_info.time = tfs->header.stamp;
     optimized_trajectory_.push_back(p_info);
   }
+  bag.close();
 }
 
 void TrajectoryEvaluator::readGroundTruthTrajectory(
     const TrajectoryEvaluator::EvaluationRequest& request) {
   // Load the groundtruth and noisy trajectories.
-  std::ifstream gt_file(request.generated_path_file_path);
-  int counter = 0;
-  while (!gt_file.eof()) {
-    PoseManager::PoseInformation p_info_gt;
-    PoseManager::PoseInformation p_info_wd;
-    std::string s;
-    double time;
-    char c;
-    double rotation_x, rotation_y, rotation_z, rotation_w, translation_x,
-        translation_y, translation_z;
-    // reading time
-    std::getline(gt_file, s, ':');
-    gt_file >> time;
-    // reading ground_truth pose
-    // reading rotation
-    std::getline(gt_file, s, '[');
-    gt_file >> rotation_x;
-    gt_file >> c >> rotation_y;
-    gt_file >> c >> rotation_z;
-    gt_file >> c >> rotation_w;
-    // reading translation
-    std::getline(gt_file, s, '[');
-    gt_file >> translation_x;
-    gt_file >> c >> translation_y;
-    gt_file >> c >> translation_z;
-    gt_file >> c;
-    {
-      Transformation::Rotation rotation(rotation_w, rotation_x, rotation_y,
-                                        rotation_z);
-      Transformation::Vector3 translation(translation_x, translation_y,
-                                          translation_z);
-      Transformation pose(translation, rotation);
-      p_info_gt.pose = pose;
-      p_info_gt.time = ros::Time(time);
+  {
+    std::ifstream gt_file(request.generated_path_file_path);
+    if (!gt_file) {
+      LOG(ERROR) << "file " << request.generated_path_file_path
+                 << " does not exist";
+      return;
     }
-    ground_truth_trajectory_.push_back(p_info_gt);
-    // reading pose with drift
-    std::getline(gt_file, s, ':');
-    // reading rotation
-    std::getline(gt_file, s, '[');
-    gt_file >> rotation_x;
-    gt_file >> c >> rotation_y;
-    gt_file >> c >> rotation_z;
-    gt_file >> c >> rotation_w;
-    // reading translation
-    std::getline(gt_file, s, '[');
-    gt_file >> translation_x;
-    gt_file >> c >> translation_y;
-    gt_file >> c >> translation_z;
-    gt_file >> c;
-    {
-      Transformation::Rotation rotation(rotation_w, rotation_x, rotation_y,
-                                        rotation_z);
-      Transformation::Vector3 translation(translation_x, translation_y,
-                                          translation_z);
-      Transformation pose(translation, rotation);
-      p_info_wd.pose = pose;
-      p_info_wd.time = ros::Time(time);
-    }
-    drifted_trajectory_.push_back(p_info_wd);
-    // reading till last character
-    std::getline(gt_file, s, '\n');
   }
+  // std::string topic="pose_history"
+  const std::string gt_topic = "data/pose_ground_truth";
+  const std::string drifted_topic = "data/pose";
+  rosbag::Bag bag;
+  bag.open(request.generated_path_file_path, rosbag::bagmode::Read);
+  for (rosbag::MessageInstance const m :
+       rosbag::View(bag, rosbag::TopicQuery(gt_topic))) {
+    PoseManager::PoseInformation p_info_gt;
+    geometry_msgs::TransformStamped::ConstPtr tfs =
+        m.instantiate<geometry_msgs::TransformStamped>();
+    if (tfs == nullptr) {
+      continue;
+    }
+    kindr::minimal::QuatTransformationTemplate<double> pose_d;
+    tf::transformMsgToKindr(tfs->transform, &pose_d);
+    p_info_gt.pose = pose_d.cast<float>();
+    p_info_gt.pose_init = pose_d.cast<float>();
+    p_info_gt.time = tfs->header.stamp;
+    ground_truth_trajectory_.push_back(p_info_gt);
+  }
+  for (rosbag::MessageInstance const m :
+       rosbag::View(bag, rosbag::TopicQuery(drifted_topic))) {
+    PoseManager::PoseInformation p_info_gt;
+    geometry_msgs::TransformStamped::ConstPtr tfs =
+        m.instantiate<geometry_msgs::TransformStamped>();
+    if (tfs == nullptr) {
+      continue;
+    }
+    kindr::minimal::QuatTransformationTemplate<double> pose_d;
+    tf::transformMsgToKindr(tfs->transform, &pose_d);
+    p_info_gt.pose = pose_d.cast<float>();
+    p_info_gt.pose_init = pose_d.cast<float>();
+    p_info_gt.time = tfs->header.stamp;
+    drifted_trajectory_.push_back(p_info_gt);
+  }
+  bag.close();
 }
 
 std::pair<double, double> distanceMetric(const Transformation& poseL,
                                          const Transformation& poseR) {
-  const auto logDiff = Transformation::log(poseL) - Transformation::log(poseR);
   double positional_error =
       (poseL.getPosition() - poseR.getPosition()).squaredNorm();
   const voxblox::Rotation qr =

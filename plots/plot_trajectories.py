@@ -1,5 +1,7 @@
 # pylint: skip-file
+from enum import unique
 import json
+import csv
 import math
 from typing import final
 import numpy as np
@@ -14,28 +16,9 @@ PI = math.pi
 import rosbag
 import yaml
 
-# The 24 posible rotations of 0, 90,-90, 180 around the 3 axis
-picks = [[[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
-         [[-1, 0, 0], [0, 0, -1], [0, -1, 0]],
-         [[-1, 0, 0], [0, 0, 1], [0, 1, 0]], [[-1, 0, 0], [0, 1, 0],
-                                              [0, 0, -1]],
-         [[0, -1, 0], [-1, 0, 0], [0, 0, -1]],
-         [[0, 0, 1], [-1, 0, 0], [0, -1, 0]],
-         [[0, 0, -1], [-1, 0, 0], [0, 1, 0]], [[0, 1, 0], [-1, 0, 0],
-                                               [0, 0, 1]],
-         [[0, -1, 0], [0, 0, 1], [-1, 0, 0]],
-         [[0, 0, -1], [0, -1, 0], [-1, 0, 0]],
-         [[0, 0, 1], [0, 1, 0], [-1, 0, 0]], [[0, 1, 0], [0, 0, -1],
-                                              [-1, 0, 0]],
-         [[0, -1, 0], [0, 0, -1], [1, 0, 0]], [[0, 0, 1], [0, -1, 0],
-                                               [1, 0, 0]],
-         [[0, 0, -1], [0, 1, 0], [1, 0, 0]], [[0, 1, 0], [0, 0, 1], [1, 0, 0]],
-         [[0, -1, 0], [1, 0, 0], [0, 0, 1]], [[0, 0, -1], [1, 0, 0],
-                                              [0, -1, 0]],
-         [[0, 0, 1], [1, 0, 0], [0, 1, 0]], [[0, 1, 0], [1, 0, 0], [0, 0, -1]],
-         [[1, 0, 0], [0, -1, 0], [0, 0, -1]], [[1, 0, 0], [0, 0, 1],
-                                               [0, -1, 0]],
-         [[1, 0, 0], [0, 0, -1], [0, 1, 0]], [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]
+import get_experiment_results
+
+T_C_R = np.array([[0, -1, 0, 0], [0, 0, -1, 0], [1, 0, 0, 0], [0, 0, 0, 1]])
 
 plt.rcParams['text.usetex'] = True
 
@@ -271,13 +254,12 @@ def plotPerAxisPlusPolarAngles(gt_tr,
     return fig1, fig2
 
 
-def plotXYZErrorsPerAxis(gt_tr,
-                         wd_tr,
-                         op_tr,
-                         voxgraph_tr=np.array([]),
-                         N=None,
-                         times={},
-                         include_optimized=True):
+def computeTrajectorySynchronizedLength(gt_tr,
+                                        wd_tr,
+                                        voxgraph_tr,
+                                        times,
+                                        N=None,
+                                        **kwargs):
     if N is None and voxgraph_tr.size != 0:
         print(wd_tr.shape, gt_tr.shape)
         N = min(len(gt_tr[:, 1]), len(wd_tr[:, 1]), len(voxgraph_tr[:, 1]))
@@ -285,11 +267,12 @@ def plotXYZErrorsPerAxis(gt_tr,
         N = min(len(gt_tr[:, 1]), len(wd_tr[:, 1]))
     n1_ = np.arange(0, N)
     n2_ = np.arange(0, N)
+    pair_time_matches = []
     if len(times) > 0:
         N = min(N, len(times['panoptic_times']), len(times['voxgraph_times']))
         n1_ = times['panoptic_times'][:N]
         n2_ = times['voxgraph_times'][:N]
-        pair_time_matches = []
+
         t1_index = 0
         t2_index = 0
         # construct pairs of times of the two timeseries
@@ -304,14 +287,28 @@ def plotXYZErrorsPerAxis(gt_tr,
                 t2_index += 1
         pair_time_matches = np.array(pair_time_matches, dtype=np.int)
         N = len(pair_time_matches)
+        n1_ = n1_[pair_time_matches[:, 0]]
+        n2_ = n2_[pair_time_matches[:, 1]]
+    return N, n1_, n2_, pair_time_matches
+
+
+def plotXYZErrorsPerAxis(gt_tr,
+                         wd_tr,
+                         op_tr,
+                         voxgraph_tr=np.array([]),
+                         N=None,
+                         times={},
+                         include_optimized=True,
+                         **kwargs):
+    N, n1_, n2_, pair_time_matches = computeTrajectorySynchronizedLength(
+        gt_tr, wd_tr, voxgraph_tr, times, N)
+    if len(times) > 0:
         wd_tr = wd_tr[:N, :] - gt_tr[:N, :]
         if include_optimized:
             op_tr = op_tr[:N, :] - gt_tr[:N, :]
         if voxgraph_tr.size > 0:
             voxgraph_tr = voxgraph_tr[pair_time_matches[:, 1], :] - gt_tr[
                 pair_time_matches[:, 0], :]
-        n1_ = n1_[pair_time_matches[:, 0]]
-        n2_ = n2_[pair_time_matches[:, 1]]
     else:
         wd_tr = wd_tr[:N, :] - gt_tr[:N, :]
         if include_optimized:
@@ -337,6 +334,9 @@ def plotXYZErrorsPerAxis(gt_tr,
                                          'blue',
                                          label='voxgraph')
         axes[index % len(axes)].set_ylabel(label)
+        # for item in ([axes[index % len(axes)].title, axes[index % len(axes)].xaxis.label, axes[index % len(axes)].yaxis.label] +
+        #             axes[index % len(axes)].get_xticklabels() + axes[index % len(axes)].get_yticklabels()):
+        #     item.set_fontsize(100)
 
     plotAxisWithIndex(n1_, axes, 0, r'$\Delta x$[m]')
     plotAxisWithIndex(n1_, axes, 1, r'$\Delta y$[m]')
@@ -349,6 +349,178 @@ def plotXYZErrorsPerAxis(gt_tr,
             axes[-1].set_xlabel('sec')
         else:
             axes[-1].set_xlabel('pose idx')
+    fig.tight_layout()
+    return fig
+
+
+def getErrorFromManyExperiments(all_trajectories):
+    total_errors = {}
+    for name, info in all_trajectories.items():
+        r = computeTrajectorySynchronizedLength(**info)
+        N = r[0]
+        diff = info['op_tr'][:N, :] - info['gt_tr'][:N, :]
+        residual = diff * diff
+        total_error = np.sqrt(np.sum(residual) / N)
+        total_errors[name] = total_error
+    return total_errors
+
+
+def trajectoryVSplot(r1, r2, title="Trajectory Errors Comparison"):
+    assert r1.keys() == r2.keys(), "different number of keys"
+
+    fig = plt.figure(figsize=(16, 9))
+    ax = plt.axes()
+    width = 0.8  # the width of the bars
+    keys = [k for k in r1.keys() if not 'num_points' in k]
+    vals = np.array([float(r1[k]) for k in keys])
+    vals2 = np.array([float(r2[k]) for k in keys])
+    x = np.arange(0, len(keys))
+    ax.bar(x=(x - width / 2), height=vals, width=width / 2, label='wo interp')
+    ax.bar(x=(x), height=vals2, width=width / 2, label='w interp')
+    for i in ax.patches:
+        plt.text(i.get_x() + width / 8,
+                 i.get_height(),
+                 str(round(i.get_height(), 3)),
+                 fontsize=10,
+                 fontweight='bold',
+                 color='grey')
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(keys)
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+
+
+def plotErrorForManyExperiments(all_trajectories,
+                                title='Mapping Evaluations',
+                                error_type='RMSE[m]'):
+    fig = plt.figure(2)
+    total_errors = getErrorFromManyExperiments(all_trajectories)
+    x = np.arange(4)
+    width = 0.8
+    drift_labels = ['light', 'moderate', 'strong', 'severe']
+    labels = set([k[k.index('_') + 1:] for k in all_trajectories.keys()])
+    fig, ax = plt.subplots()
+    num_labels = len(labels)
+    for i, label in enumerate(labels):
+        vals = []
+        for j, d_label in enumerate(drift_labels):
+            vals.append(total_errors[d_label + '_' + label])
+        ax.bar(x=(x - width / 2 + i * width / num_labels),
+               height=vals,
+               width=width / num_labels,
+               label=label)
+    for i in ax.patches:
+        plt.text(i.get_x() + width / 8,
+                 i.get_height(),
+                 str(round(i.get_height(), 3)),
+                 fontsize=10,
+                 fontweight='bold',
+                 color='grey')
+    ax.set_title(title)
+    ax.set_ylabel(error_type)
+    ax.set_xticks(x)
+    ax.set_xticklabels(drift_labels)
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
+def getExperimentResults(yaml_file_path):
+    dir_final_name = os.path.basename(yaml_file_path)[:-len(".yaml")]
+    with open(yaml_file_path, 'r') as fr:
+        yaml_data = yaml.load(fr, yaml.FullLoader)
+    base_experiments_dir = os.path.join(os.getenv("HOME"), 'datasets',
+                                        dir_final_name)
+    experiments_results = get_experiment_results.getExperimentResults(
+        base_experiments_dir)
+    return experiments_results
+
+
+def plotMappingErrorForManyExperiments(yaml_file_path,
+                                       labels,
+                                       title='Mapping Evaluations',
+                                       error_type='RMSE[m]',
+                                       use_label_numbers=True):
+    fig = plt.figure()
+    experiments_results = getExperimentResults(yaml_file_path)
+    evaluations = [
+        float(er['panmap'][error_type]) for er in experiments_results
+    ]
+    x = np.arange(4) * 4
+    width = 0.8 * 4
+    drift_labels = ['light', 'moderate', 'strong', 'severe']
+    # labels = set([k[k.index('_')+1:] for k in all_trajectories.keys()])
+    fig, ax = plt.subplots()
+    num_labels = len(labels)
+    for i, label in enumerate(labels):
+        vals = []
+        for j, d_label in enumerate(drift_labels):
+            vals.append(evaluations[i * 4 +
+                                    j])  # total_errors[d_label + '_' + label])
+        ax.bar(x=(x - width / 2 + i * width / num_labels),
+               height=vals,
+               width=width / num_labels,
+               label=label)
+    if use_label_numbers:
+        for i in ax.patches:
+            plt.text(i.get_x() + width / 8,
+                     i.get_height(),
+                     str(round(i.get_height(), 3)),
+                     fontsize=10,
+                     fontweight='bold',
+                     color='grey')
+    ax.set_title(title)
+    ax.set_ylabel(error_type)
+    ax.set_xticks(x)
+    ax.set_xticklabels(drift_labels)
+    ax.legend(loc='lower center')
+    ax.grid()
+    fig.tight_layout()
+    return fig
+
+
+def plotTrajectoryErrorForManyExperiments(yaml_file_path,
+                                          labels,
+                                          title='Trajectory Evaluations',
+                                          error_type='og_rmse_pos[m]',
+                                          ylabel='RMSE [m]',
+                                          use_label_numbers=True):
+    fig = plt.figure()
+    experiments_results = getExperimentResults(yaml_file_path)
+    evaluations = [
+        float(er['trajectory'][error_type]) for er in experiments_results
+    ]
+    x = np.arange(4) * 4
+    width = 0.8 * 4
+    drift_labels = ['light', 'moderate', 'strong', 'severe']
+    # labels = set([k[k.index('_')+1:] for k in all_trajectories.keys()])
+    fig, ax = plt.subplots()
+    num_labels = len(labels)
+    for i, label in enumerate(labels):
+        vals = []
+        for j, d_label in enumerate(drift_labels):
+            vals.append(evaluations[i * 4 +
+                                    j])  # total_errors[d_label + '_' + label])
+        ax.bar(x=(x - width / 2 + i * width / num_labels),
+               height=vals,
+               width=width / num_labels,
+               label=label)
+    if use_label_numbers:
+        for i in ax.patches:
+            plt.text(i.get_x() + width / 8,
+                     i.get_height(),
+                     str(round(i.get_height(), 3)),
+                     fontsize=10,
+                     fontweight='bold',
+                     color='grey')
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xticks(x)
+    ax.set_xticklabels(drift_labels)
+    ax.legend(loc='top center')
+    ax.grid()
     fig.tight_layout()
     return fig
 
@@ -590,7 +762,99 @@ def plotPerAxisDirectory(base_dir,
               include_optimized=True)
 
 
+def getAllExperimentTrajectories(yaml_file_path, post_mult=True):
+    dir_final_name = os.path.basename(yaml_file_path)[:-len(".yaml")]
+    yaml_data = {}
+    with open(yaml_file_path, 'r') as fr:
+        yaml_data = yaml.load(fr, yaml.FullLoader)
+    base_experiments_dir = os.path.join(os.getenv("HOME"), 'datasets',
+                                        dir_final_name)
+    files_in_dir = os.listdir(base_experiments_dir)
+    all_trajectories = {}
+    for i, fd in enumerate(files_in_dir):
+        experiment_path = os.path.join(base_experiments_dir, fd)
+        print(experiment_path)
+        if os.path.isdir(experiment_path):
+            int_fd = int(fd[len('experiment'):])
+            experiment_data = yaml_data['experiment' + str(int_fd + 1)]
+            files = getTrajectoryFiles(experiment_path)
+            gt_tr, wd_tr, _, op_tr, op_tr_times, voxgraph_tr, voxgraph_times, mid_poses, mid_poses_times = getTrajectories(
+                files)
+            if post_mult:
+                voxgraph_tr2 = np.array([
+                    pickLogPoseGivenTransformPost(
+                        p, np.linalg.inv(T_C_R[0:3, 0:3])) for p in voxgraph_tr
+                ])
+                # voxgraph_tr2 = voxgraph_tr
+            else:
+                voxgraph_tr2 = np.array([
+                    pickLogPoseGivenTransform(p, np.linalg.inv(T_C_R[0:3,
+                                                                     0:3]))
+                    for p in voxgraph_tr
+                ])
+            voxgraph_tr = voxgraph_tr2
+            times = {
+                'panoptic_times': op_tr_times,
+                'voxgraph_times': voxgraph_times,
+                'mid_poses_times': mid_poses_times
+            }
+            all_trajectories[experiment_data["name"]] = {
+                "gt_tr": gt_tr,
+                "wd_tr": wd_tr,
+                "op_tr": op_tr,
+                "times": times,
+                "voxgraph_tr": voxgraph_tr,
+                "mid_poses": mid_poses
+            }
+    return all_trajectories
+
+
+def getPanmapFile(experiment_path):
+    files = os.listdir(experiment_path)
+    panmap_files = [
+        f for f in files if (f.endswith(".panmap")
+                             and not (f.endswith("evaluation_mean.panmap")))
+    ]
+    panmap_file = os.path.join(experiment_path, panmap_files[0])
+    return panmap_file
+
+
+def getExperimentCSVFileContents(experiment_path):
+    files = os.listdir(experiment_path)
+    csv_files = [f for f in files if f.endswith(".csv")]
+    csv_file = csv_files[0]
+    res = []
+    with open(csv_file, 'r') as fr:
+        csvreader = csv.DictReader(fr)
+        for row in csvreader:
+            res.append(row)
+    return res
+
+
+def getAllExperimentMappingErrors():
+    yaml_file_path, post_mult = True
+    dir_final_name = os.path.basename(yaml_file_path)[:-len(".yaml")]
+    yaml_data = {}
+    with open(yaml_file_path, 'r') as fr:
+        yaml_data = yaml.load(fr, yaml.FullLoader)
+    base_experiments_dir = os.path.join(os.getenv("HOME"), 'datasets',
+                                        dir_final_name)
+    files_in_dir = os.listdir(base_experiments_dir)
+    all_error_infos = {}
+    for i, fd in enumerate(files_in_dir):
+        experiment_path = os.path.join(base_experiments_dir, fd)
+        print(experiment_path)
+        if os.path.isdir(experiment_path):
+            int_fd = int(fd[len('experiment'):])
+            experiment_data = yaml_data['experiment' + str(int_fd + 1)]
+            info = getExperimentCSVFileContents(experiment_path)
+            all_error_infos[experiment_data["name"]] = info
+    return all_error_infos
+
+
 def plotFullExperiment(yaml_file_path):
+    T_C_R = np.array([[0, -1, 0, 0], [0, 0, -1, 0], [1, 0, 0, 0], [0, 0, 0,
+                                                                   1]])
     dir_final_name = os.path.basename(yaml_file_path)[:-len(".yaml")]
     yaml_data = {}
     with open(yaml_file_path, 'r') as fr:
@@ -605,25 +869,10 @@ def plotFullExperiment(yaml_file_path):
             int_fd = int(fd[len('experiment'):])
             experiment_data = yaml_data['experiment' + str(int_fd + 1)]
             figName = experiment_data['name'] + '.png'
-            rotX, rotY, rotZ = 0.0, 0.0, 0.0
-            if 'panoptic_yaml_data' in experiment_data:
-                if 'map_management' in experiment_data['panoptic_yaml_data']:
-                    rotX = experiment_data['panoptic_yaml_data'][
-                        'map_management'].get('rotX', 0.0) * PI / 180.0
-                    rotY = experiment_data['panoptic_yaml_data'][
-                        'map_management'].get('rotY', 0.0) * PI / 180.0
-                    rotZ = experiment_data['panoptic_yaml_data'][
-                        'map_management'].get('rotZ', 0.0) * PI / 180.0
-            arX = createArrayAroundX(rotX)
-            arY = createArrayAroundY(rotY)
-            arZ = createArrayAroundY(rotZ)
-            # R_C_R = arX @ arY @ arZ
-            print(len(picks), int_fd)
-            R_C_R = picks[int_fd]
-            T_C_R = np.pad(R_C_R, pad_width=(0, 1))
-            T_C_R[-1][-1] = 1
-            print(rotX, rotY, rotZ, T_C_R)
-            plotPerAxisDirectory(experiment_path, figName, T_C_R)
+            plotPerAxisDirectory(experiment_path,
+                                 figName,
+                                 T_C_R,
+                                 post_mult=True)
 
 
 # def main():
