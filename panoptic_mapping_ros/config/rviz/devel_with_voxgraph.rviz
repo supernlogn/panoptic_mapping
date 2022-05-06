@@ -95,7 +95,54 @@ Visualization Manager:
           Unreliable: false
           Value: true
           Visible:
-            0_Unknown: true
+            100_SM_Floor_a: true
+            1020_SM_Floor_a: true
+            1029_SM_Floor_a: true
+            1048_SM_Floor_a: true
+            1073_SM_Floor_a: true
+            1085_SM_Floor_a: true
+            1098_SM_Floor_a: true
+            1125_SM_Floor_a: true
+            121_SM_Floor_a: true
+            144_SM_Floor_a: true
+            154_SM_Floor_a: true
+            181_SM_Floor_a: true
+            221_SM_Floor_a: true
+            245_SM_Floor_a: true
+            270_SM_Floor_a: true
+            27_SM_Floor_a: true
+            291_SM_Floor_a: true
+            2_SM_Floor_a: true
+            307_SM_Floor_a: true
+            314_SM_Floor_a: true
+            330_SM_Floor_a: true
+            351_SM_Floor_a: true
+            360_SM_Floor_a: true
+            370_SM_Floor_a: true
+            387_SM_Floor_a: true
+            403_SM_Floor_a: true
+            425_SM_Floor_a: true
+            441_SM_Floor_a: true
+            480_SM_Floor_a: true
+            49_SM_Floor_a: true
+            524_SM_Floor_a: true
+            560_SM_Floor_a: true
+            578_SM_Floor_a: true
+            590_SM_Floor_a: true
+            609_SM_Floor_a: true
+            628_SM_Floor_a: true
+            645_SM_Floor_a: true
+            679_SM_Floor_a: true
+            717_SM_Floor_a: true
+            71_SM_Floor_a: true
+            747_SM_Floor_a: true
+            793_SM_Floor_a: true
+            826_SM_Floor_a: true
+            862_SM_Floor_a: true
+            88_SM_Floor_a: true
+            899_SM_Floor_a: true
+            941_SM_Floor_a: true
+            981_SM_Floor_a: true
             Value: true
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
@@ -231,7 +278,51 @@ Visualization Manager:
               Topic: /voxgraph_mapper/separated_mesh
               Unreliable: false
               Value: true
-              Visible: false
+              Visible:
+                Value: false
+                submap_0: true
+                submap_1: true
+                submap_10: true
+                submap_11: true
+                submap_12: true
+                submap_13: true
+                submap_14: true
+                submap_15: true
+                submap_16: true
+                submap_17: true
+                submap_18: true
+                submap_2: true
+                submap_20: true
+                submap_21: true
+                submap_23: true
+                submap_24: true
+                submap_25: true
+                submap_26: true
+                submap_27: true
+                submap_28: true
+                submap_29: true
+                submap_3: true
+                submap_30: true
+                submap_31: true
+                submap_32: true
+                submap_33: true
+                submap_34: true
+                submap_35: true
+                submap_36: true
+                submap_37: true
+                submap_38: true
+                submap_39: true
+                submap_4: true
+                submap_40: true
+                submap_41: true
+                submap_42: true
+                submap_43: true
+                submap_44: true
+                submap_5: true
+                submap_6: true
+                submap_7: true
+                submap_8: true
+                submap_9: true
             - Class: rviz/MarkerArray
               Enabled: false
               Marker Topic: /voxgraph_mapper/submap_stitcher
@@ -385,7 +476,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.673583984375
+      Distance: 18.9112491607666
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -393,17 +484,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.3984594345092773
-        Y: -0.07690143585205078
-        Z: -1.2160253524780273
+        X: 2.8641393184661865
+        Y: -0.6515237092971802
+        Z: -1.21038818359375
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4160593748092651
+      Pitch: 1.4157732725143433
       Target Frame: <Fixed Frame>
-      Yaw: 1.5609991550445557
+      Yaw: 1.580207347869873
     Saved: ~
 Window Geometry:
   Color:
@@ -429,5 +520,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1861
-  X: 72
+  X: 74
   Y: 27
