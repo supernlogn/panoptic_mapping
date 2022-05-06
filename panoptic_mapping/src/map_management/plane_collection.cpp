@@ -35,9 +35,6 @@ std::mt19937 PlaneCollection::random_number_generator_;
 void PlaneCollection::Config::checkParams() const {
   checkParamGT(z_threshold, 0.0f, "z_threshold");
   checkParamGT(xy_threshold, 0.0f, "xy_threshold");
-  checkParamGT(max_walls, 0, "max_walls");
-  checkParamGT(max_floors, 0, "max_floors");
-  checkParamGT(max_ceilings, 0, "max_ceilings");
   checkParamGT(ransac_num_iterations, 0, "ransac_num_iterations");
   checkParamGT(ransac_probability, 0.0, "ransac_probability");
   const int minPoints = ransac_min_points;
@@ -45,15 +42,22 @@ void PlaneCollection::Config::checkParams() const {
   checkParamGT(ransac_epsilon, 0.0, "ransac_epsilon");
   checkParamGT(ransac_cluster_epsilon, 0.0, "ransac_cluster_epsilon");
   checkParamGE(ransac_normal_threshold, 0.0, "ransac_normal_threshold");
+  checkParamCond(class_planes_merge_to_class.size() == classes.size(),
+                 "class_planes_merge_to_class wrong size");
+  checkParamCond(classes_max_instances.size() == classes.size(),
+                 "classes_max_instances wrong size");
 }
 
 void PlaneCollection::Config::setupParamsAndPrinting() {
   setupParam("verbosity", &verbosity);
   setupParam("z_threshold", &z_threshold);
   setupParam("xy_threshold", &xy_threshold);
-  setupParam("max_walls", &max_walls);
-  setupParam("max_floors", &max_floors);
-  setupParam("max_ceilings", &max_ceilings);
+  setupParam("classes", &classes);
+  setupParam("classes_max_instances", &classes_max_instances);
+  setupParam("class_planes_merge_to_class", &class_planes_merge_to_class);
+  if (class_planes_merge_to_class.empty()) {
+    class_planes_merge_to_class = classes;
+  }
   setupParam("ransac_num_iterations", &ransac_num_iterations);
   setupParam("ransac_probability", &ransac_probability);
   int min_points = static_cast<int>(ransac_min_points);
@@ -88,9 +92,9 @@ void PlaneCollection::processSubmap(Submap* s) {
   std::map<PlaneCollection::ClassID, std::vector<PointIndexType>>
       filtered_class_indices;
   CHECK(s->hasClassLayer());
-  if (s->getIsoSurfacePoints().size() == 0u) {
-    s->updateEverything();
-  }
+  // if (s->getIsoSurfacePoints().size() == 0u) {
+  //   s->updateEverything();
+  // }
   if (s->getIsoSurfacePoints().size() == 0u) {
     return;
   }
@@ -111,6 +115,13 @@ void PlaneCollection::processSubmap(Submap* s) {
     ss << "\n"
        << p.first << "--" << filtered_class_indices.at(p.first).size() << "--"
        << p.second.size();
+    int dst_class = config_.class_planes_merge_to_class[p.first];
+    if (p.first != dst_class) {
+      for (const auto plane : class_id_to_planes.at(p.first)) {
+        class_id_to_planes.at(dst_class).emplace_back(plane);
+      }
+      class_id_to_planes[p.first].clear();
+    }
   }
   LOG(INFO) << "\n" << ss.str();
   submap_id_to_class_to_planes_->insert({s->getID(), class_id_to_planes});
@@ -137,277 +148,6 @@ void PlaneCollection::findSubmapPlanes(
     } else {
       LOG_IF(INFO, config_.verbosity >= 4) << "skipping class with no indices";
     }
-  }
-}
-
-bool PlaneCollection::planeRansac(std::vector<PlaneType>* merged_result,
-                                  const voxblox::MeshLayer& mesh_layer,
-                                  const std::vector<PointIndexType>& p_indices,
-                                  const int num_iterations,
-                                  const int max_num_planes,
-                                  const ClassID class_id) {
-  std::vector<Eigen::Hyperplane<float, 3>> best_result;
-  std::vector<std::pair<ClassID, BoundingBoxType>> best_bounding_boxes = {};
-  size_t num_points = p_indices.size();
-  size_t num_outliers = num_points;
-  bool is_satisfying_result = false;
-  const size_t satisfying_num_outliers =
-      config_.satisfying_outlier_percent * num_points;
-  LOG_IF(INFO, config_.verbosity >= 1)
-      << "start planeRansac for " << num_points << " points";
-  // create vector with all points
-  // TODO(supernlogn): This is a completely indepedent
-  // procedure. Maybe put it somewhere else
-  std::vector<const Point*> mesh_points(p_indices.size());
-  std::vector<const Point*> mesh_normals(p_indices.size());
-  {
-    int i = 0;
-    for (const auto& p_idx : p_indices) {
-      const auto& p_n = getPointAndNormalFromPointIndex(p_idx, mesh_layer);
-      mesh_points[i] = p_n.first;
-      mesh_normals[i] = p_n.second;
-      ++i;
-    }
-    LOG_IF(INFO, config_.verbosity >= 3)
-        << "Planeransac: Initialized mesh_points and mesh_normals pointers";
-  }
-  // run ransac's main iteration
-  for (int i = 0; i < num_iterations; ++i) {
-    const auto& hyperplanes =
-        ransacSample(mesh_points, mesh_normals, max_num_planes, class_id);
-    int temp_num_outliers = ransacCheck(hyperplanes, mesh_points);
-    if (temp_num_outliers < num_outliers) {
-      best_result = hyperplanes;
-      num_outliers = temp_num_outliers;
-      if (temp_num_outliers < satisfying_num_outliers) {
-        is_satisfying_result = true;
-        break;
-      }
-    }
-  }
-
-  if (is_satisfying_result) {
-    LOG_IF(INFO, config_.verbosity >= 3) << "Num outliers result is satisfying";
-  } else {
-    LOG_IF(WARNING, config_.verbosity >= 3)
-        << "Num outliers result is not satisfying. Exhausted num of iterations";
-  }
-  LOG_IF(INFO, config_.verbosity >= 2)
-      << "num_outliers/satisfying_num_outliers/num_points=" << num_outliers
-      << "/" << satisfying_num_outliers << "/" << num_points;
-  bool is_ok = num_outliers < config_.max_outlier_percentage * num_points;
-  if (is_ok) {
-    // create plane_type from eigen::Hyperplane
-    LOG_IF(INFO, config_.verbosity >= 3)
-        << "Planeransac: Create plane from eigen::Hyperplane";
-    for (const auto& plane : best_result) {
-      merged_result->emplace_back(plane, class_id);
-      PlaneType& full_plane = merged_result->back();
-      full_plane.createPlaneSegmentAaBb(mesh_points,
-                                        config_.position_cluster_threshold);
-      // create bounding boxes around planes
-    }
-  }
-  return is_ok;
-}
-
-bool PlaneCollection::planeRansacSimple(
-    std::vector<PlaneType>* merged_result, const voxblox::MeshLayer& mesh_layer,
-    const std::vector<PointIndexType>& p_indices, const int num_iterations,
-    const int max_num_planes, const ClassID class_id) {
-  Eigen::Hyperplane<float, 3> best_result;
-  std::vector<std::pair<ClassID, BoundingBoxType>> best_bounding_boxes = {};
-  size_t num_points = p_indices.size();
-  size_t num_outliers = num_points;
-  LOG_IF(INFO, config_.verbosity >= 1)
-      << "start planeRansac for " << num_points << " points";
-
-  // create vector with all points
-  // TODO(supernlogn): This is a completely indepedent
-  // procedure. Maybe put it somewhere else
-  std::vector<const Point*> mesh_points(num_points);
-  {
-    int i = 0;
-    for (const auto& p_idx : p_indices) {
-      const auto& p_n = getPointAndNormalFromPointIndex(p_idx, mesh_layer);
-      mesh_points[i] = p_n.first;
-      ++i;
-    }
-    LOG_IF(INFO, config_.verbosity >= 3)
-        << "Planeransac: Initialized mesh_points pointers";
-  }
-  for (int k = 0; k < max_num_planes; ++k) {
-    int skipped = 0;
-    // run ransac's main iteration
-    num_outliers = mesh_points.size();
-    for (int i = 0; i < num_iterations; ++i) {
-      const auto& hyperplane =
-          ransacSampleSingle(mesh_points, max_num_planes, class_id);
-      if (hyperplane.normal().squaredNorm() < 1e-6) {
-        ++skipped;
-        continue;
-      }
-      int temp_num_outliers = ransacCheckSingle(hyperplane, mesh_points);
-      if (temp_num_outliers < num_outliers) {
-        best_result = hyperplane;
-        num_outliers = temp_num_outliers;
-      }
-    }
-    if (skipped == num_iterations) {
-      LOG(ERROR) << "Skipped all iterations because of very small norm";
-    }
-    LOG_IF(WARNING, skipped > 100)
-        << "Skipped " << skipped << " iterations with very small norm";
-    // create result
-    // and bounding boxes around planes
-    float k_term = (max_num_planes - k) / static_cast<float>(max_num_planes);
-    if (num_outliers <
-        config_.max_outlier_percentage * k_term * mesh_points.size()) {
-      merged_result->emplace_back(best_result, class_id);
-      PlaneType& full_plane = merged_result->back();
-      full_plane.createPlaneSegmentAaBb(mesh_points,
-                                        config_.position_cluster_threshold);
-      // eliminate points for the next plane
-      for (int i = mesh_points.size() - 1; i >= 0; --i) {
-        if (best_result.absDistance(*mesh_points[i]) <
-            config_.position_cluster_threshold) {
-          mesh_points.erase(mesh_points.begin() + i);
-        }
-      }
-    }
-    // if enough points iterate
-    if (mesh_points.size() < 10) {
-      break;
-    }
-  }
-
-  LOG_IF(INFO, config_.verbosity >= 2)
-      << "num_outliers/num_points=" << mesh_points.size() << "/" << num_points;
-  bool is_ok = num_outliers < config_.max_outlier_percentage * num_points;
-  LOG_IF(INFO, config_.verbosity >= 3) << "PlaneransacSimple: is_ok =" << is_ok;
-  return is_ok;
-}
-
-std::vector<Eigen::Hyperplane<float, 3>> PlaneCollection::ransacSample(
-    const std::vector<const Point*>& mesh_points,
-    const std::vector<const Point*>& mesh_normals, const int max_num_planes,
-    const ClassID class_id) const {
-  // get 3 random points
-  int sample_maximum = mesh_points.size();
-  LOG_IF(INFO, config_.verbosity >= 5)
-      << "ransacSample for " << sample_maximum << " points";
-  std::vector<Point> point_subset(max_num_planes * 3);
-  std::vector<Point> normals_subset(max_num_planes * 3);
-  for (int i = 0; i < 3 * max_num_planes; ++i) {
-    const auto s = getSample(0, sample_maximum);
-    point_subset[i] = *mesh_points[s];
-    normals_subset[i] = *mesh_normals[s];
-  }
-  // const Point class_dir = getDirectionOfClassID(class_id);
-  // cluster major plane
-  const float threshold = config_.position_cluster_threshold;
-  std::vector<Eigen::Hyperplane<float, 3>> ret;
-  // mini_clustering(&ret, point_subset, normals_subset, max_num_planes,
-  //                 threshold);
-  Eigen::Vector3f class_dir;
-  if (class_id == 0) {
-    class_dir = Point(0.0, 0.0, -1.0);
-  } else if (class_id == 1) {
-    class_dir = Point(0.0, 0.0, 1.0);
-  } else {
-    class_dir = Point(0.5, 0.5, 0.5);
-  }
-  for (int i = 0; i < max_num_planes; ++i) {
-    const int b_i = 3 * i;
-    const auto& hplane =
-        createPlaneFrom3Points(point_subset[b_i], point_subset[b_i + 1],
-                               point_subset[b_i + 2], class_dir);
-    ret.push_back(hplane);
-  }
-  return ret;
-}
-
-Eigen::Hyperplane<float, 3> PlaneCollection::ransacSampleSingle(
-    const std::vector<const Point*>& mesh_points, const int max_num_planes,
-    const ClassID class_id) const {
-  const int sample_maximum = mesh_points.size();
-  const auto s1 = getSample(0, sample_maximum);
-  auto s2 = getSample(0, sample_maximum);
-  int i = 0;
-  while (s2 == s1 && i < 10) {
-    s2 = getSample(0, sample_maximum);
-    ++i;
-  }
-  auto s3 = getSample(0, sample_maximum);
-  i = 0;
-  while ((s3 == s1 || s3 == s2) && i < 10) {
-    s3 = getSample(0, sample_maximum);
-    ++i;
-  }
-  const Point* p1 = mesh_points[s1];
-  const Point* p2 = mesh_points[s2];
-  const Point* p3 = mesh_points[s3];
-  Eigen::Vector3f class_dir;
-  if (class_id == 0) {
-    class_dir = Point(0.0, 0.0, -1.0);
-  } else if (class_id == 1) {
-    class_dir = Point(0.0, 0.0, 1.0);
-  } else {
-    class_dir = Point(0.5, 0.5, 0.5);
-  }
-  return createPlaneFrom3Points(*p1, *p2, *p3, class_dir);
-}
-
-void PlaneCollection::mini_clustering(
-    std::vector<Eigen::Hyperplane<float, 3>>* major_planes,
-    const std::vector<Point>& point_set, const std::vector<Point>& normals_set,
-    const int num_clustered_planes, const float threshold) const {
-  /* naive distance matrix computation */
-  const Point* p_data = point_set.data();
-  const Point* n_data = normals_set.data();
-  const size_t N = point_set.size();
-  /* get row with the smallest sum */
-  int mst_classes[N];
-  for (int i = 0; i < N; ++i) {
-    mst_classes[i] = i;
-  }
-  for (int i = 0; i < N; ++i) {
-    for (int j = i + 1; j < N; ++j) {
-      const float dist =
-          PlaneType::distFunc2(p_data[i], n_data[i], p_data[j], n_data[j]);
-      if (dist < threshold) {
-        mst_classes[j] = mst_classes[i];
-      }
-    }
-  }
-  std::set<int> distinct_classes;
-  for (int i = 0; i < N; ++i) {
-    distinct_classes.insert(mst_classes[i]);
-  }
-  const Point zero_point = Point::Zero(3);
-
-  std::vector<c_info_t> mst_classes_info;
-  for (int cluster_class : distinct_classes) {
-    Point mean_point = zero_point;
-    Point mean_normal = zero_point;
-    int n = 0;
-    for (int i = 0; i < N; ++i) {
-      if (mst_classes[i] == cluster_class) {
-        mean_point += p_data[i];
-        mean_normal += n_data[i];
-        ++n;
-      }
-    }
-    mean_point /= n;
-    mean_normal /= n;
-    mst_classes_info.emplace_back(n, mean_point,
-                                  mean_normal.stableNormalized());
-  }
-  std::sort(mst_classes_info.begin(), mst_classes_info.end(),
-            c_info_t::compDesc);
-  for (int i = 0; i < num_clustered_planes; ++i) {
-    const auto& c_i = mst_classes_info[i];
-    major_planes->emplace_back(c_i.point, c_i.normal);
   }
 }
 
@@ -444,7 +184,7 @@ bool PlaneCollection::cgalExtractPlane(
   // Provides the input data.
   shape_detector.set_input(mesh_points);
   shape_detection_parameters_.min_points =
-      std::max(num_points / static_cast<size_t>(config_.max_floors),
+      std::max(num_points / static_cast<size_t>(max_num_planes),
                std::min(config_.ransac_min_points, num_points));
   // Detects registered shapes with default parameters.
   shape_detector.detect(shape_detection_parameters_);
@@ -462,7 +202,7 @@ bool PlaneCollection::cgalExtractPlane(
   size_t count = 0;
   const size_t num_new_planes = shape_detector.shapes().size();
   for (const auto idx : indices) {
-    if (count >= config_.max_floors) {
+    if (count >= max_num_planes) {
       break;
     }
     const Efficient_ransac::Shape* cshape =
@@ -476,8 +216,10 @@ bool PlaneCollection::cgalExtractPlane(
     eigen_normal.stableNormalize();
     Point p = eigen_normal.cast<float>() * static_cast<float>(d);
     LOG_IF(INFO, config_.verbosity >= 5) << "eigen_normal:\n" << eigen_normal;
+    // if it is wall like (see small flat class ids) then add it to walls
+    int class_id_final = config_.class_planes_merge_to_class[class_id];
     merged_result->emplace_back(eigen_normal.cast<float>().stableNormalized(),
-                                p, class_id);
+                                p, class_id_final);
     PlaneType* full_plane = &merged_result->back();
     std::vector<const Point*> temp_points;
     std::vector<const Point*> temp_normals;
@@ -576,7 +318,7 @@ void PlaneCollection::applyClassPreFilter(
   // assign all background class IDs a zero-element vector
   LOG_IF(INFO, config_.verbosity >= 3)
       << "Initializing prefilter for background classes";
-  const auto background_class_ids = getBackgroundClassIDS();
+  const auto background_class_ids = config_.classes;
   for (ClassID class_id : background_class_ids) {
     ret->insert({class_id, std::vector<PointIndexType>()});
   }
@@ -660,20 +402,14 @@ void PlaneCollection::visualizePlanesOfClass(
 // general
 int PlaneCollection::getMaxNumPlanesPerType(ClassID class_id) const {
   // TODO(supernlogn): define them arbitary
-  const ClassID ceiling_id = 2;
-  const ClassID floor_id = 1;
-  const ClassID wall_id = 0;
-  switch (class_id) {
-    case ceiling_id:
-      return config_.max_ceilings;
-    case floor_id:
-      return config_.max_floors;
-    case wall_id:
-      return config_.max_walls;
-    default:
-      LOG(ERROR) << "No background class with ID: " << class_id;
-      return 0;
+  const auto it =
+      std::find(config_.classes.begin(), config_.classes.end(), class_id);
+  if (it != config_.classes.end()) {
+    int dist = it - config_.classes.begin();
+    int ret = config_.classes_max_instances[dist];
+    return ret;
   }
+  LOG(WARNING) << "Not using such class " << class_id << " for plane matching";
   return 0;
 }
 
@@ -695,48 +431,6 @@ const Point& PlaneCollection::getPointFromPointIndex(
     const PointIndexType& p_idx, const voxblox::MeshLayer& mesh_layer) const {
   return mesh_layer.getMeshPtrByIndex(p_idx.block_index)
       ->vertices[p_idx.linear_index];
-}
-
-float getMeshNormals(Submap* submap) {
-  auto mesh_layer = submap->getMeshLayerPtr();
-  voxblox::BlockIndexList mesh_indices;
-  mesh_layer->getAllUpdatedMeshes(
-      &mesh_indices);  // TODO(supernlogn): See if this is not needed
-  LOG(INFO) << "mesh_indices.size() =" << mesh_indices.size();
-  voxblox::Pointcloud floor_vertices;
-  voxblox::Point up(0, 1.0, 0.0);
-  float up_threshold = 0.8;
-  // const int class_id = submap->getClassID();
-  const auto& classLayer = submap->getClassLayer();
-  for (const voxblox::BlockIndex& block_index : mesh_indices) {
-    voxblox::Mesh::ConstPtr mesh = mesh_layer->getMeshPtrByIndex(block_index);
-    panoptic_mapping::ClassBlock::ConstPtr class_block =
-        classLayer.getBlockConstPtrByIndex(block_index);
-    // TODO(supernlogn) clustering can be done with label also
-    for (size_t i = 0u; i < mesh->vertices.size(); ++i) {
-      const auto pn = mesh->normals[i];
-      const auto& class_voxel = class_block->getVoxelByLinearIndex(i);
-      std::cout << pn << ";";
-      float dot_prod = pn.dot(up);
-      if (dot_prod > up_threshold) {
-        floor_vertices.push_back(mesh->vertices[i]);
-      }
-    }
-    std::cout << '\n';
-    std::cout << "mesh->vertices.size() = " << mesh->vertices.size() << '\n';
-  }
-
-  double mean_vertice_y = 0.0;
-  for (const auto vert : floor_vertices) {
-    mean_vertice_y += vert.y();
-  }
-  if (floor_vertices.size() > 0) {
-    mean_vertice_y /= floor_vertices.size();
-  } else {
-    LOG(WARNING) << "No floor vertices pointing up";
-  }
-
-  return static_cast<float>(mean_vertice_y);
 }
 
 PlaneCollection::c_info_t::c_info_t(int a0, Point a1, Point a2)

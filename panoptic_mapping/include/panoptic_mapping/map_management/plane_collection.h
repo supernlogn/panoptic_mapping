@@ -55,9 +55,9 @@ class PlaneCollection {
     int verbosity = 1;
     float z_threshold = 0.15;
     float xy_threshold = 0.01;
-    int max_walls = 3;
-    int max_floors = 1;
-    int max_ceilings = 1;
+    std::vector<int> classes;
+    std::vector<int> classes_max_instances;
+    std::vector<int> class_planes_merge_to_class;
     float normal_cluster_threshold = 0.1;     // no-unit
     float position_cluster_threshold = 0.05;  // [m]
     float max_outlier_percentage = 0.70;
@@ -159,23 +159,6 @@ class PlaneCollection {
       const Transformation T_mid_pose,
       const std::map<PlaneCollection::ClassID, std::vector<PointIndexType>>&
           filtered_class_indices);
-  bool planeRansac(std::vector<PlaneType>* merged_result,
-                   const voxblox::MeshLayer& mesh_layer,
-                   const std::vector<PointIndexType>& p_indices,
-                   const int num_iterations, const int max_num_planes,
-                   const ClassID class_id);
-  bool planeRansacSimple(std::vector<PlaneType>* merged_result,
-                         const voxblox::MeshLayer& mesh_layer,
-                         const std::vector<PointIndexType>& p_indices,
-                         const int num_iterations, const int max_num_planes,
-                         const ClassID class_id);
-  std::vector<Eigen::Hyperplane<float, 3>> ransacSample(
-      const std::vector<const Point*>& mesh_points,
-      const std::vector<const Point*>& mesh_normals, const int max_num_planes,
-      const ClassID class_id) const;
-  Eigen::Hyperplane<float, 3> ransacSampleSingle(
-      const std::vector<const Point*>& mesh_points, const int max_num_planes,
-      const ClassID class_id) const;
   void applyClassPreFilter(
       std::map<PlaneCollection::ClassID, std::vector<PointIndexType>>* ret,
       const TsdfLayer& tsdf_layer, const voxblox::MeshLayer& meshLayer,
