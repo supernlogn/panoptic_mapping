@@ -190,7 +190,8 @@ void MultiClassProjectiveIntegrator::updateClassVoxel(
     InterpolatorBase* interpolator, ClassVoxel* voxel, const InputData& input,
     const int submap_id) const {
   const int id = interpolator->interpolateID(input.idImage());
-  if (id_classes_set_1_.find(id) != id_classes_set_1_.end()) {
+  if (id_classes_set_1_.find(id) != id_classes_set_1_.end() &&
+      voxel->getVoxelType() == ClassVoxelType::kMultiVariableCount) {
     // use (fixed_count) classification for class set 1
     if (config_.use_instance_classification) {
       voxel->incrementCount(id);
@@ -245,17 +246,19 @@ void MultiClassProjectiveIntegrator::allocateNewBlocks(
       }
       max_range_in_image_ = std::max(max_range_in_image_, ray_distance);
       const int id = input.idImage().at<int>(v, u);
-      bool is_on_set_1 = id_classes_set_1_.find(id) != id_classes_set_1_.end();
-      bool submap_id_exists = submaps->submapWithClassIdExists(id);
+      bool is_on_set_1 = id_classes_set_1_.count(id) > 0;
+      bool submap_id_exists = submaps->submapWithInstanceIdExists(id);
       Submap* submap = nullptr;
       if (is_on_set_1) {
         submap = submaps->getBackground();
       } else if (submap_id_exists) {
         const auto& all_active_submaps_with_id =
-            submaps->getActiveSubmapWithClassId(id);
+            submaps->getActiveSubmapWithInstanceId(id);
         if (!all_active_submaps_with_id.empty()) {
+          assert(all_active_submaps_with_id.size() <= 1);
           submap = all_active_submaps_with_id[0];
         } else {
+          // LOG(WARNING) << "SUBMAP DOES NOT EXIST with instance id: " << id;
           submap_id_exists = false;
         }
       }

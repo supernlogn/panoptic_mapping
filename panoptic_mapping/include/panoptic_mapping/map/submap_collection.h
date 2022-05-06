@@ -107,6 +107,25 @@ class SubmapCollection {
     return instance_to_submap_ids_;
   }
 
+  void removeSubmapFromInstanceToSubmapIDTable(const int submap_id) {
+    const int instance_id = getSubmapPtr(submap_id)->getInstanceID();
+    if (instance_to_submap_ids_.count(instance_id) == 0) {
+      LOG(ERROR) << "instance_to_submap_ids_ does not contain " << instance_id
+                 << " although submap " << submap_id << " is of that instance.";
+      return;
+    }
+    instance_to_submap_ids_.at(instance_id).erase(submap_id);
+    if (instance_to_submap_ids_.at(instance_id).empty()) {
+      instance_to_submap_ids_.erase(instance_id);
+    }
+  }
+
+  void changeInstanceIDInInstanceToSubmapIdTable(const int submap_id,
+                                                 const int new_instance_id) {
+    removeSubmapFromInstanceToSubmapIDTable(submap_id);
+    updateInstanceToSubmapIDTable(submap_id, new_instance_id);
+  }
+
   void updateInstanceToSubmapIDTable(const int submap_id, const int id) {
     if (instance_to_submap_ids_.find(id) != instance_to_submap_ids_.end()) {
       instance_to_submap_ids_.at(id).insert(submap_id);
@@ -183,17 +202,17 @@ class SubmapCollection {
     background_id_ = background_id;
   }
 
-  bool submapWithClassIdExists(const int class_id) const {
-    return instance_to_submap_ids_.find(class_id) !=
+  bool submapWithInstanceIdExists(const int instance_id) const {
+    return instance_to_submap_ids_.find(instance_id) !=
            instance_to_submap_ids_.end();
   }
 
-  std::vector<Submap*> getActiveSubmapWithClassId(const int class_id) {
+  std::vector<Submap*> getActiveSubmapWithInstanceId(const int instance_id) {
     std::vector<Submap*> ret;
-    if (submapWithClassIdExists(class_id)) {
-      for (const int submap_id : instance_to_submap_ids_.at(class_id)) {
+    if (submapWithInstanceIdExists(instance_id)) {
+      for (const int submap_id : instance_to_submap_ids_.at(instance_id)) {
         Submap* smap = getSubmapPtr(submap_id);
-        if (smap->isActive()) {
+        if (smap->isActive() && smap->wasTracked()) {
           ret.push_back(smap);
         }
       }

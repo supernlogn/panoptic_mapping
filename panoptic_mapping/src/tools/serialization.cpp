@@ -49,6 +49,11 @@ std::unique_ptr<ClassLayer> loadClassLayerFromStream(
                                                   tmp_byte_offset_ptr);
       break;
     }
+    case ClassVoxelType::kMultiVariableCount: {
+      result = MultiVariableCountLayer::loadFromStream(
+          submap_proto, proto_file_ptr, tmp_byte_offset_ptr);
+      break;
+    }
     case ClassVoxelType::kUncertainty: {
       result = UncertaintyLayer::loadFromStream(submap_proto, proto_file_ptr,
                                                 tmp_byte_offset_ptr);
