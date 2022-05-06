@@ -32,7 +32,14 @@ def getLogger():
 
 
 logger = getLogger()
+# to dry run the experiments procedure
+# If the trajectory are not produced, please run this again with
+# INSPECT_CALLS = True
+# after the first run of the experiment (so that you dont repeat the experiment again)
 INSPECT_CALLS = False
+# Select window name to take screenshot
+WINDOW_NAME = "devel.rviz - RViz"  # for small flat
+# "devel_with_voxgraph.rviz - RViz" # for large flat
 
 
 def getWindowId(window_name):
@@ -84,8 +91,11 @@ def closeExperiment():
     os.system("pkill -9 roscore")
 
 
-def runEvaluation(map_path, generated_path_file_path, trajectory_file_path,
-                  trajectory_evaluation_path):
+def runEvaluation(map_path,
+                  generated_path_file_path,
+                  trajectory_file_path,
+                  trajectory_evaluation_path,
+                  ground_truth_pointcloud_file=""):
     """ Launches the panoptic mapping evaluation scripts
     given the path of the map to evaluate.
 
@@ -95,6 +105,8 @@ def runEvaluation(map_path, generated_path_file_path, trajectory_file_path,
     logger.info("launching map evaluation of map_file: %s", map_path)
     evaluate_map_cmd = "roslaunch panoptic_mapping_utils evaluate_panmap.launch"
     evaluate_map_cmd += " map_file:=%s" % map_path
+    if ground_truth_pointcloud_file != "":
+        evaluate_map_cmd += " ground_truth_pointcloud_file:=%s" % ground_truth_pointcloud_file
     logger.debug(evaluate_map_cmd)
     if not INSPECT_CALLS:
         os.system(evaluate_map_cmd)
@@ -107,8 +119,8 @@ def runEvaluation(map_path, generated_path_file_path, trajectory_file_path,
     evaluate_trajectory_cmd += (" output_file_path:=%s" %
                                 trajectory_evaluation_path)
     logger.debug(evaluate_trajectory_cmd)
-    if not INSPECT_CALLS:
-        os.system(evaluate_trajectory_cmd)
+    # if not INSPECT_CALLS:
+    os.system(evaluate_trajectory_cmd)
 
 
 def evaluateAfterMapIsBuilt(experiment_name,
@@ -116,7 +128,8 @@ def evaluateAfterMapIsBuilt(experiment_name,
                             window_name,
                             screenshot_name,
                             experiments_dir="",
-                            closing_func=None):
+                            closing_func=None,
+                            ground_truth_pointcloud_file=""):
     """ This waits for the map of the panoptic mapping to be built
     and afterwards takes a screenshot of the rviz window and runs
     an evaluation of the map.
@@ -161,7 +174,8 @@ def evaluateAfterMapIsBuilt(experiment_name,
 
     logger.info("launching evaluations for %s", experiment_name)
     runEvaluation(map_file_path, generated_path_file_path,
-                  trajectory_file_path, trajectory_evaluation_path)
+                  trajectory_file_path, trajectory_evaluation_path,
+                  ground_truth_pointcloud_file)
     # stop all ros processes
     if closing_func is None:
         closeExperiment()
@@ -206,7 +220,8 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
         logger.info(data_to_yaml_generated)
         yaml_file_path = os.path.join(
             os.path.dirname(yaml_data['base_voxgraph_yaml_data']),
-            args_experiment['voxgraph_config'] + '.yaml')
+            args_experiment['voxgraph_config'] + '' if
+            args_experiment['voxgraph_config'].endswith('.yaml') else '.yaml')
         with open(yaml_file_path, 'w') as fw:
             logger.debug("Writting yaml data to %s", yaml_file_path)
             yaml.dump(data_to_yaml_generated, fw)
@@ -227,7 +242,7 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
             yaml.dump(data_to_yaml_generated, fw)
     base_name = args_experiment.pop('base_name')
     experiment_name = base_name + args_experiment['name']
-    window_name = "devel_with_voxgraph.rviz - RViz"
+    window_name = WINDOW_NAME
     save_map_path_when_finished = os.path.join(experiments_dir,
                                                experiment_name + ".panmap")
     args_experiment[
@@ -237,6 +252,8 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
     trajectory_file_path = os.path.join(experiments_dir, 'trajectory.in')
     voxgraph_traj_file_path = os.path.join(experiments_dir,
                                            'voxgraph_traj.bag')
+    ground_truth_pointcloud_file = args_experiment.get(
+        "ground_truth_pointcloud_file", "")
     # create complete call to panoptic mapping
     line_strs = [
         "%s:=%s" % (k, str(v)) for k, v in args_experiment.items()
@@ -259,10 +276,13 @@ def runExperiment(yaml_data, experiment_index, experiments_dir=""):
             os.system(complete_call)
 
     def start_evaluation_wait():
-        evaluateAfterMapIsBuilt(experiment_name, save_map_path_when_finished,
-                                window_name,
-                                experiment_name + str(time.time()),
-                                experiments_dir)
+        evaluateAfterMapIsBuilt(
+            experiment_name,
+            save_map_path_when_finished,
+            window_name,
+            experiment_name + str(time.time()),
+            experiments_dir,
+            ground_truth_pointcloud_file=ground_truth_pointcloud_file)
 
     # create and start processes
     p_1 = multiprocessing.Process(name="panoptic_mapping_experiment_process",
@@ -302,9 +322,11 @@ def main():
         last_dir = argv1_strip[argv1_strip.rindex('/') + 1:-len(".yaml")]
         experiments_dir = os.path.join(os.getenv('HOME'), "datasets/",
                                        last_dir)
-    logger.info("experiments directory set to = %s", experiments_dir)
     continue_from_dir = 0  # allow not re-executing the experiments
     # and start from this one
+    if len(argv) > 3:
+        continue_from_dir = argv[3]
+    logger.info("experiments directory set to = %s", experiments_dir)
     if len(argv) > 3:
         continue_from_dir = int(argv[3])
     if not os.path.exists(experiments_dir):
