@@ -12,6 +12,7 @@
 #include <panoptic_mapping/map/classification/fixed_count.h>
 #include <panoptic_mapping/submap_allocation/freespace_allocator_base.h>
 #include <panoptic_mapping/submap_allocation/submap_allocator_base.h>
+#include <panoptic_mapping/tools/evaluation_data_writer.h>
 #include <panoptic_mapping/tracking/dual_mode_tracker.h>
 
 namespace panoptic_mapping {
@@ -158,8 +159,14 @@ void PanopticMapper::setupMembers() {
   setupCollectionDependentMembers();
 
   // Data Logging.
-  data_logger_ = config_utilities::FactoryRos::create<DataWriterBase>(
-      defaultNh("data_writer"));
+  if (defaultNh("data_writer").hasParam("output_directory")) {
+    data_logger_ = std::make_unique<EvaluationDataWriter>(
+        config_utilities::getConfigFromRos<EvaluationDataWriter::Config>(
+            ros::NodeHandle(nh_private_, "data_writer")));
+  } else {
+    data_logger_ = config_utilities::FactoryRos::create<DataWriterBase>(
+        defaultNh("data_writer"));
+  }
 
   // Setup all requested inputs from all modules.
   InputData::InputTypes requested_inputs;
