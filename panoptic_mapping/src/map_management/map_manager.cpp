@@ -293,12 +293,12 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
         }
         if (current_id == id) {
           LOG_IF(INFO, config_.verbosity >= 4)
-              << "Submap " << id << " was deactivated, could not be matched."
-              << std::endl;
+              << "Submap " << id << " was deactivated, could not be matched.\n";
         }
       }
     }
   }
+  // submaps->updateInstanceToSubmapIDTable();
 }
 
 void MapManager::performChangeDetection(SubmapCollection* submaps) {
@@ -312,9 +312,10 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
   // call voxgraph for one last time
   // send the last background submaps to voxgraph
   // and call for a full graph optimization
-  if (config_.send_deactivated_submaps_to_voxgraph) {
+  if (config_.send_deactivated_submaps_to_voxgraph &&
+      submaps->backgroundExists()) {
     publishSubmapToVoxGraph(submaps, *(submaps->getBackground()));
-    // wait 1 sec befor calling voxgraph finish mapping
+    // wait 1 sec before calling voxgraph finish mapping
     sleep(1.0);
     // call voxgraph to finish mapping
     {
@@ -372,17 +373,11 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
                 ->getSubmapPtr(
                     *(published_submap_ids_to_voxgraph_.rbegin() + 1))
                 ->getT_M_S());
-        submaps->getBackground()->updateEverything(
-            /*only_updated_blocks=*/false);
+        // submaps->getBackground()->updateEverything(
+        //     /*only_updated_blocks=*/false);
       }
     } else {
-      LOG(ERROR) << "BACKGROUND DOES NOT EXIST";
-    }
-  }
-  {
-    // update all submaps
-    for (Submap& submap : *submaps) {
-      submap.updateEverything();
+      LOG(ERROR) << "Background does not exist.";
     }
   }
   std::stringstream info;
@@ -446,6 +441,9 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
         submaps->removeSubmap(id);
       }
     }
+  }
+  for (Submap& submap : *submaps) {
+    submap.updateEverything(false);
   }
 }
 
@@ -519,12 +517,6 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
 
 void MapManager::optimizedVoxgraphPosesCallback(
     const cblox_msgs::MapPoseUpdates& msg) {
-  // LOG_IF(INFO, config_.verbosity >= 4)
-  //     << "MapManager::optimizedVoxgraphPosesCallback"
-  //     << "received for time " << msg.header.stamp.toSec() << "with"
-  //     << msg.map_headers.size() << " map_headers."
-  //     << "Current number of submap ids stored is: "
-  //     << published_submap_ids_to_voxgraph_.size() << std::endl;
   // push the message received to the queue of messages.
   {
     std::lock_guard<std::mutex> guard(callback_mutex_);
@@ -721,6 +713,11 @@ void MapManager::publishSubmapToVoxGraph(SubmapCollection* submaps,
                 submapToPublish.getID()) !=
       published_submap_ids_to_voxgraph_.end()) {
     LOG(WARNING) << "Trying to re-publish the same submap to voxgraph";
+    return;
+  }
+  if (submapToPublish.getPoseHistory().size() == 0) {
+    LOG_IF(ERROR, config_.verbosity >= 4)
+        << "submap to publish has no pose history";
     return;
   }
   published_submap_ids_to_voxgraph_.emplace_back(submapToPublish.getID());

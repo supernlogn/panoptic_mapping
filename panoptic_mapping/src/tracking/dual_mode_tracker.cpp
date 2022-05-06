@@ -123,6 +123,8 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
             matched = true;
             submap_id = id_value.first;
             value = id_value.second;
+            submaps->changeInstanceIDInInstanceToSubmapIdTable(submap_id,
+                                                               input_id);
             break;
           }
         }
@@ -133,7 +135,6 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
         submap_id = ids_values.front().first;
         value = ids_values.front().second;
       }
-
       // Print the matching statistics for all submaps.
       if (config_.verbosity >= 4) {
         logging_details << ". Overlap: ";
@@ -146,6 +147,7 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
       }
     } else if (tracking_data.getHighestMetric(input_id, &submap_id, &value,
                                               config_.tracking_metric)) {
+      std::cout << "This should not be running\n";
       // Only consider the highest metric candidate.
       if (value > config_.match_acceptance_threshold) {
         matched = true;
@@ -159,6 +161,7 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
     if (matched) {
       n_matched++;
       submaps->getSubmapPtr(submap_id)->setWasTracked(true);
+      submaps->getSubmapPtr(submap_id)->setInstanceID(input_id);
     } else if (allocate_new_submap) {
       n_new++;
       Submap* new_submap = nullptr;
@@ -190,13 +193,21 @@ void DualModeTracker::processInput(SubmapCollection* submaps,
       info << logging_details.str();
     }
   }
+  std::unordered_set<int> input_ids_debug;
   detail_timer.Stop();
   for (auto it = submaps->begin(); it != submaps->end(); it++) {
+    input_ids_debug.insert(it->getInstanceID());
     if (it->isActive()) {
       PoseManager::getGlobalInstance()->addSubmapIdToPose(pose_id, it->getID());
       it->addPoseID(pose_id);
     }
   }
+  // check if all input_ids have corresponding submap
+  assert(input_ids_debug.size() == tracking_data.getInputIDs().size());
+  for (int i_id : tracking_data.getInputIDs()) {
+    assert(input_ids_debug.count(i_id) > 0);
+  }
+
   // Allocate free space map if required.
   alloc_timer.Unpause();
   freespace_allocator_->allocateSubmap(submaps, input);

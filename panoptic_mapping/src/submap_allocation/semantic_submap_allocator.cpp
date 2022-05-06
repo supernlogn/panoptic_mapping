@@ -73,6 +73,8 @@ Submap* SemanticSubmapAllocator::allocateSubmap(SubmapCollection* submaps,
   new_submap->setBackground_id_on_reactivation(submaps->getBackgroundID());
   new_submap->setClassID(label.class_id);
   new_submap->setLabel(label.label);
+  new_submap->setInstanceID(input_id);
+  submaps->updateInstanceToSubmapIDTable(new_submap->getID(), input_id);
   new_submap->setName(label.name);
   return new_submap;
 }

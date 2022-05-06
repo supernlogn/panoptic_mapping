@@ -30,7 +30,7 @@ bool SubmapCollection::removeSubmap(int id) {
   // update the poseManager
   size_t previous_index = it->second;
   const auto it_submap = submaps_.begin() + it->second;
-
+  removeSubmapFromInstanceToSubmapIDTable(id);
   submaps_.erase(submaps_.begin() + it->second);
   id_to_index_.erase(it);
   // correct the index table
