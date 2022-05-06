@@ -124,7 +124,7 @@ def plotPerAxis(gt_tr,
                          label='with drift',
                          linewidth=5)
         axes[index].plot(n1_, gt_tr[:N, index], 'green', label='groundtruth')
-        axes[index].plot(n1_, op_tr[:N, index], 'red', label='optimized')
+        axes[index].plot(n1_, op_tr[:N, index], 'red', label='proposed')
         if voxgraph_tr.size > 0:
             axes[index].plot(n2_,
                              voxgraph_tr[:N, index],
@@ -188,7 +188,7 @@ def plotPerAxisPlusPolarAngles(gt_tr,
             axes[index % len(axes)].plot(ticks,
                                          op_tr[:N, index],
                                          'red',
-                                         label='optimized')
+                                         label='proposed')
         if voxgraph_tr.size > 0:
             axes[index % len(axes)].plot(n2_,
                                          voxgraph_tr[:N, index],
@@ -217,7 +217,7 @@ def plotPerAxisPlusPolarAngles(gt_tr,
             axes[index % len(axes)].plot(op_tr[:N, index],
                                          ticks,
                                          'red',
-                                         label='optimized')
+                                         label='proposed')
         if voxgraph_tr.size > 0:
             axes[index % len(axes)].plot(voxgraph_tr[:N, index],
                                          n2_,
@@ -327,7 +327,7 @@ def plotXYZErrorsPerAxis(gt_tr,
             axes[index % len(axes)].plot(ticks[:N],
                                          op_tr[:N, index],
                                          'red',
-                                         label='optimized')
+                                         label='proposed')
         if voxgraph_tr.size > 0:
             axes[index % len(axes)].plot(n2_,
                                          voxgraph_tr[:N, index],
@@ -349,7 +349,7 @@ def plotXYZErrorsPerAxis(gt_tr,
             axes[-1].set_xlabel('sec')
         else:
             axes[-1].set_xlabel('pose idx')
-    fig.tight_layout()
+    # fig.tight_layout()
     return fig
 
 
@@ -443,7 +443,7 @@ def plotMappingErrorForManyExperiments(yaml_file_path,
                                        title='Mapping Evaluations',
                                        error_type='RMSE[m]',
                                        use_label_numbers=True):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(4**3, 3**3))
     experiments_results = getExperimentResults(yaml_file_path)
     evaluations = [
         float(er['panmap'][error_type]) for er in experiments_results
@@ -454,15 +454,19 @@ def plotMappingErrorForManyExperiments(yaml_file_path,
     # labels = set([k[k.index('_')+1:] for k in all_trajectories.keys()])
     fig, ax = plt.subplots()
     num_labels = len(labels)
+    k = 0
     for i, label in enumerate(labels):
+        if label == '_skip_':
+            continue
         vals = []
         for j, d_label in enumerate(drift_labels):
             vals.append(evaluations[i * 4 +
                                     j])  # total_errors[d_label + '_' + label])
-        ax.bar(x=(x - width / 2 + i * width / num_labels),
+        ax.bar(x=(x - width / 2 + k * width / num_labels),
                height=vals,
                width=width / num_labels,
                label=label)
+        k += 1
     if use_label_numbers:
         for i in ax.patches:
             plt.text(i.get_x() + width / 8,
@@ -473,11 +477,12 @@ def plotMappingErrorForManyExperiments(yaml_file_path,
                      color='grey')
     ax.set_title(title)
     ax.set_ylabel(error_type)
+    ax.set_xlabel('Drift Type')
     ax.set_xticks(x)
     ax.set_xticklabels(drift_labels)
     ax.legend(loc='lower center')
     ax.grid()
-    fig.tight_layout()
+    # fig.tight_layout()
     return fig
 
 
@@ -498,15 +503,21 @@ def plotTrajectoryErrorForManyExperiments(yaml_file_path,
     # labels = set([k[k.index('_')+1:] for k in all_trajectories.keys()])
     fig, ax = plt.subplots()
     num_labels = len(labels)
+    k = 0
     for i, label in enumerate(labels):
-        vals = []
-        for j, d_label in enumerate(drift_labels):
-            vals.append(evaluations[i * 4 +
-                                    j])  # total_errors[d_label + '_' + label])
-        ax.bar(x=(x - width / 2 + i * width / num_labels),
-               height=vals,
-               width=width / num_labels,
-               label=label)
+        if label != '_skip_':
+            vals = []
+            for j, d_label in enumerate(drift_labels):
+                vals.append(
+                    evaluations[i * 4 +
+                                j])  # total_errors[d_label + '_' + label])
+            ax.bar(x=(x - width / 2 + k * width / num_labels),
+                   height=vals,
+                   width=width / num_labels,
+                   label=label)
+            k += 1
+        else:
+            print('skipped label')
     if use_label_numbers:
         for i in ax.patches:
             plt.text(i.get_x() + width / 8,
@@ -517,9 +528,10 @@ def plotTrajectoryErrorForManyExperiments(yaml_file_path,
                      color='grey')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
+    ax.set_xlabel('Drift Type')
     ax.set_xticks(x)
     ax.set_xticklabels(drift_labels)
-    ax.legend(loc='top center')
+    ax.legend(loc='upper center')
     ax.grid()
     fig.tight_layout()
     return fig
@@ -568,7 +580,7 @@ def plot3D(gt_tr, wd_tr, op_tr, voxgraph_tr=np.array([]), N=None):
               op_tr[:N, 1],
               op_tr[:N, 2],
               'red',
-              label='optimized')
+              label='proposed')
     if voxgraph_tr.size > 0:
         ax.plot3D(voxgraph_tr[:N, 0],
                   voxgraph_tr[:N, 1],
