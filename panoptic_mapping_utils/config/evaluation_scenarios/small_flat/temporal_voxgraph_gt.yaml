@@ -61,7 +61,7 @@ experiment1:
 # run 2 no use of our algo
 experiment2:
   name: moderate_none_run2
-  drift_type: moderate
+  drift_type: none
   base_path: "/home/ioannis/datasets/flat_dataset/run2"
   ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
   panoptic_yaml_data:
@@ -105,10 +105,10 @@ experiment2:
 # change detection no use of our algo (loads map)
 experiment3:
   name: moderate_none_run2_change
-  drift_type: moderate
+  drift_type: strong
   base_path: "/home/ioannis/datasets/flat_dataset/run2"
   load_map: true
-  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment0/runWithVoxgraph_moderate_none_run1.panmap"
+  load_file: "/home/ioannis/datasets/temporal_voxgraph_gt/experiment0/runWithVoxgraph_moderate_none_run1.panmap"
   ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
   panoptic_yaml_data:
     visualization:
@@ -142,90 +142,6 @@ experiment3:
       use_instance_classification: false
       update_only_tracked_submaps: true
       optimize_last_background_separately: true
-  voxgraph_yaml_data:
-    measurements:
-      submap_registration:
-        sampling_ratio: 1.0
-        enabled: true
-      odometry:
-        enabled: true
-      planes:
-        enabled: false
-# run 1 use of our algo
-experiment4:
-  name: moderate_proposed_run1
-  drift_type: none
-  ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_1_gt_10000.ply"
-  panoptic_yaml_data:
-    id_tracker:
-      type: dual_mode # ground_truth, projective, detectron, single_tsdf, dual_mode
-      verbosity: 1
-    tsdf_integrator:
-      type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
-      verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
-    map_management:
-      send_deactivated_submaps_to_voxgraph: false
-      optimize_last_background_separately: true
-  voxgraph_yaml_data:
-    measurements:
-      submap_registration:
-        sampling_ratio: 1.0
-        enabled: true
-      odometry:
-        enabled: true
-      planes:
-        enabled: false
-# run 2 use of our algo
-experiment5:
-  name: moderate_proposed_run2
-  drift_type: moderate
-  base_path: "/home/ioannis/datasets/flat_dataset/run2"
-  ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
-  panoptic_yaml_data:
-    id_tracker:
-      type: dual_mode # ground_truth, projective, detectron, single_tsdf, dual_mode
-      verbosity: 1
-    tsdf_integrator:
-      type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
-      verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
-    map_management:
-      send_deactivated_submaps_to_voxgraph: true
-      optimize_last_background_separately: true
-  voxgraph_yaml_data:
-    measurements:
-      submap_registration:
-        sampling_ratio: 1.0
-        enabled: true
-      odometry:
-        enabled: true
-      planes:
-        enabled: false
-# change detection use of our algo (loads map)
-experiment6:
-  name: moderate_proposed_run2_change
-  drift_type: moderate
-  base_path: "/home/ioannis/datasets/flat_dataset/run2"
-  load_map: true
-  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment3/runWithVoxgraph_moderate_proposed_run1.panmap"
-  ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
-  panoptic_yaml_data:
-    id_tracker:
-      type: dual_mode # ground_truth, projective, detectron, single_tsdf, dual_mode
-      verbosity: 1
-    tsdf_integrator:
-      type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
-      verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
-    visualization:
-      submaps:
-        color_mode: change
-    map_management:
-      send_deactivated_submaps_to_voxgraph: true
   voxgraph_yaml_data:
     measurements:
       submap_registration:

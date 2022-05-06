@@ -50,7 +50,7 @@ measurements:
     enabled: false
     information_zz: 2500.0
   planes:
-    enabled: true
+    enabled: false
     information_matrix:
       x_x:     1000.0
       y_y:     1000.0

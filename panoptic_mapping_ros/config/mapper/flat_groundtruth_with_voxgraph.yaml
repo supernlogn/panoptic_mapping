@@ -57,7 +57,7 @@ background_submap_allocator:
     clear_foreign_voxels: false
     required_belonging_corners: 1
   classification:
-    type: variable_count
+    type: multivariable_count
   background_voxel_size: 0.05
   unknown_voxel_size: 0.05
   use_class_layer: *use_class_layer
@@ -75,30 +75,32 @@ id_tracker:
   
   # Projective ID tracker
   depth_tolerance: -1  # m, negative = #vs
+  truncation_distance: -2
   tracking_metric: IoU  # IoU, overlap
   match_acceptance_threshold: 0.1
   min_allocation_size: 2000 # px, for submap allocation.
   use_class_data_for_matching: true
+  voxel_size: 0.05
   submap:
     voxels_per_side: *voxels_per_side
     use_class_layer: *use_class_layer
-    truncation_distance: 0.1
+    truncation_distance: -2
 tsdf_integrator:
   type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
   verbosity: 1
 
   # multi_class
-  id_classes_set_1: [0,1,2]
+  id_classes_set_1: [0,1,2,3,4,5]
   # Projective
   use_weight_dropoff: true
   max_weight: 10000
   interpolation_method: adaptive  # nearest, bilinear, adaptive
-  foreign_rays_clear: false
-  integration_threads: 1
+  foreign_rays_clear: true
+  integration_threads: 8
   allocate_neighboring_blocks: false
   
   # Class Projective
-  use_binary_classification: false
+  use_binary_classification: true
   use_instance_classification: &use_instance_classification true
   update_only_tracked_submaps: true
   
@@ -118,13 +120,13 @@ map_management:
   avoid_merging_deactivated_background_submaps: true
   
   # Behavior
-  send_deactivated_submaps_to_voxgraph: true
+  send_deactivated_submaps_to_voxgraph: false
   merge_deactivated_submaps_if_possible: true
   apply_class_layer_when_deactivating_submaps: true
   update_whole_trajectory_with_voxgraph_tf: true
   update_contained_submaps_with_correction: true
   use_submap_stitching: true
-  optimize_poses_online: false
+  optimize_poses_online: true
 
   activity_manager:
     required_reobservations: 5 # Consecutive observations to keep new submaps.
@@ -156,6 +158,9 @@ map_management:
       ransac_min_points: 2000
       ransac_epsilon: 0.1
       ransac_cluster_epsilon: 0.05
+      classes: [0,1,2,3,4,5]
+      classes_max_instances: [3,3,4,2,2,2]
+      class_planes_merge_to_class: [0,1,2,2,2,2]
       plane_visualization_topic: "/panoptic_mapper/planes_visualization"
 visualization:
   submaps:

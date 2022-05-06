@@ -25,6 +25,28 @@ experiment1:
       send_deactivated_submaps_to_voxgraph: false
       use_submap_stitching: false
       optimize_poses_online: false
+      clear_unknown_labels: true
+    id_tracker:
+      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      verbosity: 1
+    tsdf_integrator:
+      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      verbosity: 1
+      # single tsdf
+      use_segmentation: false
+      # multi_class
+      id_classes_set_1: [0,1,2]
+      # Projective
+      use_weight_dropoff: true
+      max_weight: 10000
+      interpolation_method: adaptive  # nearest, bilinear, adaptive
+      foreign_rays_clear: true
+      integration_threads: 8
+      allocate_neighboring_blocks: false
+      # Class Projective
+      use_binary_classification: true
+      use_instance_classification: false
+      update_only_tracked_submaps: true
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -43,6 +65,28 @@ experiment2:
       send_deactivated_submaps_to_voxgraph: false
       use_submap_stitching: false
       optimize_poses_online: false
+      clear_unknown_labels: true
+    id_tracker:
+      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      verbosity: 1
+    tsdf_integrator:
+      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      verbosity: 1
+      # single tsdf
+      use_segmentation: false
+      # multi_class
+      id_classes_set_1: [0,1,2]
+      # Projective
+      use_weight_dropoff: true
+      max_weight: 10000
+      interpolation_method: adaptive  # nearest, bilinear, adaptive
+      foreign_rays_clear: true
+      integration_threads: 8
+      allocate_neighboring_blocks: false
+      # Class Projective
+      use_binary_classification: true
+      use_instance_classification: false
+      update_only_tracked_submaps: true
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -61,6 +105,28 @@ experiment3:
       send_deactivated_submaps_to_voxgraph: false
       use_submap_stitching: false
       optimize_poses_online: false
+      clear_unknown_labels: true
+    id_tracker:
+      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      verbosity: 1
+    tsdf_integrator:
+      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      verbosity: 1
+      # single tsdf
+      use_segmentation: false
+      # multi_class
+      id_classes_set_1: [0,1,2]
+      # Projective
+      use_weight_dropoff: true
+      max_weight: 10000
+      interpolation_method: adaptive  # nearest, bilinear, adaptive
+      foreign_rays_clear: true
+      integration_threads: 8
+      allocate_neighboring_blocks: false
+      # Class Projective
+      use_binary_classification: true
+      use_instance_classification: false
+      update_only_tracked_submaps: true
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -79,6 +145,28 @@ experiment4:
       send_deactivated_submaps_to_voxgraph: false
       use_submap_stitching: false
       optimize_poses_online: false
+      clear_unknown_labels: true
+    id_tracker:
+      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      verbosity: 1
+    tsdf_integrator:
+      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      verbosity: 1
+      # single tsdf
+      use_segmentation: false
+      # multi_class
+      id_classes_set_1: [0,1,2]
+      # Projective
+      use_weight_dropoff: true
+      max_weight: 10000
+      interpolation_method: adaptive  # nearest, bilinear, adaptive
+      foreign_rays_clear: true
+      integration_threads: 8
+      allocate_neighboring_blocks: false
+      # Class Projective
+      use_binary_classification: true
+      use_instance_classification: false
+      update_only_tracked_submaps: true
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -93,6 +181,7 @@ experiment5:
   drift_type: light
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: false
@@ -111,6 +200,7 @@ experiment6:
   drift_type: moderate
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: false
@@ -128,6 +218,7 @@ experiment7:
   drift_type: strong
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: false
@@ -145,6 +236,7 @@ experiment8:
   drift_type: severe
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: false
@@ -163,6 +255,7 @@ experiment9:
   drift_type: light
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -180,6 +273,7 @@ experiment10:
   drift_type: moderate
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -197,6 +291,7 @@ experiment11:
   drift_type: strong
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -214,6 +309,7 @@ experiment12:
   drift_type: severe
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -232,6 +328,7 @@ experiment13:
   drift_type: light
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -249,6 +346,7 @@ experiment14:
   drift_type: moderate
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -266,6 +364,7 @@ experiment15:
   drift_type: strong
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -283,6 +382,7 @@ experiment16:
   drift_type: severe
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -300,6 +400,7 @@ experiment17:
   drift_type: light
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -317,6 +418,7 @@ experiment18:
   drift_type: moderate
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -334,6 +436,7 @@ experiment19:
   drift_type: strong
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true
@@ -351,6 +454,7 @@ experiment20:
   drift_type: severe
   panoptic_yaml_data:
     map_management:
+      clear_unknown_labels: true
       avoid_merging_deactivated_background_submaps: true
       send_deactivated_submaps_to_voxgraph: true
       use_submap_stitching: true

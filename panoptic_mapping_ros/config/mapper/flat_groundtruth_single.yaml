@@ -41,11 +41,11 @@ submap_allocator:
   
   # Semantic
   small_instance_voxel_size: 0.02
-  medium_instance_voxel_size: 0.02
-  large_instance_voxel_size: 0.02
-  background_voxel_size: 0.02
-  unknown_voxel_size: 0.02
-  use_class_layer: &use_class_layer false
+  medium_instance_voxel_size: 0.03
+  large_instance_voxel_size: 0.04
+  background_voxel_size: 0.05
+  unknown_voxel_size: 0.05
+  use_class_layer: &use_class_layer true
 
 freespace_allocator:
   type: monolithic  # monolithic
@@ -55,27 +55,28 @@ freespace_allocator:
   voxel_size: 0.3
   use_class_layer: false
 id_tracker:
-  type: single_tsdf # ground_truth, projective, detectron, single_tsdf, dual_mode
+  type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
   verbosity: 1
   
   # Projective ID tracker
   depth_tolerance: -1  # m, negative = #vs
+  truncation_distance: -2
   tracking_metric: IoU  # IoU, overlap
   match_acceptance_threshold: 0.1
   min_allocation_size: 2000 # px, for submap allocation.
   use_class_data_for_matching: true
-  voxel_size: 0.02
+  voxel_size: 0.05
   submap:
     voxels_per_side: *voxels_per_side
     use_class_layer: *use_class_layer
     truncation_distance: -2
 tsdf_integrator:
-  type: single_tsdf # projective, class_projective, multi_class_projective, single_tsdf
+  type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
   verbosity: 1
   # single tsdf
   use_segmentation: false
   # multi_class
-  id_classes_set_1: [0,1,2]
+  id_classes_set_1: [0,1,2,3,4,5]
   # Projective
   use_weight_dropoff: true
   max_weight: 10000
@@ -95,7 +96,7 @@ map_management:
   
   # Frequencies
   prune_active_blocks_frequency: 0
-  activity_management_frequency: 0
+  activity_management_frequency: 5
   change_detection_frequency: 5
   update_poses_with_voxgraph_frequency: 3
   publish_poses_to_voxgraph_frequency: 1

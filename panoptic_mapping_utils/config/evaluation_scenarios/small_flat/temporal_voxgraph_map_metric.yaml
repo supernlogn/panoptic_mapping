@@ -29,10 +29,10 @@ experiment1:
       use_submap_stitching: false
       optimize_poses_online: false
     id_tracker:
-      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      type: single_tsdf # ground_truth, projective, detectron, single_tsdf, dual_mode
       verbosity: 1
     tsdf_integrator:
-      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      type: single_tsdf # projective, class_projective, multi_class_projective, single_tsdf
       verbosity: 1
       # single tsdf
       use_segmentation: false
@@ -72,10 +72,10 @@ experiment2:
       use_submap_stitching: false
       optimize_poses_online: false
     id_tracker:
-      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      type: single_tsdf # ground_truth, projective, detectron, single_tsdf, dual_mode
       verbosity: 1
     tsdf_integrator:
-      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      type: single_tsdf # projective, class_projective, multi_class_projective, single_tsdf
       verbosity: 1
       # single tsdf
       use_segmentation: false
@@ -92,6 +92,11 @@ experiment2:
       use_binary_classification: true
       use_instance_classification: false
       update_only_tracked_submaps: true
+    data_writer:
+      verbosity: 1
+      output_directory: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment1/"
+      file_name: ""
+      store_map_every_n_frames: 10  # Use 0 to ignore
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -108,7 +113,7 @@ experiment3:
   drift_type: moderate
   base_path: "/home/ioannis/datasets/flat_dataset/run2"
   load_map: true
-  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment0/runWithVoxgraph_moderate_none_run1.panmap"
+  load_file: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment0/runWithVoxgraph_moderate_none_run1.panmap"
   ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
   panoptic_yaml_data:
     visualization:
@@ -121,15 +126,15 @@ experiment3:
       use_submap_stitching: false
       optimize_poses_online: false
     id_tracker:
-      type: projective # ground_truth, projective, detectron, single_tsdf, dual_mode
+      type: single_tsdf # ground_truth, projective, detectron, single_tsdf, dual_mode
       verbosity: 1
     tsdf_integrator:
-      type: class_projective # projective, class_projective, multi_class_projective, single_tsdf
+      type: single_tsdf # projective, class_projective, multi_class_projective, single_tsdf
       verbosity: 1
       # single tsdf
       use_segmentation: false
       # multi_class
-      id_classes_set_1: [0,1,2,3,4,5]
+      id_classes_set_1: [0,1,2]
       # Projective
       use_weight_dropoff: true
       max_weight: 10000
@@ -142,6 +147,11 @@ experiment3:
       use_instance_classification: false
       update_only_tracked_submaps: true
       optimize_last_background_separately: true
+    data_writer:
+      verbosity: 1
+      output_directory: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment2/"
+      file_name: ""
+      store_map_every_n_frames: 10  # Use 0 to ignore
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -163,8 +173,6 @@ experiment4:
     tsdf_integrator:
       type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
       verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
     map_management:
       send_deactivated_submaps_to_voxgraph: false
       optimize_last_background_separately: true
@@ -184,17 +192,14 @@ experiment5:
   base_path: "/home/ioannis/datasets/flat_dataset/run2"
   ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
   panoptic_yaml_data:
-    id_tracker:
-      type: dual_mode # ground_truth, projective, detectron, single_tsdf, dual_mode
-      verbosity: 1
-    tsdf_integrator:
-      type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
-      verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
     map_management:
       send_deactivated_submaps_to_voxgraph: true
       optimize_last_background_separately: true
+    data_writer:
+      verbosity: 1
+      output_directory: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment4/"
+      file_name: ""
+      store_map_every_n_frames: 10  # Use 0 to ignore
   voxgraph_yaml_data:
     measurements:
       submap_registration:
@@ -210,22 +215,18 @@ experiment6:
   drift_type: moderate
   base_path: "/home/ioannis/datasets/flat_dataset/run2"
   load_map: true
-  load_file: "/home/ioannis/datasets/temporal_voxgraph/experiment3/runWithVoxgraph_moderate_proposed_run1.panmap"
+  load_file: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment3/runWithVoxgraph_moderate_proposed_run1.panmap"
   ground_truth_pointcloud_file: "/home/ioannis/datasets/flat_dataset/flat_2_gt_10000.ply"
   panoptic_yaml_data:
-    id_tracker:
-      type: dual_mode # ground_truth, projective, detectron, single_tsdf, dual_mode
-      verbosity: 1
-    tsdf_integrator:
-      type: multi_class_projective # projective, class_projective, multi_class_projective, single_tsdf
-      verbosity: 1
-      id_classes_set_1: [0,1,2,3,4,5]
-      use_instance_classification: true
     visualization:
       submaps:
         color_mode: change
     map_management:
       send_deactivated_submaps_to_voxgraph: true
+    data_writer:
+      verbosity: 1
+      output_directory: "/home/ioannis/datasets/temporal_voxgraph_map_metric/experiment5/"
+      store_map_every_n_frames: 10  # Use 0 to ignore
   voxgraph_yaml_data:
     measurements:
       submap_registration:
