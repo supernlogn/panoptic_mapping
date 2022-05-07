@@ -74,6 +74,9 @@ class PanopticMapper {
     // If true, indicate the default values when printing component configs.
     bool indicate_default_values = true;
 
+    // background classes to use when using dual tracking
+    std::vector<int> background_classes;
+
     Config() { setConfigName("PanopticMapper"); }
 
    protected:

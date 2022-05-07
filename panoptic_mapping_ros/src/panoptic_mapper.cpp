@@ -4,12 +4,14 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include <panoptic_mapping/common/camera.h>
 #include <panoptic_mapping/labels/label_handler_base.h>
 #include <panoptic_mapping/map/classification/fixed_count.h>
+#include <panoptic_mapping/map/classification/variable_count.h>
 #include <panoptic_mapping/submap_allocation/freespace_allocator_base.h>
 #include <panoptic_mapping/submap_allocation/submap_allocator_base.h>
 #include <panoptic_mapping/tools/evaluation_data_writer.h>
@@ -61,6 +63,7 @@ void PanopticMapper::Config::setupParamsAndPrinting() {
   setupParam("indicate_default_values", &indicate_default_values);
   setupParam("secs_to_wait_input_before_shutdown",
              &secs_to_wait_input_before_shutdown);
+  setupParam("background_classes", &background_classes);
 }
 
 PanopticMapper::PanopticMapper(const ros::NodeHandle& nh,
@@ -128,6 +131,8 @@ void PanopticMapper::setupMembers() {
       CHECK(background_submap_allocator);
       dynamic_cast<DualModeTracker*>(id_tracker_.get())
           ->setBackgroundSubmapAllocator(background_submap_allocator);
+      MultiVariableCountVoxel::submap_class = std::unordered_set<int>(
+          config_.background_classes.begin(), config_.background_classes.end());
     }
   } else {
     LOG(ERROR) << "Cannot use tracker without a proper type";
